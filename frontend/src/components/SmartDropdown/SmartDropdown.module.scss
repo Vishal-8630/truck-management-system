@@ -1,0 +1,67 @@
+@use '../../styles/globals' as *;
+
+.dropdown {
+    position: relative;
+    width: 100%;
+
+    label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #444;
+        margin-bottom: 0.4rem;
+    }
+
+    .control,
+    .input {
+        padding: 0.6rem 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #fff;
+        color: $neutral-dark;
+        width: 100%;
+        font-size: 0.9rem;
+
+        &:focus {
+            outline: none;
+            border-color: $primary;
+            box-shadow: 0 0 0 2px rgba($primary, 0.15);
+        }
+    }
+
+    .control {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .arrow {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ddd;
+        color: $neutral-dark;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        z-index: 1000001;
+
+        li {
+            padding: 0.6rem 0.8rem;
+            cursor: pointer;
+
+            &:hover {
+                background: #f0f4ff;
+            }
+        }
+    }
+}

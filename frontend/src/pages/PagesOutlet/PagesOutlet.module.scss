@@ -1,0 +1,7 @@
+.container {
+  padding: 20px;
+  width: 100%;
+  min-height: calc(100vh - 80px); // adjust if you have a navbar
+  box-sizing: border-box;
+  background-color: #f9f9f9; // optional
+}

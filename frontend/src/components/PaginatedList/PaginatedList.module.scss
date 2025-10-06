@@ -1,0 +1,25 @@
+@use '../../styles/globals' as *;
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    button {
+        border: none;
+        color: $primary;
+        cursor: pointer;
+        background-color: white;
+        font-size: 1rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &:disabled {
+            color: gray;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+    }
+}

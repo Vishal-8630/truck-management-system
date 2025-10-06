@@ -1,0 +1,21 @@
+@use '../../styles/globals' as *;
+
+.filterContainer {
+    text-align: left;
+    @include flex-center();
+    gap: 0.8rem;
+
+    .clearContainer {
+        @include flex-center();
+        gap: 0.8rem;
+        @include text-color(gray);
+
+        .filterPara {
+            @include responsive-font(0.8rem, 0.8rem, 1rem);
+        }
+    }
+
+    .filterBtn {
+        min-width: 10rem;
+    }
+}

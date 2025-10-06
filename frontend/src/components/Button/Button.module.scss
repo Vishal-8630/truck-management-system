@@ -1,0 +1,15 @@
+@use '../../styles/globals' as *;
+@use "sass:color";
+
+.buttonContainer {
+    display: flex;
+    justify-content: center;
+}
+
+.primaryBtn {
+    @include primary-btn();
+}
+
+.secondaryBtn {
+    @include secondary-btn();
+}

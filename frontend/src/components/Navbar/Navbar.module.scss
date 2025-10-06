@@ -1,0 +1,160 @@
+@use '../../styles/globals' as *;
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 80px;
+    background-color: #1d1e22;
+    color: white;
+    position: fixed;
+    top: 10px;
+    width: 90%;
+    max-width: 1000px;
+    border-radius: 14px;
+    padding: 1rem 2rem;
+    z-index: 10000;
+
+    @include respond-to(lg) {
+        max-width: 900px;
+        padding: 1rem 1.5rem;
+    }
+
+    @include respond-to(xl) {
+        max-width: 1200px;
+    }
+
+    @include respond-to(xxl) {
+        max-width: 1400px;
+    }
+}
+
+.brand {
+    @include flex-center();
+    gap: 0.5rem;
+
+    img {
+        width: 55px;
+        height: 55px;
+    }
+
+    .logo {
+        @include flex-center();
+
+        img {
+            width: 125px;
+            height: 72px;
+        }
+    }
+
+    .drl {
+        font-size: 60px;
+        font-weight: bold;
+        color: #fff;
+        text-transform: uppercase;
+        font-family: Arial, sans-serif;
+        text-shadow:
+            2px 2px 0 #ff4d4d,
+            4px 4px 0 #ff9933,
+            6px 6px 0 #33cc33;
+    }
+}
+
+.links {
+    display: flex;
+    align-items: center;
+
+    @include respond-to(lg) {
+        gap: 0.6rem;
+    }
+
+    @include respond-to(md) {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        background-color: #1d1e22;
+        top: 110%;
+        left: 0;
+        width: 100%;
+        padding: 2rem;
+        border-radius: 14px;
+        align-items: flex-start;
+        z-index: 1000;
+    }
+
+    li {
+        @include flex-center();
+        list-style: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+        text-align: center;
+        cursor: pointer;
+        transition: color 0.3s ease-in-out;
+
+        @include respond-to(lg) {
+            font-size: 0.9rem;
+            padding: 0.4rem 0.5rem;
+        }
+
+        @include respond-to(md) {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        &:hover {
+            color: #a2a2a4;
+        }
+
+        div {
+            @include flex-center();
+            gap: 5px;
+
+            > :last-child {
+                font-size: 0.6rem;
+                display: flex;
+            }
+        }
+    }
+}
+
+.logoutButton {
+    cursor: pointer;
+    transition: color 0.3s ease-in-out;
+
+    &:hover {
+        color: #a2a2a4;
+    }
+}
+
+.burger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    display: none;
+
+    @include respond-to(md) {
+        display: flex;
+    }
+
+    span {
+        display: inline-block;
+        height: 3px;
+        background-color: white;
+        width: 25px;
+        border-radius: 2px;
+
+        &:nth-child(2) {
+            width: 15px;
+            align-self: flex-end;
+        }
+    }
+}

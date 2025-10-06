@@ -1,0 +1,7 @@
+@use '../../styles/globals' as *;
+
+.bottomContainer {
+    height: 100px;
+    background-color: $primary-bg;
+    width: 100%;
+}

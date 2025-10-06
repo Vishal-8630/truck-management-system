@@ -1,0 +1,26 @@
+@use '../../styles/globals' as *;
+
+.moveToTopBtn {
+  @include circle(50px);
+  background-color: black;
+  position: sticky;
+  margin-left: auto;
+  bottom: $spacing-md;
+  @include spacing(margin, (right, $spacing-sm), (bottom, $spacing-sm));
+  @include flex-center();
+  cursor: pointer;
+  z-index: 10000;
+
+  &:hover {
+    svg {
+        color: $hover-color;
+    }
+  }
+
+  svg {
+    color: $neutral-light;
+    font-weight: bold;
+    font-weight: 1.5rem;
+    transition: color $transition-medium;
+  }
+}

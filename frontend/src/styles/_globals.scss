@@ -1,0 +1,64 @@
+@use './variables' as *;
+@forward './variables';
+
+@use './mixins' as *;
+@forward './mixins';
+
+// Global Reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-body;
+  background-color: rgba(248, 248, 248, 0.3);
+  color: $neutral-dark;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-heading;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, textarea {
+  background-color: $neutral-light;
+  border: 1px solid $neutral-dark;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+  font-family: $font-body;
+
+  &:focus {
+    outline: none;
+  }
+
+  &.error {
+    border-color: $accent;
+  }
+
+  &:disabled {
+    background-color: $disabled-bg;
+    border: 1px solid $disabled-border;
+  }
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.errorText {
+  color: $accent;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}

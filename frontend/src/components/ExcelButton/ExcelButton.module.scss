@@ -1,0 +1,10 @@
+@use '../../styles/globals' as *;
+
+.excelBtnWrapper {
+  width: 100%;
+  text-align: right;
+  
+  .excelBtn {
+    @include primary-btn();
+  }
+}

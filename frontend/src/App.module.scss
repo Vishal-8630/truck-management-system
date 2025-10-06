@@ -1,0 +1,39 @@
+@use './styles/globals' as *;
+
+.appContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.navbarContainer {
+    flex-shrink: 0;
+}
+
+.contentContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 90px;
+    max-width: 1000px;
+    margin: 0 auto;
+    height: 100%;
+    width: 90%;
+    position: relative;
+
+    @include respond-to(lg) {
+        max-width: 900px;
+    }
+
+    @include respond-to(xl) {
+        max-width: 1200px;
+    }
+
+    @include respond-to(xxl) {
+        max-width: 1400px;
+    }
+}
+
+.bottomBarContainer {
+    flex-shrink: 0;
+}

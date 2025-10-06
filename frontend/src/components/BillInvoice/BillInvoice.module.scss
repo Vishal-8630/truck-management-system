@@ -1,0 +1,292 @@
+@use '../../styles/globals' as *;
+
+.billInvoiceContainer {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    border: 1px solid #000;
+    max-width: 80%;
+    min-width: 850px;
+    margin: 1.1rem auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.header {
+    @include flex-center();
+    text-align: center;
+    gap: 3rem;
+    font-weight: bold;
+
+    .secondRow {
+
+        .drl {
+            font-size: 3rem;
+            font-weight: bold;
+            color: red;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            text-shadow: 3px 3px 4px rgba(0, 0, 0, 0.3);
+        }
+    }
+}
+
+.section_1 {
+    display: flex;
+    font-weight: bold;
+    width: 100%;
+
+    >* {
+        border-left: 1px solid black;
+        border-top: 1px solid black;
+        padding: 10px;
+    }
+
+    >*:nth-child(2) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        >*:last-child {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    >*:first-child {
+        border-left: none;
+    }
+
+    >*:last-child {
+        font-weight: normal;
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+
+        >*:last-child {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 200px;
+
+            >*>*:first-child {
+                font-weight: bold;
+            }
+
+            >* {
+                display: flex;
+                gap: 10px;
+                border: 1px solid black;
+
+                >* {
+                    padding: 5px;
+                    flex: 1;
+                }
+
+                >*:last-child {
+                    text-align: end;
+                    border-left: 1px solid black;
+                }
+            }
+
+            >*:last-child {
+                border-top: none;
+            }
+        }
+    }
+}
+
+.billRow {
+    flex: 1;
+    border-top: 1px solid black;
+
+    table {
+        border-bottom: 1px solid black;
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+
+        th,
+        td {
+            border-right: 1px solid black;
+            border-bottom: 1px solid black;
+            text-align: center;
+
+            &:last-child {
+                border-right: none;
+            }
+        }
+    }
+
+    >:last-child {
+        margin-top: 20px;
+        font-size: 1rem;
+
+        div {
+            @include flex-center();
+
+            >:first-child {
+                font-style: italic;
+                font-size: 1rem;
+                flex: 1;
+                text-align: center;
+            }
+
+            >:last-child {
+                margin-right: 20px;
+            }
+        }
+    }
+}
+
+.gstSection {
+
+    table {
+        float: right;
+        border: 1px solid black;
+        border-collapse: collapse;
+        border-right: none;
+        border-bottom: none;
+
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 4px;
+            text-align: center;
+        }
+
+        tr>*:last-child {
+            border-right: none;
+        }
+
+        tbody {
+
+            tr:last-child td {
+                border-bottom: none;
+            }
+        }
+    }
+}
+
+.section_2 {
+    border-top: 1px solid black;
+    display: flex;
+    font-weight: bold;
+
+    >:first-child {
+        border-right: 1px solid black;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex: 2;
+    }
+
+    >:last-child {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+
+        >* {
+            display: flex;
+            flex: 1;
+
+            >*:last-child {
+                border-right: none;
+                text-align: end;
+                padding-right: 13px;
+            }
+
+            >* {
+                border-bottom: 1px solid black;
+                border-right: 1px solid black;
+                flex: 1;
+            }
+        }
+
+        >:last-child>* {
+            border-bottom: none;
+        }
+    }
+}
+
+.section_3 {
+    border-top: 1px solid black;
+    padding: 10px;
+    font-weight: bold;
+
+    ol {
+        margin-left: 30px;
+    }
+
+    >:last-child {
+        margin-top: 20px;
+
+        div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        span {
+            color: lighten(red, 10%)
+        }
+    }
+}
+
+@media print {
+    .billInvoiceContainer {
+        min-height: 230mm;
+        width: 210mm;
+        max-width: 90%;
+        margin: 2rem auto 0 auto;
+
+        .header {
+            margin: 15px;
+
+            .drl {
+                font-size: 1.8rem;
+            }
+
+            p {
+                margin: 3px;
+            }
+        }
+
+        .section_1, .section_2, .section_3 {
+            font-size: 0.7rem;
+            >:last-child {
+                >:last-child {
+                    div >:last-child {
+                        text-align: left;
+                        flex: 2;
+                    }
+                }
+            }
+        }
+
+        .billRow {
+            table {
+                tr {
+                    th {
+                        font-size: 0.6rem;
+                    }
+                    td {
+                        font-size: 0.5rem;
+                    }
+                }
+            }
+            >:last-child {
+                div {
+                    >:first-child {
+                        font-size: 0.7rem;
+                    }
+                    >:last-child {
+                        font-size: 0.7rem;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,498 @@
+@use '../../styles/globals' as *;
+
+.invoice {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    padding: 20px;
+    margin: 20px;
+    min-width: 750px;
+
+    @include respond-to(lg) {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+hr {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.bottom {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.text_center {
+    @include flex-column();
+    align-items: center;
+    justify-content: center;
+}
+
+.flex_center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+
+    hr {
+        width: 100%;
+    }
+
+    div {
+        width: 100%;
+    }
+}
+
+.flex_1 {
+    flex: 1;
+}
+
+.flex_2 {
+    flex: 2;
+}
+
+.flex_3 {
+    flex: 3;
+}
+
+.flex_4 {
+    flex: 4;
+}
+
+.flex_5 {
+    flex: 5;
+}
+
+.flex_6 {
+    flex: 6;
+}
+
+.section_1,
+.section_2,
+.section_3,
+.section_4 {
+    display: flex;
+}
+
+.underlineText {
+    text-decoration: underline;
+}
+
+.field_name {
+    font-weight: bold;
+}
+
+.bold {
+    font-weight: bold;
+
+    @include respond-to(lg) {
+        font-size: 0.5rem;
+    }
+}
+
+.innerPadding {
+    padding: 10px;
+}
+
+.email {
+    color: blue;
+}
+
+.header {
+    display: flex;
+
+    >.box {
+        border: 1px solid black;
+    }
+
+    >:first-child {
+        border-right: none;
+    }
+
+    >:last-child {
+        border-left: none;
+    }
+
+    .drl {
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: red;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        text-shadow: 3px 3px 4px rgba(0, 0, 0, 0.3);
+
+        @include respond-to(lg) {
+            font-size: 1.7rem;
+        }
+    }
+
+    @include respond-to(lg) {
+        .logo {
+            img {
+
+                width: 70px;
+                height: 70px;
+            }
+        }
+
+        >:first-child {
+            padding: 0.6rem;
+            text-align: center;
+        }
+
+        .field_name {
+            font-size: 0.5rem;
+        }
+
+        .underlineText {
+            font-size: 0.5rem;
+        }
+
+        >:last-child {
+            padding: 0.6rem;
+        }
+    }
+}
+
+.section_1 {
+    >.box {
+        border: 1px solid black;
+    }
+
+    >:first-child,
+    >:nth-child(2),
+    >:nth-child(3) {
+        border-top: none;
+        border-right: none;
+    }
+
+    >:last-child {
+        border-top: none;
+    }
+
+    .lr_no_box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+
+        div {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            margin-top: 30px;
+            font-size: 1.1rem;
+            text-align: center;
+
+            .lr_header {
+                margin-right: 30px;
+
+                @include respond-to(lg) {
+                    margin-right: 5px;
+                }
+            }
+        }
+    }
+
+    .owner_risk {
+        width: 100%;
+        padding: 10px;
+
+        div {
+            margin-top: 3px;
+        }
+
+        .details {
+            display: flex;
+        }
+
+        @include respond-to(lg) {
+
+            >:nth-child(1),
+            >:nth-child(2),
+            >:nth-child(3) {
+                font-size: 0.5rem;
+            }
+        }
+    }
+}
+
+.section_2 {
+    >:first-child {
+        border-left: 1px solid black;
+    }
+
+    >:first-child,
+    >:nth-child(2),
+    >:last-child {
+        border-right: 1px solid black;
+    }
+}
+
+.section_3 {
+
+    >:first-child {
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+    }
+
+    >:first-child {
+        table {
+
+            thead,
+            tbody {
+                tr {
+                    >:first-child {
+                        border-left: none;
+                    }
+
+                    >:last-child {
+                        border-right: none;
+                    }
+                }
+            }
+        }
+    }
+
+    >:nth-child(2) {
+        table {
+
+            thead,
+            tbody {
+                tr {
+                    >:first-child {
+                        border-left: none;
+                    }
+                }
+            }
+
+            tbody {
+                tr {
+                    >:first-child {
+                        border-top: none;
+                        border-right: none;
+                    }
+                }
+
+                >tr {
+                    >* {
+                        border-bottom: none;
+                    }
+                }
+            }
+        }
+    }
+
+    >:last-child {
+        border-top: 1px solid black;
+        border-right: 1px solid black;
+    }
+}
+
+.parentDiv {
+    flex: 1;
+
+    .childDiv {
+        display: flex;
+        padding-left: 5px;
+
+        .childValue {
+            flex: 1;
+            text-align: end;
+        }
+    }
+}
+
+.pan_gst {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.damage_section {
+    padding: 10px;
+
+    @include respond-to(lg) {
+
+        p,
+        div {
+            font-size: 0.5rem;
+        }
+    }
+}
+
+.invoice_info {
+    padding: 10px;
+}
+
+.auto_populated {
+    font-size: 1.1rem;
+    color: rgb(37, 149, 255);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+
+    @include respond-to(lg) {
+        font-size: 0.5rem;
+    }
+}
+
+.consignor_details {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+
+    .outerDiv {
+        display: flex;
+        align-items: center;
+
+        .consignor_values {
+            flex: 1;
+            text-align: center;
+        }
+    }
+}
+
+.vehicle_details {
+    padding: 10px;
+
+    .innerDiv {
+        display: flex;
+        align-items: center;
+
+        .values {
+            flex: 1;
+            text-align: center;
+        }
+    }
+}
+
+.section_3 {
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid black;
+
+            &.description {
+                width: 60%;
+            }
+
+            @include respond-to(lg) {
+                font-size: 0.5rem;
+            }
+        }
+    }
+}
+
+.tableBody {
+    height: 100%;
+}
+
+.section_4 {
+    border: 1px solid black;
+    justify-content: space-around;
+    padding: 10px;
+
+    .lastDiv {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    }
+}
+
+@media print {
+
+    .invoiceContainer {
+        width: 100%;
+        min-height: 100%;
+        margin: 2rem auto 0 auto;
+    }
+
+    // .bold {
+    //     font-size: 0.5rem;
+    // }
+
+    // .auto_populated {
+    //     font-size: 0.5rem;
+    // }
+
+    // .header {
+    //     .logo {
+    //         img {
+
+    //             width: 70px;
+    //             height: 70px;
+    //         }
+    //     }
+
+    //     .drl {
+    //         font-size: 1.5rem;
+    //         padding: 5px 0;
+    //     }
+
+    //     >:first-child {
+    //         padding: 0.6rem;
+    //         text-align: center;
+    //     }
+
+    //     .field_name {
+    //         font-size: 0.5rem;
+    //     }
+
+    //     .underlineText {
+    //         font-size: 0.5rem;
+    //     }
+
+    //     >:last-child {
+    //         padding: 0.6rem;
+    //     }
+    // }
+
+    // .lr_no_box {
+    //     flex: 1;
+
+    //     div {
+    //         margin: 0;
+    //     }
+
+    //     .lr_header {
+    //         margin-right: 5px;
+    //     }
+    // }
+
+    // .owner_risk {
+    //     flex: 3;
+
+    //     >:nth-child(1),
+    //     >:nth-child(2),
+    //     >:nth-child(3) {
+    //         font-size: 0.5rem;
+    //     }
+    // }
+
+    // .damage_section {
+    //     flex: 1;
+
+    //     p,
+    //     div {
+    //         font-size: 0.5rem;
+    //     }
+    // }
+
+    // table {
+    //     th {
+    //         font-size: 0.5rem;
+    //     }
+    // }
+}

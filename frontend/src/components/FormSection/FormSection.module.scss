@@ -1,0 +1,23 @@
+@use '../../styles/globals' as *;
+
+.formSection {
+  @include bg-color($secondary);
+  @include spacing(padding, (all, 1.5rem));
+  @include spacing(margin, (all, 0.8rem));
+  @include flex-column();
+  border: $border-light;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  gap: 1rem;
+
+  .sectionTitle {
+    @include spacing(padding, (bottom, 0.8rem));
+    @include spacing(margin, (horizontal, auto), (vertical, 0));
+    @include responsive-font(1rem, 1.1rem, 1.25rem);
+    @include text-color($primary);
+    font-weight: 600;
+    text-align: center;
+    border-bottom: $border-dark;
+    width: 90%;
+  }
+}

@@ -1,0 +1,40 @@
+@use '../../styles/globals' as *;
+
+.messageContainer {
+  @include flex-column();
+  position: fixed;
+  top: 100px;
+  right: 0;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.message {
+  @include flex-between();
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  min-width: 250px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+
+  button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    margin-left: 1rem;
+  }
+}
+
+.success {
+  background-color: #2cce67; /* green */
+}
+
+.error {
+  background-color: #ff5252; /* red */
+}
+
+.info {
+  background-color: #4680ff; /* blue */
+}

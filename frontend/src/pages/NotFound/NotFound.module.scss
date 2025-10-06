@@ -1,0 +1,32 @@
+@use '../../styles/globals' as *;
+
+.notFoundContainer  {
+    @include flex-center();
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+
+    .heading {
+        font-size: 5rem;
+    }
+
+    .btn {
+        font-size: 2rem;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 5px;
+        background-color: $neutral-dark;
+        color: $neutral-light;
+        cursor: pointer;
+        margin: 1.5rem;
+        @include transition();
+
+        &:hover {
+            background-color: lighten($neutral-dark, 20%);
+        }
+
+        &:active {
+            transform: scale(0.6);
+        }
+    }
+}

@@ -1,0 +1,74 @@
+@use '../../styles/globals' as *;
+
+/* Overlay.module.scss */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+}
+
+.content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  position: relative;
+  width: 60%;
+  max-width: 1000px;
+  height: fit-content;
+  @include spacing(margin, (left, $spacing-lg), (right, $spacing-lg));
+
+  @include respond-to(md) {
+    width: 90%;
+    padding: 1rem;
+  }
+
+  @include respond-to(lg) {
+    max-width: 900px;
+  }
+
+  @include respond-to(xl) {
+    max-width: 1200px;
+  }
+
+  @include respond-to(xxl) {
+    max-width: 1400px;
+  }
+
+  /* REMOVE overflow here */
+  overflow: hidden; // clip the corners
+}
+
+.scrollable {
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: 8px; // optional for scrollbar spacing
+
+  /* optional: custom scrollbar for smooth look */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}

@@ -1,0 +1,47 @@
+@use '../../styles/globals' as *;
+
+.partyFormContainer {
+    @include flex-center();
+    color: $neutral-light;
+    width: 100%;
+    flex: 1;
+    height: 100%;
+
+    .partyForm {
+        width: 35rem;
+    }
+}
+
+
+.formGroup {
+    @include flex-column();
+    margin-bottom: 1.5rem;
+
+
+
+    label {
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    input {
+        width: 100%;
+        padding: 0.8rem 0.6rem;
+        border: none;
+        font-size: 1rem;
+        border-radius: 0.3rem;
+        font-family: $font-body;
+        padding-left: 0.8rem;
+    }
+}
+
+.formControl {
+    width: 100%;
+    text-align: center;
+    margin-top: 2rem;
+
+    .addBtn {
+       @include primary-btn();
+       min-width: 50%;
+    }
+}

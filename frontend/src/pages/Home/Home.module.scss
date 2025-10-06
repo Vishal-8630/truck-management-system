@@ -1,0 +1,172 @@
+@use '../../styles/globals' as *;
+
+.homePage {
+  @include spacing(margin, (top, $spacing-lg));
+}
+
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-shadow:
+    5px 2px 9px rgba(0, 0, 0, 0.2),
+    -5px -2px 9px rgba(0, 0, 0, 0.2);
+  @include spacing(padding, (all, $spacing-lg));
+  @include border-radius($radius-lg);
+
+  @include respond-to(md) {
+    @include spacing(padding, (all, $spacing-md));
+  }
+
+  h1 {
+    @include text-color($neutral-dark);
+    @include responsive-font(1.3rem, $heading-md, $heading-lg);
+    @include spacing(margin, (bottom, $spacing-lg));
+    text-align: center;
+
+    @include respond-to(md) {
+      @include spacing(margin, (bottom, $spacing-md));
+    }
+  }
+
+  .heroContent {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    @include respond-to(sm) {
+      align-items: flex-start;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-lg;
+      @include spacing(padding, (left, $spacing-lg), (right, $spacing-lg));
+
+      @include respond-to(sm) {
+        @include spacing(padding, (left, $spacing-sm), (right, $spacing-sm));
+        gap: $spacing-sm;
+      }
+
+      p {
+        text-align: center;
+        @include responsive-font(0.8rem, 1.2rem);
+      }
+    }
+
+    img {
+      width: 50%;
+      height: 100%;
+      @include border-radius($radius-lg)
+    }
+
+    .heroControls {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      gap: $spacing-lg;
+      @include spacing(margin, (top, 3rem));
+
+      @include respond-to(md) {
+        gap: $spacing-sm;
+        @include spacing(margin, (top, 0));
+        flex-direction: column;
+      }
+
+      @include respond-to(xl) {
+        width: 25rem;
+      }
+
+      .quoteBtn {
+        @include secondary-btn();
+      }
+
+      .contactBtn {
+        @include primary-btn();
+      }
+    }
+  }
+}
+
+.aboutSection {
+  @include bg-color($primary);
+  @include text-color($secondary);
+  @include spacing(padding, (all, $spacing-lg));
+  @include spacing(margin, (top, $spacing-lg), (bottom, $spacing-lg));
+  @include border-radius($radius-lg);
+
+  .aboutHeading {
+    text-align: center;
+    @include spacing(margin, (bottom, $spacing-lg));
+    @include responsive-font(1.3rem, $heading-md, $heading-lg);
+  }
+
+  .aboutContent {
+    @include spacing(padding, (left, $spacing-lg), (right, $spacing-lg));
+    max-width: 70rem;
+    @include spacing(margin, (left, auto), (right, auto));
+
+    @include respond-to(md) {
+      @include spacing(padding, (left, $spacing-sm), (right, $spacing-sm));
+    }
+
+    p {
+      text-align: center;
+      @include responsive-font(0.8rem, 1.2rem);
+    }
+  }
+
+  .aboutControls {
+    width: 100%;
+    @include flex-center();
+    @include spacing(margin, (top, $spacing-lg));
+
+    button {
+      @include secondary-btn();
+    }
+  }
+}
+
+.servicesSection {
+  .servicesHeading {
+    text-align: center;
+    @include spacing(margin, (bottom, $spacing-lg));
+    @include responsive-font(1.3rem, $heading-md, $heading-lg);
+  }
+
+  .servicesCards {
+    @include flex-center();
+    flex-wrap: wrap;
+  }
+}
+
+.contactSection {
+  @include flex-center();
+  flex-direction: column;
+  @include bg-color($primary);
+  @include text-color($secondary);
+  @include spacing(padding, (all, $spacing-lg));
+  @include spacing(margin, (top, $spacing-lg), (bottom, 0));
+  @include border-radius($radius-lg);
+
+  .heading {
+    text-align: center;
+  }
+
+  .contactInformation {
+    @include spacing(margin, (top, $spacing-md), (bottom, $spacing-lg));
+
+    p {
+      @include spacing(margin, (bottom, $spacing-sm));
+      @include responsive-font(0.8rem, 1rem, 1.2rem);
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  .inquiryBtn {
+    @include secondary-btn();
+  }
+}

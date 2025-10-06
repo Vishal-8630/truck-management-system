@@ -1,0 +1,330 @@
+@use './variables' as *;
+
+// ==================================================
+// SCSS Utility Mixins Toolkit
+// ==================================================
+
+// -----------------------------
+// Media Query Mixin
+// -----------------------------
+@mixin respond-to($breakpoint) {
+  @if $breakpoint ==xsm {
+    @media (max-width: $breakpoint-xsm) {
+      @content;
+    }
+  }
+  
+  @if $breakpoint ==sm {
+    @media (max-width: $breakpoint-sm) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint ==md {
+    @media (max-width: $breakpoint-md) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint ==lg {
+    @media (max-width: $breakpoint-lg) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint ==xl {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint ==xxl {
+    @media (min-width: $breakpoint-xxl) {
+      @content;
+    }
+  }
+}
+
+@mixin respond-to-between($min, $max) {
+  @media (min-width: $min) and (max-width: $max) {
+    @content;
+  }
+}
+
+// -----------------------------
+// Flex Layouts
+// -----------------------------
+@mixin flex-center($direction: row) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-between($direction: row) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// -----------------------------
+// Buttons
+// -----------------------------
+@mixin button-style($bg-color,
+  $text-color,
+  $h-padding: $spacing-sm,
+  $v-padding: $spacing-md,
+  $radius: $radius-md,
+  $hover-bg-color: $secondary) {
+  background-color: $bg-color;
+  color: $text-color;
+  border: none;
+  padding: $h-padding $v-padding;
+  border-radius: $radius;
+  cursor: pointer;
+  font-weight: 600;
+  @include transition();
+
+  &:not(:disabled):hover {
+    background-color: $hover-bg-color;
+  }
+
+  &:disabled {
+    background-color: $disabled-bg;
+    border: 1px solid $disabled-border;
+    color: $neutral-dark;
+    cursor: not-allowed;
+  }
+}
+
+// -----------------------------
+// Typography
+// -----------------------------
+@mixin responsive-font($size-sm, $size-md: null, $size-lg: null) {
+  font-size: $size-sm;
+
+  @if $size-md !=null {
+    @media (min-width: $breakpoint-md) {
+      font-size: $size-md;
+    }
+  }
+
+  @if $size-lg !=null {
+    @media (min-width: $breakpoint-lg) {
+      font-size: $size-lg;
+    }
+  }
+}
+
+// -----------------------------
+// Spacing
+// -----------------------------
+
+// Examples:
+// 1. All sides, single value
+// @include spacing(margin, (all, 20px));
+// → margin: 20px;
+
+// 2. All sides, shorthand
+// @include spacing(margin, (all, 10px 20px 30px 40px));
+// → margin: 10px 20px 30px 40px;
+
+// 3. Axis with one value
+// @include spacing(padding, (vertical, 15px));
+// → padding-top: 15px; padding-bottom: 15px;
+
+// 4. Axis with two values
+// @include spacing(padding, (horizontal, 10px 20px));
+// → padding-left: 10px; padding-right: 20px;
+
+// 5. Mix everything
+// @include spacing(margin, (horizontal, 10px), (top, 5px), (all, 2px));
+// → margin: 2px; margin-left: 10px; margin-right: 10px; margin-top: 5px;
+
+@mixin spacing($property: margin, $args...) {
+  @each $arg in $args {
+    $side: nth($arg, 1);
+    $value: nth($arg, 2);
+
+    // Handle shorthand values (like 10px, 10px 20px, etc.)
+    @if $side ==all {
+      #{$property}: $value;
+    }
+
+    @else if $side ==vertical {
+      @if length($value)==1 {
+        #{$property}-top: $value;
+        #{$property}-bottom: $value;
+      }
+
+      @else if length($value)==2 {
+        #{$property}-top: nth($value, 1);
+        #{$property}-bottom: nth($value, 2);
+      }
+    }
+
+    @else if $side ==horizontal {
+      @if length($value)==1 {
+        #{$property}-left: $value;
+        #{$property}-right: $value;
+      }
+
+      @else if length($value)==2 {
+        #{$property}-left: nth($value, 1);
+        #{$property}-right: nth($value, 2);
+      }
+    }
+
+    @else {
+      // Specific side (top, right, bottom, left)
+      #{$property}-#{$side}: $value;
+    }
+  }
+}
+
+// -----------------------------
+// Borders & Shapes
+// -----------------------------
+@mixin circle($size) {
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+}
+
+@mixin border-radius($radius: $radius-sm) {
+  border-radius: $radius;
+}
+
+// -----------------------------
+// Colors
+// -----------------------------
+@mixin text-color($color) {
+  color: $color;
+}
+
+@mixin bg-color($color) {
+  background-color: $color;
+}
+
+// -----------------------------
+// Shadows / Borders
+// -----------------------------
+@mixin box-shadow($x: 0px, $y: 4px, $blur: 6px, $color: rgba(0, 0, 0, 0.1)) {
+  box-shadow: $x $y $blur $color;
+}
+
+@mixin border($size: 1, $style: solid, $color: $neutral-dark) {
+  border: $size $style $color;
+}
+
+
+// -----------------------------
+// Grids & Containers
+// -----------------------------
+@mixin grid($columns: 12, $gap: $spacing-md) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  gap: $gap;
+}
+
+@mixin container($max-width: 1200px, $padding: $spacing-lg) {
+  width: 100%;
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 $padding;
+}
+
+// -----------------------------
+// Utility Mixins
+// -----------------------------
+@mixin text-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin transition($properties: all, $duration: 0.3s, $ease: ease-in-out) {
+  transition: $properties $duration $ease;
+}
+
+@mixin visually-hidden {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+@mixin main-heading {
+  font-family: $font-heading;
+  text-align: center;
+  @include spacing(margin, (bottom, $spacing-md), (top, $spacing-sm));
+  @include spacing(padding, (bottom, $spacing-sm));
+  border-bottom: $border-dark;
+  @include responsive-font(1.5rem, $heading-md, $heading-lg);
+  @include text-color($primary);
+}
+
+@mixin primary-btn {
+  background-color: $neutral-dark;
+  color: $neutral-light;
+  border: none;
+  @include spacing(padding, (vertical, 0.8rem), (horizontal, 1rem));
+  @include responsive-font(0.8rem, 1rem, 1rem);
+  font-family: $font-link;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@mixin secondary-btn {
+  background-color: $neutral-light;
+  border: $border-light;
+  cursor: pointer;
+  box-shadow: $box-shadow-3d;
+  border-radius: $radius-md;
+  @include spacing(padding, (vertical, 0.8rem), (horizontal, 1rem));
+  font-family: $font-link;
+  @include responsive-font(0.8rem, 1rem, 1rem);
+  transition: all 0.3s ease-in-out;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@mixin primary-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid $neutral-light;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.15), 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+}
