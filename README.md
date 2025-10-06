@@ -58,18 +58,18 @@ Demo video coming soon.
 ## Installation
 
 1. **Clone the repository**
-git clone https://github.com/Vishal-8630/truck-management-system.git
-cd truck-management-system
+- git clone https://github.com/Vishal-8630/truck-management-system.git
+- cd truck-management-system
 
 2. **Install dependencies**
 
 - Frontend
-  cd frontend
-  npm install
+  - cd frontend
+  - npm install
 
 - Backend
-  cd backend
-  npm install
+ - cd backend
+ - npm install
 
 3. **Set up environment variables**
 PORT=3000
@@ -80,12 +80,12 @@ NODE_ENV=development
 4. ** Run the application**
 
 - Frontend
-  cd frontend
-  npm run dev
+  - cd frontend
+  - npm run dev
 
 - Backend
-  cd backend
-  npm start
+  - cd backend
+  - npm start
 
 5. **Access the app**
 Open [Local Host](http://localhost:5173) in your browser.
