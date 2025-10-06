@@ -58,18 +58,27 @@ Demo video coming soon.
 ## Installation
 
 1. **Clone the repository**
-- git clone https://github.com/Vishal-8630/truck-management-system.git
-- cd truck-management-system
+
+Open terminal and run below code.  
+
+```git
+git clone https://github.com/Vishal-8630/truck-management-system.git
+cd truck-management-system
+```
 
 2. **Install dependencies**
 
 - Frontend
-  - cd frontend
-  - npm install
+```git
+cd frontend
+npm install
+```
 
 - Backend
- - cd backend
- - npm install
+```git
+cd backend
+npm install
+```
 
 3. **Set up environment variables**
 
@@ -82,22 +91,26 @@ JWT_SECRET=your_jwt_secret
 NODE_ENV=development
 ```
 
-5. **Run the application**
+4. **Run the application**
 
 - Frontend
-  - cd frontend
-  - npm run dev
+```git
+cd frontend
+npm run dev
+```
 
 - Backend
-  - cd backend
-  - npm start
+```git
+cd backend
+npm start
+```
 
 5. **Access the app**
 Open [Local Host](http://localhost:5173) in your browser.
 
 ## Contact
 
-**Author:** Vishal Chaudhary
-**Email:** vishh8630@gmail.com
-**GitHub:** [https://github.com/Vishal-8630](https://github.com/Vishal-8630)
-**LinkedIn:** [https://www.linkedin.com/in/vishal8630](https://www.linkedin.com/in/vishal8630)
+**Author:** Vishal Chaudhary  
+**Email:** [vishh8630@gmail.com](mailto:vishh8630@gmail.com)  
+**GitHub:** [https://github.com/Vishal-8630](https://github.com/Vishal-8630)  
+**LinkedIn:** [https://www.linkedin.com/in/vishal8630](https://www.linkedin.com/in/vishal8630)  
