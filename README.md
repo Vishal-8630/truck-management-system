@@ -105,7 +105,7 @@ cd backend
 npm start
 ```
 
-5. **Access the app**
+5. **Access the app**  
 Open [Local Host](http://localhost:5173) in your browser.
 
 ## Contact
