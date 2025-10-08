@@ -53,7 +53,8 @@ It allows firms to **store and print bills**, **track vehicle entries**, and mai
 ![Party Balance](screenshots/party-balance.png)
 
 ### Demo
-Demo video coming soon.
+
+[Demo Video](https://drive.google.com/file/d/19vAYK4WWu-NbfKcN3u8bA6kuq7G8ce8t/view?usp=sharing)
 
 ## Installation
 
