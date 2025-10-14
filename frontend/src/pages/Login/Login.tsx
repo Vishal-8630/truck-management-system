@@ -81,13 +81,13 @@ const Login: React.FC = () => {
       resetForm();
       navigate("/");
     } catch (err: any) {
+      console.log("Error: ", err);
       const errors = err.response?.data?.errors || {};
       setFormErrors({
         username: errors.username || "",
         password: errors.password || "",
       });
       dispatch(authEnd());
-      console.log(err);
       dispatch(
         addMessage({
           type: "error",
