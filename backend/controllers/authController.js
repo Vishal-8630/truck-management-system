@@ -48,6 +48,8 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
     const { username, password } = req.body;
 
+    console.log("Login Details: ", username, password);
+
     const user = await User.findOne({ username });
     if (!user || !(await user.comparePassword(password))) {
         return next(new AppError('Invalid username or password', 401));
@@ -60,6 +62,8 @@ const loginUser = async (req, res, next) => {
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000
     });
+
+    console.log("User: ", user);
 
     return successResponse(res, "User Logged In Successfully", {
         user: {
