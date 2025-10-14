@@ -87,7 +87,7 @@ const Login: React.FC = () => {
         password: errors.password || "",
       });
       dispatch(authEnd());
-      console.log(err.response);
+      console.log(err);
       dispatch(
         addMessage({
           type: "error",
