@@ -1,5 +1,5 @@
 import styles from "./Home.module.scss";
-import HeroSectionImg from "../../assets/hero-section-pic.jpg";
+import HeroSectionImg from "../../assets/truck.jpg";
 import { motion } from "framer-motion";
 import { Truck, Package, Share2, Building2, Settings } from "lucide-react";
 import ServiceCard from "../../components/ServiceCard";
@@ -55,7 +55,7 @@ const Home = () => {
               <button className={styles.contactBtn}>Contact Us</button>
             </div>
           </div>
-          <img src={HeroSectionImg} alt="Hero Image" />
+          <img src={HeroSectionImg} alt="Hero Image" className={styles.heroSectionPic}/>
         </div>
       </motion.div>
       <motion.div

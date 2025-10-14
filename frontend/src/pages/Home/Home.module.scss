@@ -57,9 +57,14 @@
     }
 
     img {
-      width: 50%;
-      height: 100%;
-      @include border-radius($radius-lg)
+      width: 250px;
+      height: 300px;
+      @include border-radius($radius-lg);
+
+      @include respond-to(sm) {
+        width: 150px;
+        height: 150px;
+      }
     }
 
     .heroControls {
