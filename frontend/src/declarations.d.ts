@@ -4,5 +4,7 @@ declare module '*.png';
 declare module '*.jpg';
 declare module '*.jpeg';
 declare module '*.svg';
+declare module 'react-dom/client';
+declare module 'file-saver';
 declare module '@syncfusion/ej2-base/styles/material.css';
 declare module '@syncfusion/ej2-react-calendars/styles/material.css';
