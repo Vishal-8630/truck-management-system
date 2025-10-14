@@ -1,7 +1,7 @@
 import React from "react";
 import {
   ENTRY_LABELS,
-  type EntryType,
+  type BillEntryType,
   type ExtraCharge,
 } from "../../types/billEntry";
 import styles from "./EntryRow.module.scss";
@@ -9,15 +9,15 @@ import { PARTY_LABELS, type BillingPartyType } from "../../types/billingParty";
 import { formatDate } from "../../utils/formatDate";
 
 interface EntryRowProps {
-  entry: EntryType;
+  entry: BillEntryType;
 }
 
 const EntryRow: React.FC<EntryRowProps> = ({ entry }) => {
   return (
     <tr className={styles.entryRow}>
-      {(Object.entries(ENTRY_LABELS) as [keyof EntryType, string][]).map(
+      {(Object.entries(ENTRY_LABELS) as [keyof BillEntryType, string][]).map(
         ([k, _]) => {
-          const key = k as keyof EntryType;
+          const key = k as keyof BillEntryType;
 
           if (key === "extra_charges") {
             const extra_charges = entry[key] as ExtraCharge[];
@@ -36,7 +36,7 @@ const EntryRow: React.FC<EntryRowProps> = ({ entry }) => {
             });
           }
 
-          if (key.toLowerCase().includes("date")) {
+          if (typeof key === 'string' && key.toLowerCase().includes("date")) {
             return (
               <td key={key}>{formatDate(new Date(entry[key]))}</td>
             );

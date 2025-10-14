@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   EmptyVehicleEntry,
-  type BalancePartyType,
   type VehicleEntryType,
 } from "../../types/vehicleEntry";
 import { useDispatch } from "react-redux";

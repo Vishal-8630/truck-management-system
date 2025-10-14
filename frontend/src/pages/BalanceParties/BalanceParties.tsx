@@ -17,7 +17,7 @@ import {
 import type { AppDispatch } from "../../app/store";
 import { useItemStates } from "../../hooks/useItemStates";
 import ExcelButton from "../../components/ExcelButton";
-import { BalancePartyFilters } from "../../filters/BalancePartyFilters";
+import { BalancePartyFilters } from "../../filters/balancePartyFilters";
 
 const BalanceParties = () => {
   const dispatch: AppDispatch = useDispatch();

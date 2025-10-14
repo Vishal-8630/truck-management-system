@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { FaUser, FaEnvelope, FaLock, FaIdCard } from "react-icons/fa";
 
@@ -8,7 +8,6 @@ import { authStart, authSuccess, authEnd } from "../../features/auth";
 import { addMessage } from "../../features/message";
 import {
   selectAuthLoading,
-  selectUser,
 } from "../../features/auth/authSelectors";
 
 import api from "../../api/axios";

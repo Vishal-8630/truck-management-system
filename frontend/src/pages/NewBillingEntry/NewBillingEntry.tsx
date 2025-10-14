@@ -120,6 +120,7 @@ const Entry: React.FC = () => {
   ) => {
     if (mode === "select") {
       setState(val);
+      console.log(name);
     } else {
       if (val === "") {
         setSelectedParty({ _id: "", name: "", address: "", gst_no: "" });

@@ -8,6 +8,6 @@ export interface FilterConfig<T> {
     label: string;
 }
 
-export type AppliedFilters<T> = Partial<Record<string, unknown>>;
+export type AppliedFilters<_T> = Partial<Record<string, unknown>>;
 
 export type FilterWithValue<T> = FilterConfig<T> & { value: string | [string, string] | SortDirection };

@@ -6,7 +6,7 @@ import api from "../../api/axios";
 import { logout } from "../../features/auth";
 import { addMessage } from "../../features/message";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import NavButton from "../NavButton/NavButton";
 import { FaChevronDown } from "react-icons/fa";
 
