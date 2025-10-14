@@ -61,13 +61,13 @@ const Navbar = () => {
                 to: "/bill-entry/new-entry",
                 label: "New Bill Entry",
                 content:
-                  "Click here to create new Billing Entry. Lorem ipsum dolor sit amet consectetur adipisicing elit. Et, tenetur quae quod voluptate illum fuga ducimus eum. Molestiae deleniti vitae sit quo iusto!",
+                  "Click here to create new Billing Entry.",
               },
               {
                 to: "/bill-entry/all-bill-entries",
                 label: "All Bill Entries",
                 content:
-                  "Click here to view all Billing Entries. Lorem ipsum dolor sit amet consectetur adipisicing elit. Et, tenetur quae quod.",
+                  "Click here to view all Billing Entries.",
               },
               {
                 to: "/bill-entry/lrcopy",
@@ -83,7 +83,7 @@ const Navbar = () => {
                 to: "/bill-entry/billing-party",
                 label: "Billing Party",
                 content:
-                  "Click here to add Billing Party. Lorem ipsum dolor sit amet consectetur adipisicing elit. Et, tenetur quae quod voluptate illum fuga ducimus eum. Molestiae deleniti vitae sit quo iusto!",
+                  "Click here to add Billing Party.",
               },
             ],
           },
@@ -100,7 +100,7 @@ const Navbar = () => {
                 to: "/vehicle-entry/all-vehicle-entries",
                 label: "All Vehicle Entries",
                 content:
-                  "Click here to view all Vehicle Entries. Lorem ipsum dolor sit amet consectetur adipisicing elit. Et, tenetur quae quod voluptate illum fuga ducimus eum. Molestiae deleniti vitae sit quo iusto!",
+                  "Click here to view all Vehicle Entries.",
               },
               {
                 to: "/vehicle-entry/new-balance-party",
