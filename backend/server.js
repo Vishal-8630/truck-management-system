@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 // ✅ Allow CORS for dev & prod
 const corsOptions = {
   origin: [
-    "https://divyanshi-roadlines.onrender.com",
+    "https://divyanshiroadlines.com",
     "http://localhost:5173",
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
