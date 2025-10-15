@@ -69,7 +69,6 @@ const Login: React.FC = () => {
     dispatch(authStart());
 
     try {
-      console.log("Login data: ", formData);
       const { data } = await api.post("/auth/login", formData);
 
       dispatch(authSuccess(data.data.user));
