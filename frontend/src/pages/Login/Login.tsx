@@ -70,6 +70,7 @@ const Login: React.FC = () => {
 
     try {
       const { data } = await api.post("/auth/login", formData);
+      console.log("Data: ", data);
 
       dispatch(authSuccess(data.data.user));
       dispatch(
