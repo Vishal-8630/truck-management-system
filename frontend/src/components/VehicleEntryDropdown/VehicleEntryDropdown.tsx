@@ -10,7 +10,10 @@ import { AnimatePresence, motion, type Variants } from "framer-motion";
 import styles from "./VehicleEntryDropdown.module.scss";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { formatDate } from "../../utils/formatDate";
-import { selectVehicleEntryLoading, updateVehicleEntryAsync } from "../../features/vehicleEntry";
+import {
+  selectVehicleEntryLoading,
+  updateVehicleEntryAsync,
+} from "../../features/vehicleEntry";
 import type { AppDispatch } from "../../app/store";
 
 interface VehicleEntryDropdownProps {
@@ -25,6 +28,7 @@ interface VehicleEntryDropdownProps {
   updateDraft: (id: string, key: keyof VehicleEntryType, value: string) => void;
   toggleEditing: (id: string, key: keyof VehicleEntryType) => void;
   toggleOpen: (id: string) => void;
+  onVehicleEntryUpdate: (updatedVehicleEntry: VehicleEntryType) => void;
 }
 
 const dropDownVariants: Variants = {
@@ -43,6 +47,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   updateDraft,
   toggleEditing,
   toggleOpen,
+  onVehicleEntryUpdate,
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const loading = useSelector(selectVehicleEntryLoading);
@@ -56,7 +61,8 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
     if (contentRef.current) {
       setHeight(contentRef.current.scrollHeight);
     }
-  });
+  }, [itemState.isOpen, vehicleEntry]);
+
 
   const handleEdit = (key: keyof VehicleEntryType) => {
     toggleEditing(vehicleEntry._id, key);
@@ -98,13 +104,23 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 
   const handleSaveChanges = async () => {
     try {
-      const resultAction = await dispatch(updateVehicleEntryAsync(itemState.localItem));
+      const resultAction = await dispatch(
+        updateVehicleEntryAsync(itemState.localItem)
+      );
       if (updateVehicleEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(addMessage({ type: "success", text: "Vehicle entry updated successfully" }));
+        dispatch(
+          addMessage({
+            type: "success",
+            text: "Vehicle entry updated successfully",
+          })
+        );
+        onVehicleEntryUpdate(itemState.localItem);
       } else if (updateVehicleEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
-          dispatch(addMessage({ type: "error", text: Object.entries(errors)[0][1] }));
+          dispatch(
+            addMessage({ type: "error", text: Object.entries(errors)[0][1] })
+          );
         }
       }
     } catch {
@@ -113,8 +129,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   };
 
   const hasChanges =
-    JSON.stringify(itemState.localItem) !==
-    JSON.stringify(vehicleEntry);
+    JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
 
   return (
     <div className={styles.container}>
@@ -191,11 +206,9 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                 const value = isEditing
                   ? itemState.drafts[key] ?? ""
                   : isBalanceParty
-                  ? itemState.localItem["balance_party"].party_name
+                  ? itemState.localItem["balance_party"]?.party_name ?? "-"
                   : isKeyDate(key)
-                  ? formatDate(
-                      new Date(itemState.localItem[key] as string)
-                    )
+                  ? formatDate(new Date(itemState.localItem[key] as string))
                   : itemState.localItem[key] ?? "—";
 
                 return (
