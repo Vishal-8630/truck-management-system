@@ -183,7 +183,6 @@ const NewVehicleEntry = () => {
         );
         navigate("/vehicle-entry/all-vehicle-entries");
       } else if (addVehicleEntryAsync.rejected.match(resultAction)) {
-        console.log("Api failed: ", vehicleEntry);
         const errors = resultAction.payload;
         if (errors && Object.keys(errors).length > 0) {
           errorsRef.current = errors;
@@ -230,7 +229,6 @@ const NewVehicleEntry = () => {
 
       if (input.name === "party_name") {
         value = vehicleEntry.balance_party?.party_name || "";
-        console.log("Value: ", value);
         placeholder = "Select a Balance Party";
         selectMode = "search";
       }

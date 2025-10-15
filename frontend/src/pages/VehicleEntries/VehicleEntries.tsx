@@ -23,7 +23,7 @@ const VehicleEntries = () => {
   const dispatch: AppDispatch = useDispatch();
   const loading = useSelector(selectVehicleEntryLoading);
 
-  const vehicleEntries = useSelector(vehicleEntrySelectors.selectAll);
+  let vehicleEntries = useSelector(vehicleEntrySelectors.selectAll);
   const [filteredEntries, setFilteredEntries] = useState<VehicleEntryType[]>(
     []
   );
@@ -37,6 +37,14 @@ const VehicleEntries = () => {
   useEffect(() => {
     setFilteredEntries(vehicleEntries);
   }, [vehicleEntries]);
+
+  const onVehicleEntryUpdate = (updatedVehicleEntry: VehicleEntryType) => {
+    setFilteredEntries((prev) =>
+      prev.map((entry) =>
+        entry._id === updatedVehicleEntry._id ? updatedVehicleEntry : entry
+      )
+    );
+  };
 
   if (loading) return <Loading />;
 
@@ -71,12 +79,16 @@ const VehicleEntries = () => {
                     updateDraft={updateDraft}
                     toggleEditing={toggleEditing}
                     toggleOpen={toggleOpen}
+                    onVehicleEntryUpdate={onVehicleEntryUpdate}
                   />
                 </motion.div>
               );
             }}
           />
-          <ExcelButton data={filteredEntries} fileNamePrefix="Vehicle_Entries" />
+          <ExcelButton
+            data={filteredEntries}
+            fileNamePrefix="Vehicle_Entries"
+          />
         </>
       </motion.div>
     </div>
