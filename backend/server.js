@@ -49,7 +49,7 @@ if (process.env.NODE_ENV === "production") {
   const frontendPath = path.join(__dirname, "../frontend/dist");
   app.use(express.static(frontendPath));
 
-  app.get("/^\/(?!api).*/", (req, res, next) => {
+  app.get(/^\/(?!api).*$/, (req, res, next) => {
     res.sendFile(path.resolve(frontendPath, "index.html"));
   });
 }
