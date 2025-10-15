@@ -213,7 +213,7 @@ const NewVehicleEntry = () => {
       if (input.name === "status") {
         options = [
           { label: "Pending", value: "Pending" },
-          { label: "Recieved", value: "Recieved" },
+          { label: "Received", value: "Received" },
         ];
         value = vehicleEntry.status;
         placeholder = "";
