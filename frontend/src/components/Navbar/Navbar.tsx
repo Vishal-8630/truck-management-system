@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import NavButton from "../NavButton/NavButton";
 import { FaChevronDown } from "react-icons/fa";
+import DRL from '../../assets/drl.png';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -134,7 +135,7 @@ const Navbar = () => {
         transition={{ duration: 0.4, ease: "easeInOut" }}
       >
         <div className={styles.brand}>
-          <div className={styles.drl}>DRL</div>
+          <img src={DRL} alt="DRL" />
         </div>
         <motion.ul
           className={styles.links}
