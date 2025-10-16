@@ -7,8 +7,7 @@
     height: 300px;
     @include spacing(margin, (bottom, $spacing-lg), (left, auto), (right, auto));
     @include spacing(padding, (all, $spacing-lg));
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2),
-        -2px -2px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.2);
     @include border-radius($radius-lg);
     cursor: pointer;
 
@@ -27,5 +26,15 @@
         @include text-color(gray);
         text-align: center;
         @include responsive-font(0.8rem, 1rem, 1.2rem);
+    }
+}
+
+.paragraph {
+    color: black;
+    
+    &::first-letter {
+        font-weight: bold;
+        font-size: 1.8rem;
+        line-height: 1;
     }
 }

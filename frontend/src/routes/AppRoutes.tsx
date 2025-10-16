@@ -17,6 +17,7 @@ import PartyBalance from "../pages/PartyBalance";
 import BillEntries from "../pages/BillEntries";
 import PagesOutlet from "../pages/PagesOutlet";
 import AdminRoutes from "../components/AdminRoutes";
+import About from "../pages/About";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -39,6 +40,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/about" element={<About />} />
 
       <Route
         path="/register"

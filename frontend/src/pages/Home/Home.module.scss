@@ -8,9 +8,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  box-shadow:
-    5px 2px 9px rgba(0, 0, 0, 0.2),
-    -5px -2px 9px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   @include spacing(padding, (all, $spacing-lg));
   @include border-radius($radius-lg);
 
