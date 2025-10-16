@@ -50,8 +50,14 @@ const BALANCE_INPUTS: InputType[] = [
   { type: "number", label: "Dala", name: "dala", inputType: "number" },
   { type: "number", label: "Kamisan", name: "kamisan", inputType: "number" },
   { type: "number", label: "In AC", name: "in_ac", inputType: "number" },
-  { type: "number", label: "Halting", name: "halting", inputType: "number" },
+  { type: "input", label: "Pod Stock", name: "pod_stock" },
   { type: "number", label: "Balance", name: "balance", inputType: "number" },
+];
+
+const HALTING_INPUTS: InputType[] = [
+  { type: "number", label: "Halting", name: "halting", inputType: "number" },
+  { type: "date", label: "Halting In Date", name: "halting_in_date" },
+  { type: "date", label: "Halting Out Date", name: "halting_out_date" },
 ];
 
 const PARTY_DETAIL: InputType[] = [
@@ -137,13 +143,13 @@ const NewVehicleEntry = () => {
       if (val === "") {
         setVehicleEntry((prev) => ({
           ...prev,
-          balance_party: { _id: "", party_name: "" }
+          balance_party: { _id: "", party_name: "" },
         }));
       } else {
         const party = balanceParties.find((p) => p.party_name === val);
         setVehicleEntry((prev) => ({
           ...prev,
-          balance_party: party || { _id: "", party_name: "" }
+          balance_party: party || { _id: "", party_name: "" },
         }));
       }
     }
@@ -266,6 +272,9 @@ const NewVehicleEntry = () => {
           </FormSection>
           <FormSection title="Balance">
             {renderInputs(BALANCE_INPUTS)}
+          </FormSection>
+          <FormSection title="Halting Details">
+            {renderInputs(HALTING_INPUTS)}
           </FormSection>
           <FormSection title="Party Details">
             {renderInputs(PARTY_DETAIL)}

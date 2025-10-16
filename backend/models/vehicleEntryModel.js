@@ -34,7 +34,13 @@ const vehicleEntrySchema = mongoose.Schema({
     halting: {
         type: String,
     },
-    pod_stack: {
+    halting_in_date: {
+        type: String,
+    },
+    halting_out_date: {
+        type: String,
+    },
+    pod_stock: {
         type: String,
     },
     owner: {
