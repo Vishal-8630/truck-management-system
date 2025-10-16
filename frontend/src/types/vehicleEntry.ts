@@ -15,6 +15,9 @@ export interface VehicleEntryType {
     kamisan: string;
     in_ac: string;
     halting: string;
+    halting_in_date: string;
+    halting_out_date: string;
+    pod_stock: string;
     balance: string;
     balance_party: BalancePartyType;
     owner: string;
@@ -34,6 +37,9 @@ export const EmptyVehicleEntry: VehicleEntryType = {
     kamisan: "",
     in_ac: "",
     halting: "",
+    halting_in_date: "",
+    halting_out_date: "",
+    pod_stock: "",
     balance: "",
     balance_party: {
         _id: "",
@@ -55,6 +61,9 @@ export const VEHICLE_ENTRY_LABELS = {
     kamisan: "Kamisan",
     in_ac: "In AC",
     halting: "Halting",
+    halting_in_date: "Halting In Date",
+    halting_out_date: "Halting Out Date",
+    pod_stock: "Pod Stock",
     balance: "Balance",
     balance_party: "Party Name",
     owner: "Owner",
