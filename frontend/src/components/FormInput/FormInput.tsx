@@ -134,6 +134,19 @@ const FormInput: React.FC<FormInputProps> = ({
               onFocus={handleFocus}
               onBlur={handleBlur}
               className={hasIcon ? `${styles.withIcon}` : ""}
+              onWheel={(e) => e.preventDefault()}
+              onMouseEnter={(e) =>
+                e.currentTarget.addEventListener(
+                  "wheel",
+                  (ev) => ev.preventDefault(),
+                  { passive: false }
+                )
+              }
+              onMouseLeave={(e) =>
+                e.currentTarget.removeEventListener("wheel", (ev) =>
+                  ev.preventDefault()
+                )
+              }
             />
           )}
 
