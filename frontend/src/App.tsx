@@ -19,9 +19,6 @@ registerLicense(
 function App() {
   const checking = useAuthCheck();
 
-  console.log("App Env:", import.meta.env.VITE_APP_ENV);
-  console.log("Base URL:", import.meta.env.VITE_PROD_BASE_URL);
-
   if (checking) return <Loading />;
 
   return (

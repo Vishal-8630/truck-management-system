@@ -18,6 +18,12 @@ import BillEntries from "../pages/BillEntries";
 import PagesOutlet from "../pages/PagesOutlet";
 import AdminRoutes from "../components/AdminRoutes";
 import About from "../pages/About";
+import NewJourneyEntry from "../pages/Journey/NewJourneyEntry";
+import AllJourneyEntries from "../pages/Journey/AllJourneyEntries";
+import NewTruckEntry from "../pages/Journey/NewTruckEntry";
+import AllTruckEntries from "../pages/Journey/AllTruckEntries";
+import NewDriverEntry from "../pages/Journey/NewDriverEntry";
+import AllDriverEntries from "../pages/Journey/AllDriverEntries";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -34,6 +40,15 @@ const vehicleEntryRoutes = [
   { path: "all-balance-parties", element: <BalanceParties /> },
   { path: "party-balance", element: <PartyBalance /> },
 ];
+
+const journeyEntryRoutes = [
+  { path: "new-journey-entry", element: <NewJourneyEntry /> },
+  { path: "all-journey-entries", element: <AllJourneyEntries /> },
+  { path: "new-truck-entry", element: <NewTruckEntry /> },
+  { path: "all-truck-entries", element: <AllTruckEntries /> },
+  { path: "new-driver-entry", element: <NewDriverEntry /> },
+  { path: "all-driver-entries", element: <AllDriverEntries /> },
+]
 
 const AppRoutes = () => {
   return (
@@ -84,6 +99,20 @@ const AppRoutes = () => {
       >
         <Route index element={<Navigate to="new-entry" replace />} />
         {vehicleEntryRoutes.map(({ path, element }) => (
+          <Route key={path} path={path} element={element} />
+        ))}
+      </Route>
+
+      <Route
+        path="/journey/*"
+        element={
+          <ProtectedRoute>
+            <PagesOutlet />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="new-journey-entry" replace />} />
+        {journeyEntryRoutes.map(({ path, element }) => (
           <Route key={path} path={path} element={element} />
         ))}
       </Route>

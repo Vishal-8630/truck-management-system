@@ -1,0 +1,16 @@
+@use '../../../styles/globals' as *;
+
+.newDriverEntryContainer {
+    @include flex-center();
+    color: $neutral-light;
+    width: 100%;
+    flex: 1;
+}
+
+.newDriverForm {
+    width: 35rem;
+}
+
+.addDriverBtn {
+    @include primary-btn();
+}

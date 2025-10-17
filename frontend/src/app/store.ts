@@ -5,6 +5,7 @@ import { billEntryReducer } from "../features/billEntry";
 import { billingPartyReducers } from "../features/billingParty";
 import { vehicleEntryReducer } from "../features/vehicleEntry";
 import { balancePartyReducer } from "../features/balanceParty";
+import { driverReducer } from "../features/driver";
 
 export const store = configureStore({
     reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
         billEntry: billEntryReducer,
         billingParty: billingPartyReducers,
         vehicleEntry: vehicleEntryReducer,
-        balanceParty: balancePartyReducer
+        balanceParty: balancePartyReducer,
+        driver: driverReducer
     },
 });
 

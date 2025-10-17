@@ -120,6 +120,43 @@ const Navbar = () => {
               },
             ],
           },
+          {
+            label: "Journey Entry",
+            icon: <FaChevronDown />,
+            subLinks: [
+              {
+                to: "/journey/new-journey-entry",
+                label: "New Journey Entry",
+                content: "Click here to create new Journey Entry",
+              },
+              {
+                to: "/journey/all-journey-entries",
+                label: "All Journey Entries",
+                content:
+                  "Click here to view all Journey Entries.",
+              },
+              {
+                to: "/journey/new-truck-entry",
+                label: "New Truck",
+                content: "Click here to add new Truck",
+              },
+              {
+                to: "/journey/all-truck-entries",
+                label: "All Trucks",
+                content: "Click here to view all Trucks",
+              },
+              {
+                to: "/journey/new-driver-entry",
+                label: "New Driver",
+                content: "Click here to add new Driver",
+              },
+              {
+                to: "/journey/all-driver-entry",
+                label: "All Drivers",
+                content: "Click here to view all Drivers",
+              },
+            ],
+          },
           { to: "/profile", label: "Profile" },
           ...(user.isAdmin ? [{ to: "/register", label: "Add User" }] : []),
           { to: "/logout", label: "Logout", onClick: handleLogout },
