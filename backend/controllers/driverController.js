@@ -2,6 +2,7 @@ import Driver from "../models/driverModel.js"
 import { successResponse } from "../utils/response.js";
 import AppError from '../utils/appError.js';
 import { deleteFromS3 } from "../middlewares/uploadMiddleware.js";
+import { getSignedS3Url } from "../middlewares/s3Helper.js";
 
 const newDriver = async (req, res, next) => {
     try {
@@ -58,10 +59,20 @@ const newDriver = async (req, res, next) => {
     }
 };
 
-
 const allDrivers = async (req, res) => {
     const drivers = await Driver.find().populate("vehicles").sort({ createdAt: -1 });
-    return successResponse(res, "", drivers);
+
+    const signedDrivers = await Promise.all(
+        drivers.map(async (driver) => ({
+            ...driver._doc,
+            driver_img: await getSignedS3Url(driver.driver_img),
+            adhaar_front_img: await getSignedS3Url(driver.adhaar_front_img),
+            adhaar_back_img: await getSignedS3Url(driver.adhaar_back_img),
+            dl_img: await getSignedS3Url(driver.dl_img),
+        }))
+    );
+
+    return successResponse(res, "", signedDrivers);
 }
 
 export {

@@ -1,0 +1,23 @@
+@use '../../styles/globals' as *;
+
+.driverCardContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    max-width: 250px;
+    border-radius: 8px;
+    box-shadow: $box-shadow-3d;
+    cursor: pointer;
+
+    .driverImg {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+    }
+
+    .name {
+        font-weight: bold;
+    }
+}
