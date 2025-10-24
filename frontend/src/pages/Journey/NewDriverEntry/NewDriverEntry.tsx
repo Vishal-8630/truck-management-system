@@ -6,14 +6,16 @@ import { EmptyDriverType, type DriverType } from "../../../types/driver";
 import FormInputImage from "../../../components/FormInputImage";
 import { useDispatch } from "react-redux";
 import { addMessage } from "../../../features/message";
+import { addDriverEntryAsync } from "../../../features/driver";
+import type { AppDispatch } from "../../../app/store";
 
 const NewDriverEntry: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
 
   const [driver, setDriver] =
     useState<Omit<DriverType, "_id">>(EmptyDriverType);
 
-    // Need to work on this logic
+  // Need to work on this logic
   // const isValidDL = (value: string) =>
   //   /^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(value);
 
@@ -27,7 +29,6 @@ const NewDriverEntry: React.FC = () => {
       const phone_no = value.replace(/[^0-9]/g, "").slice(0, 10);
       setDriver((prev) => ({ ...prev, [name]: phone_no }));
     } else if (name === "adhaar_no") {
-      console.log("Inside adhar");
       const adhaar_no = value.replace(/[^0-9]/g, "").slice(0, 12);
       const formatted = adhaar_no.replace(/(\d{4})(?=\d)/g, "$1 ");
       setDriver((prev) => ({ ...prev, [name]: formatted }));
@@ -55,9 +56,8 @@ const NewDriverEntry: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Driver Data:", driver);
 
     /*
      TODO: Need to fix the valid dl logic
@@ -66,6 +66,39 @@ const NewDriverEntry: React.FC = () => {
       dispatch(addMessage({ type: "error", text: "Invalid DL Number" }));
     }
     */
+
+    try {
+      const formData = new FormData();
+
+      Object.entries(driver).forEach(([key, value]) => {
+        if (!value) return;
+
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (typeof value === 'string') {
+          formData.append(key, value);
+        } else if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        }
+      });
+
+      const resultAction = await dispatch(addDriverEntryAsync(formData));
+      if (addDriverEntryAsync.fulfilled.match(resultAction)) {
+        dispatch(
+          addMessage({ type: "success", text: "Driver added successfully" })
+        );
+        setDriver(EmptyDriverType);
+      } else if (addDriverEntryAsync.rejected.match(resultAction)) {
+        const errors = resultAction.payload;
+        if (errors) {
+          dispatch(addMessage({ type: "error", text: errors.error }));
+        }
+      }
+    } catch {
+      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
+    }
   };
 
   return (
@@ -147,7 +180,9 @@ const NewDriverEntry: React.FC = () => {
             id="adhaar_front_img"
             name="adhaar_front_img"
             value={
-              typeof driver.adhaar_front_img === "string" ? driver.adhaar_front_img : ""
+              typeof driver.adhaar_front_img === "string"
+                ? driver.adhaar_front_img
+                : ""
             }
             onFileSelect={(file) => handleFileSelect(file, "adhaar_front_img")}
           />
@@ -157,7 +192,9 @@ const NewDriverEntry: React.FC = () => {
             id="adhaar_back_img"
             name="adhaar_back_img"
             value={
-              typeof driver.adhaar_back_img === "string" ? driver.adhaar_back_img : ""
+              typeof driver.adhaar_back_img === "string"
+                ? driver.adhaar_back_img
+                : ""
             }
             onFileSelect={(file) => handleFileSelect(file, "adhaar_back_img")}
           />

@@ -151,7 +151,7 @@ const Navbar = () => {
                 content: "Click here to add new Driver",
               },
               {
-                to: "/journey/all-driver-entry",
+                to: "/journey/all-driver-entries",
                 label: "All Drivers",
                 content: "Click here to view all Drivers",
               },

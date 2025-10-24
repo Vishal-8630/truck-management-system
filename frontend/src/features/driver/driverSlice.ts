@@ -31,15 +31,22 @@ export const fetchDriverEntriesAsync = createAsyncThunk<
 // Add a new driver
 export const addDriverEntryAsync = createAsyncThunk<
   DriverType,
-  Omit<DriverType, "_id">,
+  FormData,
   { rejectValue: Record<string, string> }
 >("driver/add", async (newDriver, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
-    const response = await api.post("/driver/all", newDriver);
+    const response = await api.post("/driver/new", newDriver, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    });
     return response.data.data as DriverType;
   } catch (err: any) {
-    return rejectWithValue(normalizedError(err, "Failed to add new driver"));
+    const errorMsg =
+      err?.response?.data?.message || "Failed to add new driver";
+    console.error("Driver add error:", err.response.data);
+    return rejectWithValue({ error: errorMsg });
   }
 });
 
