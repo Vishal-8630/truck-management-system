@@ -1,0 +1,27 @@
+@use '../../../styles/globals' as *;
+
+.allTruckContainer {
+    display: flex;
+    margin-top: 2rem;
+    flex-direction: column;
+
+    .heading {
+        border-bottom: 1px solid black;
+        margin-bottom: 1rem;
+    }
+}
+
+.trucks {
+    display: flex;
+    gap: 15px;
+}
+
+.truckNo {
+    @include flex-center();
+    gap: 10px;
+    border-radius: 8px;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    box-shadow: $box-shadow-3d;
+    max-width: 200px;
+    cursor: pointer;
+}

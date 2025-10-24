@@ -1,0 +1,45 @@
+@use '../../../styles/globals' as *;
+
+.newTruckContainer {
+  @include flex-center();
+  flex-direction: column;
+  color: $neutral-light;
+  width: 100%;
+  flex: 1;
+}
+
+.heading {
+  @include main-heading();
+  width: 100%;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.truckForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+
+  .fieldContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; // ✅ centers all sections
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px; // ✅ keeps layout from being too wide
+
+    > * {
+      flex: 1 1 45%; // ✅ two per row (auto-wrap)
+      max-width: 500px; // ✅ prevents full width stretch
+      min-width: 300px;
+      box-sizing: border-box;
+    }
+  }
+}
+
+.btn {
+  @include primary-btn();
+  width: 16rem;
+  margin: 2rem auto;
+}

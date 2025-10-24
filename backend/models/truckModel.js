@@ -8,6 +8,42 @@ const truckSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    fitness_doc: {
+      type: String,
+    }, 
+    fitness_doc_expiry: {
+      type: String,
+    },
+    insurance_doc: {
+      type: String
+    },
+    insurance_doc_expiry: {
+      type: String,
+    },
+    national_permit_doc: {
+      type: String,
+    },
+    national_permit_doc_expiry: {
+      type: String,
+    },
+    state_permit_doc: {
+      type: String,
+    },
+    state_permit_doc_expiry: {
+      type: String,
+    },
+    tax_doc: {
+      type: String,
+    },
+    tax_doc_expiry: {
+      type: String,
+    },
+    pollution_doc: {
+      type: String,
+    },
+    pollution_doc_expiry: {
+      type: String,
+    },
     drivers: {
       type: [
         {
