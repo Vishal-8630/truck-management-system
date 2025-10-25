@@ -132,7 +132,7 @@ const Entry: React.FC = () => {
     }
   };
 
-  const fetchOptions = (search: string): Option[] => {
+  const fetchOptions = (search: string, field: string): Option[] => {
     try {
       const filteredBillingParties = billingParties.filter(party => party.name.toLowerCase().includes(search.toLowerCase()));
       if (filteredBillingParties.length > 0) {

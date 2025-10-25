@@ -1,0 +1,25 @@
+@use '../../styles/globals' as *;
+
+.journeyCardContainer {
+    box-shadow: $box-shadow-3d;
+    padding: 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 25rem;
+}
+
+.detailContainer {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+
+    .text {
+        font-weight: bold;
+    }
+
+    .value {
+        color: gray;
+    }
+}

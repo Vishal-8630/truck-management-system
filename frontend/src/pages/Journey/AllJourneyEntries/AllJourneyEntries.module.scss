@@ -1,0 +1,13 @@
+@use '../../../styles/globals' as *;
+
+.heading {
+    @include main-heading();
+    margin-bottom: 2rem;
+    margin-top: 2rem;
+}
+
+.journies {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}

@@ -7,6 +7,7 @@ import { vehicleEntryReducer } from "../features/vehicleEntry";
 import { balancePartyReducer } from "../features/balanceParty";
 import { driverReducer } from "../features/driver";
 import { truckReducers } from "../features/truck";
+import { journeyReducers } from "../features/journey";
 
 export const store = configureStore({
     reducer: {
@@ -17,7 +18,8 @@ export const store = configureStore({
         vehicleEntry: vehicleEntryReducer,
         balanceParty: balancePartyReducer,
         driver: driverReducer,
-        truck: truckReducers
+        truck: truckReducers,
+        journey: journeyReducers
     },
 });
 

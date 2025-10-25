@@ -47,10 +47,10 @@ export const updateTruckEntryAsync = createAsyncThunk<
     TruckType,
     TruckType,
     { rejectValue: Record<string, string> }
->("truck/update", async (updateTruck, thunkAPI) => {
+>("truck/update", async (updatedTruck, thunkAPI) => {
     const { rejectWithValue } = thunkAPI;
     try {
-        const response = await api.put(`/truck/update${updateTruck._id}`, updateTruck);
+        const response = await api.put(`/truck/update/${updatedTruck._id}`, updatedTruck);
         return response.data.data as TruckType;
     } catch (err: any) {
         return rejectWithValue(err.message || "Failed to update truck");

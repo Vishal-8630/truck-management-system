@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FormInput from "../../../components/FormInput";
 import FormSection from "../../../components/FormSection";
 import styles from "./NewTruckEntry.module.scss";
@@ -63,10 +63,6 @@ const NewTruckEntry = () => {
       [name]: value,
     }));
   };
-
-  useEffect(() => {
-    console.log(truck);
-  }, [truck])
 
   const handleFileSelect = (file: File | null, field: keyof TruckType) => {
     setTruck((prev) => ({

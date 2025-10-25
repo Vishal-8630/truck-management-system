@@ -1,0 +1,23 @@
+@use '../../../styles/globals' as *;
+
+.newJourneyContainer {
+  @include flex-center();
+  flex-direction: column;
+  color: $neutral-light;
+  width: 100%;
+  flex: 1;
+}
+
+.journeyForm {
+    width: 35rem;
+}
+
+.heading {
+    @include main-heading();
+    @include spacing(margin, (bottom, 2rem), (top, 2rem));
+    width: 100%;
+}
+
+.btn {
+    @include primary-btn();
+}

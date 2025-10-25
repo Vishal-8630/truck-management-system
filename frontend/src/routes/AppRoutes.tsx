@@ -25,6 +25,7 @@ import AllTruckEntries from "../pages/Journey/AllTruckEntries";
 import NewDriverEntry from "../pages/Journey/NewDriverEntry";
 import AllDriverEntries from "../pages/Journey/AllDriverEntries";
 import TruckDetail from "../pages/Journey/TruckDetail";
+import JourneyDetail from "../pages/Journey/JourneyDetail";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -50,6 +51,7 @@ const journeyEntryRoutes = [
   { path: "new-driver-entry", element: <NewDriverEntry /> },
   { path: "all-driver-entries", element: <AllDriverEntries /> },
   { path: "truck/:id", element: <TruckDetail /> },
+  { path: "journey-detail/:id", element: <JourneyDetail /> },
 ]
 
 const AppRoutes = () => {
