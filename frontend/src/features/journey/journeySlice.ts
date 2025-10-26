@@ -52,7 +52,7 @@ export const updateJourneyEntryAsync = createAsyncThunk<
 >("journey/update", async (updatedJourney, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
-    const response = await api.put(`/journey/update/${updatedJourney._id}`);
+    const response = await api.put(`/journey/update/${updatedJourney._id}`, updatedJourney);
     return response.data.data as JourneyType;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to update truck journey");

@@ -1,0 +1,223 @@
+@use '../../../styles/globals' as *;
+
+.journeyDetailContainer {
+    margin-top: 2rem;
+}
+
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 15px
+}
+
+.controlBtn {
+    padding: 10px 30px;
+    cursor: pointer;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    font-family: "Montserrat", sans-serif;
+    transition: all 0.2s ease-in-out;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        font-weight: bold;
+    }
+}
+
+.overlay {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.journeyDetail {
+    margin-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.block {
+    box-shadow: $box-shadow-3d;
+    border-radius: 12px;
+    padding: 1rem;
+    border: $border-light;
+    @include bg-color($secondary);
+    flex: 1 1 calc(50% - 10px);
+
+    .heading {
+        font-size: 1.5rem;
+        border-bottom: 1px solid gray;
+        margin-bottom: 0.8rem;
+        color: gray;
+    }
+
+    .detailContainer {
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .input {
+        border-color: $primary;
+        color: black;
+        width: 100%;
+        box-shadow: 0 0 0 2px rgba($primary, 0.15),
+            0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+}
+
+.text {
+    font-weight: bold;
+}
+
+.value {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    padding: 8px;
+    color: gray;
+    border: 1px solid $neutral-light;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        border-color: $primary;
+        box-shadow: 0 0 0 2px rgba($primary, 0.15),
+            0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+}
+
+.block.flex_1 {
+    flex: 1 1 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid gray;
+    padding-bottom: 10px;
+
+    .heading {
+        border-bottom: none;
+    }
+}
+
+.btn {
+    @include primary-btn();
+    width: 150px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+        font-size: 1.3rem;
+    }
+
+    td {
+        color: gray;
+    }
+
+    th,
+    td {
+        border: 1px solid gray;
+        text-align: center;
+    }
+}
+
+.body {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding-top: 15px;
+
+    .card {
+        min-width: 25rem;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: $box-shadow-3d;
+        position: relative;
+
+        .deleteCard {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: pointer;
+            background-color: #e6e6e6;
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+                background-color: #d0d0d0;
+            }
+
+            span {
+                position: absolute;
+                background-color: #000;
+                height: 2px;
+                width: 60%;
+                border-radius: 2px;
+                top: 50%;
+                left: 50%;
+                transform-origin: center;
+                transition: background-color 0.2s ease;
+
+                &:first-child {
+                    transform: translate(-50%, -50%) rotate(45deg);
+                }
+
+                &:last-child {
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                }
+            }
+        }
+
+        .fieldLabel {
+            font-weight: bold;
+        }
+
+        .fieldValue {
+            border: 1px solid gray;
+            border-radius: 8px;
+            padding: 0.5rem;
+            transition: all 0.2s ease-in-out;
+
+
+            &:hover {
+                border-color: $primary;
+                box-shadow: 0 0 0 2px rgba($primary, 0.15),
+                    0 2px 5px rgba(0, 0, 0, 0.05);
+            }
+        }
+    }
+}

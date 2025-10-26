@@ -25,7 +25,8 @@ const truckJourneySchema = new mongoose.Schema({
     type: [
       {
         amount: { type: String, default: "0" },
-        reason: { type: String, default: "" }
+        reason: { type: String, default: "" },
+        date: { type: String }
       }
     ],
     default: []
@@ -107,6 +108,9 @@ const truckJourneySchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+truckJourneySchema.set("toJSON", { virtuals: true });
+truckJourneySchema.set("toObject", { virtuals: true });
+
 // --- Hooks ---
 truckJourneySchema.pre("save", function (next) {
   const today = new Date();
@@ -160,7 +164,7 @@ truckJourneySchema.virtual("total_expense").get(function() {
   return String(total);
 });
 
-truckJourneySchema.index({ truck_id: 1 });
+truckJourneySchema.index({ truck: 1 });
 truckJourneySchema.index({ driver: 1 });
 truckJourneySchema.index({ status: 1 });
 truckJourneySchema.index({ journey_start_date: 1 });

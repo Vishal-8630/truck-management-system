@@ -22,6 +22,7 @@ export interface JourneyType {
   working_expenses: {
     amount: string;
     reason: string;
+    date: string;
   }[];
 
   diesel_expenses: {
