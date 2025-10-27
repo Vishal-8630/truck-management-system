@@ -13,6 +13,7 @@ const truckJourneySchema = new mongoose.Schema({
   journey_end_date: { type: String },
 
   distance_km: { type: String },
+  loaded_weight: { type: String },
   average_mileage: { type: String },
 
   status: {
@@ -90,9 +91,12 @@ const truckJourneySchema = new mongoose.Schema({
 
   delivery_details: {
     delivered_to: String,
-    delivery_date: String,
+    entry_date: String,
+    empty_date: String,
     remarks: String
   },
+
+
 
   status_updates: {
     type: [

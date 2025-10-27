@@ -1,10 +1,13 @@
+import SmartDropdown from "../../../../components/SmartDropdown";
+import type { Option } from "../../../NewBillingEntry/constants";
 import styles from "../JourneyDetail.module.scss";
 
 interface DetailField {
   label: string;
   value?: string | number | null;
-  key?: string; // internal field key (e.g. "journey_days" or "delivery_details.remarks")
+  key?: string;
   isEditable?: boolean;
+  options?: Option[];
 }
 
 interface DetailBlockProps {
@@ -38,20 +41,30 @@ const DetailBlock = ({
             <span className={styles.text}>{f.label}</span>
 
             {isEditMode && f.isEditable ? (
-              <input
-                type={isDateField(f.key || "") ? "date" : "text"}
-                className={`${styles.input} ${styles.value}`}
-                value={
-                  isDateField(f.key || "")
-                    ? new Date(f.value || new Date())
-                        .toISOString()
-                        .split("T")[0]
-                    : f.value === null
-                    ? ""
-                    : f.value ?? ""
-                }
-                onChange={(e) => handleChange(f.key, e.target.value)}
-              />
+              f?.options?.length ? (
+                <SmartDropdown
+                  options={f.options}
+                  mode="select"
+                  name={f.key || ""}
+                  value={String(f.value) || ""}
+                  onChange={(val: string) => handleChange(f.key, val)}
+                />
+              ) : (
+                <input
+                  type={isDateField(f.key || "") ? "date" : "text"}
+                  className={`${styles.input} ${styles.value}`}
+                  value={
+                    isDateField(f.key || "")
+                      ? new Date(f.value || new Date())
+                          .toISOString()
+                          .split("T")[0]
+                      : f.value === null
+                      ? ""
+                      : f.value ?? ""
+                  }
+                  onChange={(e) => handleChange(f.key, e.target.value)}
+                />
+              )
             ) : (
               <span className={styles.value}>{f.value ?? emptyValue}</span>
             )}

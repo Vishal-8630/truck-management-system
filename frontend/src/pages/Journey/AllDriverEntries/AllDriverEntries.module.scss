@@ -1,0 +1,15 @@
+@use '../../../styles/globals' as *;
+
+.heading {
+    @include main-heading();
+    margin-bottom: 2rem;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.drivers {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    flex-wrap: wrap;
+}

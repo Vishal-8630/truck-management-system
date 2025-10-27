@@ -15,6 +15,7 @@ import {
   type TruckType,
 } from "../../../types/truck";
 import { formatDate } from "../../../utils/formatDate";
+import EditHeader from "../../../components/EditHeader";
 
 const TruckDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,9 @@ const TruckDetail = () => {
   const loading = useSelector(selectTruckLoading);
   const trucks = useSelector(truckSelectors.selectAll);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [backupTruck, setBackupTruck] = useState<TruckType | null>(null);
+  const [localTruck, setLocalTruck] = useState<TruckType | null>(null);
 
   useEffect(() => {
     if (trucks.length === 0) dispatch(fetchTrucksEntriesAsync());
@@ -29,11 +33,15 @@ const TruckDetail = () => {
 
   const truck = trucks.find((t) => t._id === id);
 
-  if (loading || !truck) return <Loading />;
+  useEffect(() => {
+    if (truck && !loading) setLocalTruck(truck);
+  }, [truck, loading, id]);
+
+  if (loading || !localTruck) return <Loading />;
 
   const sortedDocuments = Object.entries(DOCUMENT_FIELDS).sort(([a], [b]) => {
-    const aExpiry = truck[`${a}_expiry` as keyof TruckType];
-    const bExpiry = truck[`${b}_expiry` as keyof TruckType];
+    const aExpiry = localTruck[`${a}_expiry` as keyof TruckType];
+    const bExpiry = localTruck[`${b}_expiry` as keyof TruckType];
 
     const aDate =
       typeof aExpiry === "string" && aExpiry.trim() !== ""
@@ -47,22 +55,50 @@ const TruckDetail = () => {
     return aDate - bDate;
   });
 
+  const isDirty = JSON.stringify(truck) !== JSON.stringify(localTruck);
+
+  const handleSave = () => {};
+
+  const handleDelete = (id: string) => {};
+
   return (
     <div className={styles.truckDetailContainer}>
-      <h1 className={styles.heading}>Truck Detail</h1>
+      <EditHeader
+        heading="Truck Detail"
+        isDirty={isDirty}
+        onEditClick={() => {
+          setBackupTruck(localTruck);
+          setIsEditMode(false);
+        }}
+        onCancelClick={() => {
+          setLocalTruck(backupTruck);
+          setIsEditMode(false);
+        }}
+        onSaveClick={() => {
+          setIsEditMode(false);
+          handleSave();
+        }}
+        onDeleteClick={() => {
+          handleDelete(localTruck?._id);
+        }}
+        onDiscardClick={() => {
+          setLocalTruck(backupTruck);
+          setIsEditMode(false);
+        }}
+      />
       <div className={styles.truckDetail}>
         <div className={styles.truckNo}>
           <span className={styles.text}>Truck No:</span>{" "}
-          <span className={styles.number}>{truck.truck_no}</span>
+          <span className={styles.number}>{localTruck.truck_no}</span>
         </div>
         <div className={styles.documentContainer}>
           {sortedDocuments.map(([fieldKey, fieldLabel]) => {
             const label =
               TRUCK_ENTRY_LABELS[fieldKey as keyof typeof TRUCK_ENTRY_LABELS] ??
               fieldLabel;
-            const value = truck[fieldKey as keyof TruckType] ?? "";
+            const value = localTruck[fieldKey as keyof TruckType] ?? "";
             const expiryValue =
-              truck[`${fieldKey}_expiry` as keyof TruckType] ?? "";
+              localTruck[`${fieldKey}_expiry` as keyof TruckType] ?? "";
             const expiryDate =
               typeof expiryValue === "string" && expiryValue.trim() !== ""
                 ? new Date(expiryValue)

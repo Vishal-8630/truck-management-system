@@ -150,18 +150,19 @@ table {
     flex-direction: row;
     justify-content: space-evenly;
 
-    gap: 10px;
+    gap: 20px;
     flex-wrap: wrap;
     margin-bottom: 10px;
     padding-top: 15px;
 
     .card {
-        min-width: 25rem;
         background-color: #fff;
         border-radius: 8px;
         padding: 1rem;
         box-shadow: $box-shadow-3d;
         position: relative;
+        flex: 1 1 25rem;
+        flex-wrap: wrap;
 
         .deleteCard {
             position: absolute;

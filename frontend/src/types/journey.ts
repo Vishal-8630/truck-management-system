@@ -15,6 +15,7 @@ export interface JourneyType {
   journey_end_date: string;
 
   distance_km: string;
+  loaded_weight: string;
   average_mileage: string;
 
   status: "Active" | "Completed" | "Delayed" | "Cancelled";
@@ -63,7 +64,8 @@ export interface JourneyType {
 
   delivery_details: {
     delivered_to: string;
-    delivery_date: string;
+    entry_date: string;
+    empty_date: string;
     remarks: string;
   };
 
@@ -92,6 +94,7 @@ export const EmptyJourneyType: JourneyType = {
     journey_end_date: "",
 
     distance_km: "",
+    loaded_weight: "",
     average_mileage: "",
 
     status: "Active",
@@ -115,7 +118,8 @@ export const EmptyJourneyType: JourneyType = {
 
     delivery_details: {
         delivered_to: "",
-        delivery_date: "",
+        entry_date: "",
+        empty_date: "",
         remarks: ""
     },
 

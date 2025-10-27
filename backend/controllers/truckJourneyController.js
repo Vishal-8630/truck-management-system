@@ -1,5 +1,6 @@
 import { successResponse } from '../utils/response.js';
 import Journey from '../models/truckJourneyModel.js';
+import AppError from "../utils/appError.js";
 
 const newJourney = async (req, res) => {
     const { truck, driver, from, to, journey_days, distance_km } = req.body;
@@ -17,7 +18,7 @@ const newJourney = async (req, res) => {
 };
 
 const allJournies = async (req, res) => {
-    const journies = await Journey.find({ is_deleted: true }).populate("truck").populate("driver");
+    const journies = await Journey.find({ is_deleted: false }).populate("truck").populate("driver");
     return successResponse(res, "", journies);
 }
 

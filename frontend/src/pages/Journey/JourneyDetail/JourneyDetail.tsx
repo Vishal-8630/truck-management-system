@@ -15,8 +15,9 @@ import { formatDate } from "../../../utils/formatDate";
 import type { JourneyType } from "../../../types/journey";
 import ExpenseSection from "./components/ExpenseSection";
 import DetailBlock from "./components/DetailBlock";
-import Overlay from "../../../components/Overlay";
 import { addMessage } from "../../../features/message";
+import EditHeader from "../../../components/EditHeader";
+import type { Option } from "../../NewBillingEntry/constants";
 
 const JourneyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,9 +28,13 @@ const JourneyDetail = () => {
   const [localJourney, setLocalJourney] = useState<JourneyType | null>(null);
   const [backupJourney, setBackupJourney] = useState<JourneyType | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const emptyFieldValue = "----------";
+  const status_options: Option[] = [
+    { label: "Active", value: "Active" },
+    { label: "Completed", value: "Completed" },
+    { label: "Delayed", value: "Delayed" },
+    { label: "Cancelled", value: "Cancelled" },
+  ];
 
   useEffect(() => {
     if (!journies?.length) dispatch(fetchJourneyEntriesAsync());
@@ -49,9 +54,13 @@ const JourneyDetail = () => {
       if (!prev) return prev;
       const now = String(new Date());
       const daily_progress = prev.daily_progress || [];
-      
-      const nextDate = new Date(daily_progress[daily_progress.length - 1]?.date || new Date());
-      const nextDay = parseInt(daily_progress[daily_progress.length - 1]?.day_number) + 1 || 1;
+
+      const nextDate = new Date(
+        daily_progress[daily_progress.length - 1]?.date || new Date()
+      );
+      const nextDay =
+        parseInt(daily_progress[daily_progress.length - 1]?.day_number) + 1 ||
+        1;
       nextDate.setDate(nextDate.getDate() + 1);
 
       const updates: Record<string, any> = {
@@ -87,7 +96,9 @@ const JourneyDetail = () => {
 
   const handleSave = async () => {
     try {
-      const resultAction = await dispatch(updateJourneyEntryAsync(localJourney!));
+      const resultAction = await dispatch(
+        updateJourneyEntryAsync(localJourney!)
+      );
       if (updateJourneyEntryAsync.fulfilled.match(resultAction)) {
         dispatch(
           addMessage({ type: "success", text: "Journey updated successfully" })
@@ -96,14 +107,16 @@ const JourneyDetail = () => {
         const errors = resultAction.payload;
         if (errors) {
           console.log("Errors while adding new journey", errors);
-          dispatch(addMessage({ type: "error", text: "Failed to update journey" }));
+          dispatch(
+            addMessage({ type: "error", text: "Failed to update journey" })
+          );
         }
       }
     } catch (error: any) {
       console.log("Error: ", error);
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -112,19 +125,21 @@ const JourneyDetail = () => {
         dispatch(
           addMessage({ type: "success", text: "Journey deleted successfully" })
         );
-        navigate("/journey/all-journey-entries")
+        navigate("/journey/all-journey-entries");
       } else if (deleteJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
           console.log("Errors while deleting journey", errors);
-          dispatch(addMessage({ type: "error", text: "Failed to delete journey" }));
+          dispatch(
+            addMessage({ type: "error", text: "Failed to delete journey" })
+          );
         }
       }
     } catch (error: any) {
       console.log("Error: ", error);
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
-  }
+  };
 
   const isDirty =
     localJourney && backupJourney
@@ -135,51 +150,27 @@ const JourneyDetail = () => {
 
   return (
     <div className={styles.journeyDetailContainer}>
-      <div className={styles.header}>
-        <h1 className={styles.heading}>Truck Journey</h1>
-        <div className={styles.controls}>
-          {!isEditMode ? (
-            <button
-              className={`${styles.controlBtn} ${styles.editBtn}`}
-              onClick={() => {
-                setBackupJourney(localJourney);
-                setIsEditMode(true);
-              }}
-            >
-              Edit
-            </button>
-          ) : (
-            <>
-              <button
-                className={`${styles.controlBtn} ${styles.saveBtn}`}
-                disabled={!isDirty}
-                onClick={() => {
-                  handleSave();
-                  setIsEditMode(false);
-                }}
-              >
-                Save
-              </button>
-              <button
-                className={`${styles.controlBtn} ${styles.cancelBtn}`}
-                onClick={() => {
-                  if (isDirty) {
-                    setShowCancelConfirm(true);
-                    return;
-                  }
-                  setLocalJourney(backupJourney);
-                  setIsEditMode(false);
-                }}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-          <button className={styles.controlBtn} onClick={() => {
-            setShowDeleteConfirm(true);
-          }}>Delete</button>
-        </div>
-      </div>
+      <EditHeader
+        heading="Truck Journey"
+        isDirty={isDirty}
+        onEditClick={() => {
+          setBackupJourney(localJourney);
+          setIsEditMode(true);
+        }}
+        onSaveClick={() => {
+          handleSave();
+          setIsEditMode(false);
+        }}
+        onCancelClick={() => {
+          setLocalJourney(backupJourney);
+          setIsEditMode(false);
+        }}
+        onDeleteClick={() => handleDelete(localJourney._id)}
+        onDiscardClick={() => {
+          setLocalJourney(backupJourney);
+          setIsEditMode(false);
+        }}
+      />
 
       <div className={styles.journeyDetail}>
         {/* Journey Detail - Readonly */}
@@ -190,6 +181,7 @@ const JourneyDetail = () => {
             { label: "Driver", value: localJourney.driver?.name },
             { label: "From", value: localJourney.from },
             { label: "To", value: localJourney.to },
+            { label: "Weight (Kg)", value: localJourney.loaded_weight },
           ]}
         />
 
@@ -231,6 +223,13 @@ const JourneyDetail = () => {
             {
               label: "Journey End Date",
               value: safeDate(localJourney.journey_end_date),
+            },
+            {
+              label: "Journey Status",
+              value: localJourney.status,
+              isEditable: true,
+              key: "status",
+              options: status_options,
             },
           ]}
         />
@@ -367,9 +366,15 @@ const JourneyDetail = () => {
               isEditable: true,
             },
             {
-              label: "Delivered Date",
-              value: localJourney.delivery_details?.delivery_date,
-              key: "delivery_details.delivery_date",
+              label: "Entry Date",
+              value: localJourney.delivery_details?.entry_date,
+              key: "delivery_details.entry_date",
+              isEditable: true,
+            },
+            {
+              label: "Empty Date",
+              value: localJourney.delivery_details?.empty_date,
+              key: "delivery_details.empty_date",
               isEditable: true,
             },
             {
@@ -380,59 +385,57 @@ const JourneyDetail = () => {
             },
           ]}
         />
+
+        {/* Settlements - Editable Fields */}
+        <DetailBlock
+          title="Settlements"
+          isEditMode={isEditMode}
+          onChange={(key, value) => {
+            setLocalJourney((prev) => {
+              if (!prev) return prev;
+
+              if (key.startsWith("settlements.")) {
+                const subKey = key.split(".")[1];
+                return {
+                  ...prev,
+                  settlement: {
+                    ...prev.settlement,
+                    [subKey]: value,
+                  },
+                } as JourneyType;
+              }
+
+              return { ...prev, [key]: value } as JourneyType;
+            });
+          }}
+          fields={[
+            {
+              label: "Amount Paid",
+              value: localJourney.settlement?.amount_paid,
+              key: "settlement.amount_paid",
+              isEditable: true,
+            },
+            {
+              label: "Date",
+              value: localJourney.settlement?.date_paid,
+              key: "settlement.date_paid",
+              isEditable: true,
+            },
+            {
+              label: "Mode",
+              value: localJourney.settlement.mode,
+              key: "settlement.mode",
+              isEditable: true,
+            },
+            {
+              label: "Remarks",
+              value: localJourney.settlement?.remarks,
+              key: "settlement.remarks",
+              isEditable: true,
+            },
+          ]}
+        />
       </div>
-      {showCancelConfirm && (
-        <Overlay
-          onCancel={() => {
-            setShowCancelConfirm(false);
-          }}
-        >
-          <div className={styles.overlay}>
-              <h1>Discard changes?</h1>
-              <p>
-                You have unsaved changes. Are you sure you want to discard them?
-              </p>
-              <div className={styles.popupControls}>
-                <button
-                  className={styles.controlBtn}
-                  onClick={() => {
-                    setIsEditMode(false);
-                    setShowCancelConfirm(false);
-                    setLocalJourney(backupJourney);
-                  }}
-                >
-                  Discard
-                </button>
-              </div>
-          </div>
-        </Overlay>
-      )}
-      {showDeleteConfirm && (
-        <Overlay
-          onCancel={() => {
-            setShowDeleteConfirm(false);
-          }}
-        >
-          <div className={styles.overlay}>
-            <h1>Delete Journey?</h1>
-            <p>
-              Are you sure you want to delete this journey? This action cannot be
-              undone.
-            </p>
-            <div className={styles.popupControls}>
-              <button
-                className={styles.controlBtn}
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  handleDelete(localJourney._id);
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </Overlay>
-      )}
     </div>
   );
 };

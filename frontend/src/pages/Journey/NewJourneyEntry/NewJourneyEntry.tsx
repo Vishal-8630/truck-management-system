@@ -7,7 +7,7 @@ import FormInput from "../../../components/FormInput";
 import type { AppDispatch } from "../../../app/store";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
-import { addJourneyEntryAsync, selectJourneyLoading } from "../../../features/journey";
+import { addJourneyEntryAsync } from "../../../features/journey";
 import {
   fetchTrucksEntriesAsync,
   truckSelectors,
@@ -37,11 +37,16 @@ const JOURNEY_FIELD_INPUTS: InputType[] = [
     name: "distance_km",
     inputType: "number",
   },
+  {
+    type: "number",
+    label: "Weight (Kg)",
+    name: "loaded_weight",
+    inputType: "number",
+  },
 ];
 
 const NewJourneyEntry = () => {
   const dispatch: AppDispatch = useDispatch();
-  const loading = useSelector(selectJourneyLoading);
 
   const [journey, setJourney] =
     useState<Omit<JourneyType, "_id">>(EmptyJourneyType);

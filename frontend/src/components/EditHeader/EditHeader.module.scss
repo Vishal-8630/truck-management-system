@@ -1,0 +1,52 @@
+@use '../../styles/globals' as *;
+
+.editHeaderContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    width: 100%;
+    border-bottom: 1px solid black;
+    margin: 2rem 0;
+
+    @include respond-to(sm) {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.controlBtn {
+    padding: 10px 30px;
+    cursor: pointer;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    font-family: "Montserrat", sans-serif;
+    transition: all 0.2s ease-in-out;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        font-weight: bold;
+    }
+}
+
+.overlay {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
