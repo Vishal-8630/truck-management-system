@@ -27,6 +27,8 @@ const TruckDetail = () => {
   const [backupTruck, setBackupTruck] = useState<TruckType | null>(null);
   const [localTruck, setLocalTruck] = useState<TruckType | null>(null);
 
+  void isEditMode;
+
   useEffect(() => {
     if (trucks.length === 0) dispatch(fetchTrucksEntriesAsync());
   }, [dispatch, trucks.length]);
