@@ -211,7 +211,7 @@ const NewJourneyEntry = () => {
 
   return (
     <div className={styles.newJourneyContainer}>
-      <h1 className={styles.heading}>All Truck Journey</h1>
+      <h1 className={styles.heading}>Add New Journey</h1>
       <form className={styles.journeyForm} onSubmit={handleSubmit}>
         <FormSection title="Journey Details">
           {renderInputs(JOURNEY_FIELD_INPUTS)}
