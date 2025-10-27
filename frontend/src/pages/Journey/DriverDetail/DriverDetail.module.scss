@@ -1,0 +1,23 @@
+@use '../../../styles/globals' as *;
+
+.driverDetail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 2rem;
+}
+
+.childs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.childs > * {
+  flex: 1 1 calc(50% - 20px);
+}
+
+@media (max-width: 600px) {
+  .childs > * {
+    flex: 1 1 100%;
+  }
+}

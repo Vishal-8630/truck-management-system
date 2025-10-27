@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import SmartDropdown from "../../../../components/SmartDropdown";
 import type { Option } from "../../../NewBillingEntry/constants";
 import styles from "../JourneyDetail.module.scss";
@@ -16,6 +17,7 @@ interface DetailBlockProps {
   onChange?: (key: string, value: string) => void;
   isEditMode?: boolean;
   emptyValue?: string;
+  childs?: JSX.Element;
 }
 
 const DetailBlock = ({
@@ -24,6 +26,7 @@ const DetailBlock = ({
   onChange,
   isEditMode = false,
   emptyValue = "----------",
+  childs,
 }: DetailBlockProps) => {
   const handleChange = (key: string | undefined, value: string) => {
     if (key && onChange) onChange(key, value);
@@ -35,42 +38,46 @@ const DetailBlock = ({
     <div className={styles.block}>
       <h1 className={styles.heading}>{title}</h1>
 
-      <div className={styles.detailBox}>
-        {fields.map((f, i) => (
-          <div className={styles.detailContainer} key={i}>
-            <span className={styles.text}>{f.label}</span>
+      {!childs ? (
+        <div className={styles.detailBox}>
+          {fields.map((f, i) => (
+            <div className={styles.detailContainer} key={i}>
+              <span className={styles.text}>{f.label}</span>
 
-            {isEditMode && f.isEditable ? (
-              f?.options?.length ? (
-                <SmartDropdown
-                  options={f.options}
-                  mode="select"
-                  name={f.key || ""}
-                  value={String(f.value) || ""}
-                  onChange={(val: string) => handleChange(f.key, val)}
-                />
+              {isEditMode && f.isEditable ? (
+                f?.options?.length ? (
+                  <SmartDropdown
+                    options={f.options}
+                    mode="select"
+                    name={f.key || ""}
+                    value={String(f.value) || ""}
+                    onChange={(val: string) => handleChange(f.key, val)}
+                  />
+                ) : (
+                  <input
+                    type={isDateField(f.key || "") ? "date" : "text"}
+                    className={`${styles.input} ${styles.value}`}
+                    value={
+                      isDateField(f.key || "")
+                        ? new Date(f.value || new Date())
+                            .toISOString()
+                            .split("T")[0]
+                        : f.value === null
+                        ? ""
+                        : f.value ?? ""
+                    }
+                    onChange={(e) => handleChange(f.key, e.target.value)}
+                  />
+                )
               ) : (
-                <input
-                  type={isDateField(f.key || "") ? "date" : "text"}
-                  className={`${styles.input} ${styles.value}`}
-                  value={
-                    isDateField(f.key || "")
-                      ? new Date(f.value || new Date())
-                          .toISOString()
-                          .split("T")[0]
-                      : f.value === null
-                      ? ""
-                      : f.value ?? ""
-                  }
-                  onChange={(e) => handleChange(f.key, e.target.value)}
-                />
-              )
-            ) : (
-              <span className={styles.value}>{f.value ?? emptyValue}</span>
-            )}
-          </div>
-        ))}
-      </div>
+                <span className={styles.value}>{f.value ?? emptyValue}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        childs
+      )}
     </div>
   );
 };
