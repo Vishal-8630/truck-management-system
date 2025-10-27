@@ -59,7 +59,9 @@ const TruckDetail = () => {
 
   const handleSave = () => {};
 
-  const handleDelete = (id: string) => {};
+  const handleDelete = (id: string) => {
+    void id;
+  };
 
   return (
     <div className={styles.truckDetailContainer}>

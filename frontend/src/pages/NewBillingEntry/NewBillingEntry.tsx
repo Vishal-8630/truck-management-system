@@ -120,7 +120,7 @@ const Entry: React.FC = () => {
   ) => {
     if (mode === "select") {
       setState(val);
-      console.log(name);
+      void name;
     } else {
       if (val === "") {
         setSelectedParty({ _id: "", name: "", address: "", gst_no: "" });
@@ -133,6 +133,7 @@ const Entry: React.FC = () => {
   };
 
   const fetchOptions = (search: string, field: string): Option[] => {
+    void field;
     try {
       const filteredBillingParties = billingParties.filter(party => party.name.toLowerCase().includes(search.toLowerCase()));
       if (filteredBillingParties.length > 0) {

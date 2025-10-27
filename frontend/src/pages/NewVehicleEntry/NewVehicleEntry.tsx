@@ -156,6 +156,7 @@ const NewVehicleEntry = () => {
   };
 
   const fetchOptions = (search: string, field: string): Option[] => {
+    void field;
     const fetchedBalanceParties = balanceParties.filter(
       (party) =>
         party.party_name &&

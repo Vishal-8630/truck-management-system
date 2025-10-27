@@ -24,6 +24,8 @@ const DriverDetail = () => {
   const [localDriver, setLocalDriver] = useState<DriverType | null>(null);
   const [backupDriver, setBackupDriver] = useState<DriverType | null>(null);
 
+  void isEditMode;
+
   useEffect(() => {
     dispatch(fetchDriverEntriesAsync());
   }, [dispatch]);
@@ -38,7 +40,9 @@ const DriverDetail = () => {
 
   const isDirty = JSON.stringify(localDriver) !== JSON.stringify(driver);
 
-  const handleDelete = (id: string) => {};
+  const handleDelete = (id: string) => {
+    void id;
+  };
 
   const handleSave = () => {};
 
