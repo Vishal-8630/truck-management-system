@@ -55,10 +55,10 @@ const DetailBlock = ({
                   />
                 ) : (
                   <input
-                    type={isDateField(f.key || "") ? "date" : "text"}
+                    type={isDateField(f.label || "") ? "date" : "text"}
                     className={`${styles.input} ${styles.value}`}
                     value={
-                      isDateField(f.key || "")
+                      isDateField(f.label || "")
                         ? new Date(f.value || new Date())
                             .toISOString()
                             .split("T")[0]

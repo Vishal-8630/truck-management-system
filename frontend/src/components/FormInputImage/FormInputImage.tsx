@@ -5,7 +5,8 @@ interface FormInputImageProps {
   label: string;
   id: string;
   name: string;
-  value?: string; // existing image URL (optional)
+  value?: string;
+  isEditMode?: boolean;
   onFileSelect: (file: File | null) => void;
 }
 
@@ -14,6 +15,7 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
   id,
   name,
   value,
+  isEditMode,
   onFileSelect,
 }) => {
   const [preview, setPreview] = useState<string | null>(value || null);
@@ -49,13 +51,15 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
         {preview ? (
           <div className={styles.previewWrapper}>
             <img src={preview} alt="preview" className={styles.previewImage} />
-            <button
-              type="button"
-              className={styles.removeBtn}
-              onClick={handleRemove}
-            >
-              ✕
-            </button>
+            {isEditMode && (
+              <button
+                type="button"
+                className={styles.removeBtn}
+                onClick={handleRemove}
+              >
+                ✕
+              </button>
+            )}
           </div>
         ) : (
           <label htmlFor={id} className={styles.uploadLabel}>

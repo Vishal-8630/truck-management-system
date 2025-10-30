@@ -6,64 +6,26 @@
     margin-bottom: 2rem;
 }
 
-.truckNo {
-    margin-bottom: 1.5rem;
-    font-size: 2rem;
-
-    .text {
-        font-weight: bold;
-    }
-
-    .number {
-        font-style: italic;
-        color: gray;
-    }
-}
-
-.documentContainer {
+.detailContainer {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
-
-    .document {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 5px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid gray;
-
-        .documentLabel {
-            font-size: 1.3rem;
-            font-weight: bold;
-        }
-
-        .documentDetail {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-
-            img {
-                width: 200px;
-                height: 300px;
-                cursor: pointer;
-                border-radius: 30px;
-            }
-        }
-    }
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 2rem;
 }
 
-.expiry {
-    font-size: 1.3rem;
+.childs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.childs > * {
+  flex: 1 1 calc(50% - 20px);
+}
 
-    .text {
-        font-weight: bold;
-    }
-
-    .expiryDate {
-        color: gray;
-    }
+@media (max-width: 600px) {
+  .childs > * {
+    flex: 1 1 100%;
+  }
 }
 
 .fullscreenOverlay {

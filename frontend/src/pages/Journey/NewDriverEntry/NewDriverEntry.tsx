@@ -8,9 +8,11 @@ import { useDispatch } from "react-redux";
 import { addMessage } from "../../../features/message";
 import { addDriverEntryAsync } from "../../../features/driver";
 import type { AppDispatch } from "../../../app/store";
+import { useNavigate } from "react-router-dom";
 
 const NewDriverEntry: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [driver, setDriver] =
     useState<Omit<DriverType, "_id">>(EmptyDriverType);
@@ -90,6 +92,7 @@ const NewDriverEntry: React.FC = () => {
           addMessage({ type: "success", text: "Driver added successfully" })
         );
         setDriver(EmptyDriverType);
+        navigate("/journey/all-driver-entries");
       } else if (addDriverEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
@@ -119,6 +122,7 @@ const NewDriverEntry: React.FC = () => {
             label="Driver Photo"
             id="driver_img"
             name="driver_img"
+            isEditMode
             value={
               typeof driver.driver_img === "string" ? driver.driver_img : ""
             }
@@ -179,6 +183,7 @@ const NewDriverEntry: React.FC = () => {
             label="Adhaar Front Image"
             id="adhaar_front_img"
             name="adhaar_front_img"
+            isEditMode
             value={
               typeof driver.adhaar_front_img === "string"
                 ? driver.adhaar_front_img
@@ -191,6 +196,7 @@ const NewDriverEntry: React.FC = () => {
             label="Adhaar Back Image"
             id="adhaar_back_img"
             name="adhaar_back_img"
+            isEditMode
             value={
               typeof driver.adhaar_back_img === "string"
                 ? driver.adhaar_back_img
@@ -203,6 +209,7 @@ const NewDriverEntry: React.FC = () => {
             label="Driving License Image"
             id="dl_img"
             name="dl_img"
+            isEditMode
             value={typeof driver.dl_img === "string" ? driver.dl_img : ""}
             onFileSelect={(file) => handleFileSelect(file, "dl_img")}
           />

@@ -12,6 +12,7 @@ const driverSchema = new mongoose.Schema(
     adhaar_front_img: { type: String },
     adhaar_back_img: { type: String },
     dl_img: { type: String },
+    is_deleted: { type: Boolean, default: false },
     vehicles: {
       type: [
         {

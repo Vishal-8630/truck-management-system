@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { addMessage } from "../../../features/message";
 import { addTruckEntryAsync } from "../../../features/truck";
 import FormInputImage from "../../../components/FormInputImage";
+import { useNavigate } from "react-router-dom";
 
 const DOCUMENTS = [
   {
@@ -51,6 +52,7 @@ const DOCUMENTS = [
 const NewTruckEntry = () => {
   const [truck, setTruck] = useState<TruckType>(EmptyTruckType);
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -95,6 +97,7 @@ const NewTruckEntry = () => {
         dispatch(
           addMessage({ type: "success", text: "Truck added successfully" })
         );
+        navigate("/journey/all-truck-entries");
       } else if (addTruckEntryAsync.rejected.match(resultAction)) {
         const error = resultAction.payload;
         if (error) {
@@ -140,6 +143,7 @@ const NewTruckEntry = () => {
                 value={imgValue === 'string' ? imgValue : ''}
                 name={document.field}
                 label={document.label}
+                isEditMode={true}
                 onFileSelect={(file) => handleFileSelect(file, document.field as keyof TruckType)}
               />
               <FormInput

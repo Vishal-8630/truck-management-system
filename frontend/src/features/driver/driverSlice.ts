@@ -39,12 +39,11 @@ export const addDriverEntryAsync = createAsyncThunk<
     const response = await api.post("/driver/new", newDriver, {
       headers: {
         "Content-Type": "multipart/form-data",
-      }
+      },
     });
     return response.data.data as DriverType;
   } catch (err: any) {
-    const errorMsg =
-      err?.response?.data?.message || "Failed to add new driver";
+    const errorMsg = err?.response?.data?.message || "Failed to add new driver";
     console.error("Driver add error:", err.response.data);
     return rejectWithValue({ error: errorMsg });
   }
@@ -53,19 +52,20 @@ export const addDriverEntryAsync = createAsyncThunk<
 // Update a driver
 export const updateDriverEntryAsync = createAsyncThunk<
   DriverType,
-  DriverType,
+  { id: string; updateDriver: FormData },
   { rejectValue: Record<string, string> }
->("driver/update", async (updateDriver, thunkAPI) => {
+>("driver/update", async ({ id, updateDriver }, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
-    const response = await api.put(
-      `/driver/update${updateDriver._id}`,
-      updateDriver
-    );
+    const response = await api.put(`/driver/update/${id}`, updateDriver, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data.data as DriverType;
   } catch (err: any) {
     return rejectWithValue(
-      normalizedError(err, "Failed to update vehicle entry")
+      normalizedError(err, "Failed to update driver entry")
     );
   }
 });

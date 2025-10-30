@@ -44,6 +44,10 @@ const truckSchema = new mongoose.Schema(
     pollution_doc_expiry: {
       type: String,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false
+    },
     drivers: {
       type: [
         {
