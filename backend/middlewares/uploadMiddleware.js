@@ -15,15 +15,19 @@ const s3 = new S3Client({
   },
 });
 
-// === File filter ===
+// === File Filter ===
 const fileFilter = (req, file, cb) => {
   const allowed = /jpeg|jpg|png|webp/;
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowed.test(ext)) cb(null, true);
-  else cb(new Error("Only image files are allowed"));
+  else cb(new Error("Only image files (jpeg, jpg, png, webp) are allowed"));
 };
 
-// === Storage using AWS S3 ===
+// === Environment Folder ===
+// Uploads go into "dev/" or "prod/" folders inside the bucket
+const envFolder = process.env.NODE_ENV === "production" ? "prod" : "dev";
+
+// === Multer-S3 Storage Configuration ===
 const storage = multerS3({
   s3,
   bucket: process.env.S3_BUCKET_NAME,
@@ -33,10 +37,13 @@ const storage = multerS3({
   key: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+    // Save inside environment folder
+    const key = `${envFolder}/${file.fieldname}-${uniqueSuffix}${ext}`;
+    cb(null, key);
   },
 });
 
+// === Delete file from S3 if needed ===
 export const deleteFromS3 = async (files) => {
   if (!files) return;
   const entries = Object.keys(files);
@@ -57,11 +64,11 @@ export const deleteFromS3 = async (files) => {
   }
 };
 
-// === Multer instance ===
+// === Multer Instance ===
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
 });
 
 export default upload;
