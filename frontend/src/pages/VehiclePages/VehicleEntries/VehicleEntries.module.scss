@@ -1,0 +1,15 @@
+@use '../../../styles/globals' as *;
+
+.vehicleEntriesContainer {
+    margin-top: 2rem;
+
+    .headerArea {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .heading {
+        @include main-heading();
+        @include spacing(margin, (bottom, 2rem));
+    }
+}

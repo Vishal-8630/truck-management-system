@@ -1,0 +1,19 @@
+@use '../../../styles/globals' as *;
+
+.balancePartiesContainer {
+    @include spacing(margin, (top, 3rem));
+
+    .headerArea {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .heading {
+        @include main-heading();
+        @include spacing(margin, (bottom, 2rem), (top, 1rem));
+    }
+
+    section {
+        @include spacing(margin, (bottom, 1rem));
+    }
+}

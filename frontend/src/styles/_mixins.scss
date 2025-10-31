@@ -265,8 +265,6 @@
 @mixin main-heading {
   font-family: $font-heading;
   text-align: center;
-  @include spacing(margin, (bottom, $spacing-md), (top, $spacing-sm));
-  @include spacing(padding, (bottom, $spacing-sm));
   border-bottom: $border-dark;
   @include responsive-font(1.5rem, $heading-md, $heading-lg);
   @include text-color($primary);

@@ -1,0 +1,28 @@
+@use '../../../styles/globals' as *;
+
+.registerContainer {
+  @include flex-center();
+  color: $neutral-light;
+  width: 100%;
+  flex: 1;
+}
+
+.registerForm {
+  min-width: 35rem;
+}
+
+.footerText {
+  text-align: center;
+  color: $neutral-dark;
+  margin-top: 1rem;
+
+  a {
+    color: blue;
+    text-decoration: none;
+    @include transition(color, 0.2s);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

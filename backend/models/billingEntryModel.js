@@ -146,6 +146,11 @@ const entrySchema = mongoose.Schema({
     },
     if_gst_other_state: {
         type: String,
+    }, 
+    tax_state: {
+        type: String,
+        enum: ["UP", "Other"],
+        default: "UP"
     }
 }, { timestamps: true });
 

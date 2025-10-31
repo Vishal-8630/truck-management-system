@@ -61,6 +61,7 @@ export interface BillEntryType {
   grand_total: string;
   gst_up: string;
   if_gst_other_state: string;
+  tax_state: string;
 }
 
 export const ENTRY_LABELS: Record<string, string> = {
@@ -108,6 +109,7 @@ export const ENTRY_LABELS: Record<string, string> = {
   grand_total: "Grand Total",
   gst_up: "GST UP",
   if_gst_other_state: "If GST Other State",
+  tax_state: "Tax State",
 };
 
 export const EmptyBillEntry: Omit<BillEntryType, "_id"> = {
@@ -155,4 +157,5 @@ export const EmptyBillEntry: Omit<BillEntryType, "_id"> = {
   grand_total: "",
   gst_up: "",
   if_gst_other_state: "",
+  tax_state: ""
 };

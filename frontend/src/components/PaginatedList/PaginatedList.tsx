@@ -22,7 +22,7 @@ const PaginatedList = <T,>({
 
   return (
     <>
-      <div>{currentItems.map(renderItem)}</div>
+      <div className={styles.items}>{currentItems.map(renderItem)}</div>
       <div className={styles.pagination}>
         <button
           onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}

@@ -1,36 +1,46 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "../pages/Home";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Profile from "../pages/Profile";
-import NewBillingEntry from "../pages/NewBillingEntry";
 import ProtectedRoute from "../components/ProtectedRoute";
-import LRCopy from "../pages/LRCopy";
-import Bill from "../pages/Bill";
-import BillingParty from "../pages/BillingParty";
 import NotFound from "../pages/NotFound";
-import NewVehicleEntry from "../pages/NewVehicleEntry";
-import VehicleEntries from "../pages/VehicleEntries";
-import NewBalanceParty from "../pages/NewBalanceParty";
-import BalanceParties from "../pages/BalanceParties";
-import PartyBalance from "../pages/PartyBalance";
-import BillEntries from "../pages/BillEntries";
 import PagesOutlet from "../pages/PagesOutlet";
 import AdminRoutes from "../components/AdminRoutes";
 import About from "../pages/About";
-import NewJourneyEntry from "../pages/Journey/NewJourneyEntry";
-import AllJourneyEntries from "../pages/Journey/AllJourneyEntries";
-import NewTruckEntry from "../pages/Journey/NewTruckEntry";
-import AllTruckEntries from "../pages/Journey/AllTruckEntries";
-import NewDriverEntry from "../pages/Journey/NewDriverEntry";
-import AllDriverEntries from "../pages/Journey/AllDriverEntries";
-import TruckDetail from "../pages/Journey/TruckDetail";
-import JourneyDetail from "../pages/Journey/JourneyDetail";
-import DriverDetail from "../pages/Journey/DriverDetail";
+
+// Authentication pages import
+import Login from "../pages/Authentication/Login";
+import Register from "../pages/Authentication/Register";
+import Profile from "../pages/Authentication/Profile";
+
+// Journey pages import
+import NewJourneyEntry from "../pages/JourneyPages/NewJourneyEntry";
+import AllJourneyEntries from "../pages/JourneyPages/AllJourneyEntries";
+import NewTruckEntry from "../pages/JourneyPages/NewTruckEntry";
+import AllTruckEntries from "../pages/JourneyPages/AllTruckEntries";
+import NewDriverEntry from "../pages/JourneyPages/NewDriverEntry";
+import AllDriverEntries from "../pages/JourneyPages/AllDriverEntries";
+import TruckDetail from "../pages/JourneyPages/TruckDetail";
+import JourneyDetail from "../pages/JourneyPages/JourneyDetail";
+import DriverDetail from "../pages/JourneyPages/DriverDetail";
+
+// Billing pages import
+import BillEntries from "../pages/BillingPages/BillEntries";
+import BillingParty from "../pages/BillingPages/BillingParty";
+import Bill from "../pages/BillingPages/Bill";
+import LRCopy from "../pages/BillingPages/LRCopy";
+import NewBillingEntry from "../pages/BillingPages/NewBillingEntry";
+
+// Vehicle pages import
+import NewVehicleEntry from "../pages/VehiclePages/NewVehicleEntry";
+import VehicleEntries from "../pages/VehiclePages/VehicleEntries";
+import NewBalanceParty from "../pages/VehiclePages/NewBalanceParty";
+import BalanceParties from "../pages/VehiclePages/BalanceParties";
+import PartyBalance from "../pages/VehiclePages/PartyBalance";
+import BillEntryDetail from "../pages/BillingPages/BillEntryDetail";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
   { path: "all-bill-entries", element: <BillEntries /> },
+  { path: ":id", element: <BillEntryDetail /> },
   { path: "lrcopy", element: <LRCopy /> },
   { path: "bill", element: <Bill /> },
   { path: "billing-party", element: <BillingParty /> },
