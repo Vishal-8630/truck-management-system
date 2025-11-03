@@ -15,8 +15,6 @@ const SettlementPreview = () => {
   const { data, period, driver } = location.state || {};
   const emptyFieldValue = "---------";
 
-  console.log("Data: ", data);
-
   const safeDate = (date?: string) =>
     date ? formatDate(new Date(date)) : emptyFieldValue;
 

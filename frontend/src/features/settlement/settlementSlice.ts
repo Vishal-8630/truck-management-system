@@ -19,6 +19,21 @@ export const settlementAdapter = createEntityAdapter<SettlementType, EntityId>({
 
 /* ------------------ Async Thunks ------------------- */
 
+// Fetch all settlements
+export const fetchSettlementsAsync = createAsyncThunk<
+  SettlementType[],
+  void,
+  { rejectValue: string }
+>("settlement/fetchAll", async (_, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI;
+  try {
+    const response = await api.get("/settlements");
+    return response.data.data as SettlementType[];
+  } catch (err: any) {
+    return rejectWithValue(err.message || "Failed to fetch settlements");
+  }
+});
+
 // 1️⃣ Fetch Settlement Preview
 export const fetchSettlementPreviewAsync = createAsyncThunk<
   SettlementResponseType,
@@ -77,6 +92,19 @@ const settlementSlice = createSlice({
   }),
   reducers: {},
   extraReducers: (builder) => {
+    // === Fetch All ===
+    builder
+      .addCase(fetchSettlementsAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchSettlementsAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        settlementAdapter.setAll(state, action.payload);
+      })
+      .addCase(fetchSettlementsAsync.rejected, (state) => {
+        state.loading = false;
+      });
+      
     // === Fetch Preview ===
     builder
       .addCase(fetchSettlementPreviewAsync.pending, (state) => {

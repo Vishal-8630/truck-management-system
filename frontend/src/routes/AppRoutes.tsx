@@ -29,6 +29,7 @@ import JourneyDetail from "../pages/Journey/JourneyDetail";
 import DriverDetail from "../pages/Journey/DriverDetail";
 import DriverSettlement from "../pages/Journey/Settlements/DriverSettlement";
 import SettlementPreview from "../pages/Journey/Settlements/SettlementPreview";
+import SettlementDetail from "../pages/Journey/Settlements/SettlementDetail";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -58,6 +59,7 @@ const journeyEntryRoutes = [
   { path: "driver-detail/:id", element: <DriverDetail /> },
   { path: "driver-detail/:id/settlement", element: <DriverSettlement /> },
   { path: "driver-detail/:id/settlement/preview", element: <SettlementPreview /> },
+  { path: "driver-detail/:id/settlement/:settlementId", element: <SettlementDetail /> },
 ]
 
 const AppRoutes = () => {

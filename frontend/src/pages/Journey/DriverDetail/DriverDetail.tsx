@@ -17,12 +17,19 @@ import EditHeader from "../../../components/EditHeader";
 import DetailBlock from "../JourneyDetail/components/DetailBlock";
 import FormInputImage from "../../../components/FormInputImage";
 import { addMessage } from "../../../features/message";
+import {
+  fetchSettlementsAsync,
+  settlementSelectors,
+} from "../../../features/settlement";
+import HeaderWithChild from "../../../components/HeaderWithChild";
+import { formatDate } from "../../../utils/formatDate";
 
 const DriverDetail = () => {
   const { id } = useParams();
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const drivers = useSelector(driverSelectors.selectAll);
+  const settlements = useSelector(settlementSelectors.selectAll);
   const loading = useSelector(selectDriverLoading);
   const [isEditMode, setIsEditMode] = useState(false);
   const [localDriver, setLocalDriver] = useState<DriverType | null>(null);
@@ -30,11 +37,14 @@ const DriverDetail = () => {
   const [changedDocuments, setChangedDocuments] = useState<Set<string>>(
     new Set()
   );
+  const emptyFieldValue = "---------";
 
-  void isEditMode;
+  const safeDate = (date?: string) =>
+    date ? formatDate(new Date(date)) : emptyFieldValue;
 
   useEffect(() => {
     dispatch(fetchDriverEntriesAsync());
+    dispatch(fetchSettlementsAsync());
   }, [dispatch]);
 
   const driver = drivers.find((driver) => driver._id === id);
@@ -44,6 +54,10 @@ const DriverDetail = () => {
   }, [driver, loading, id]);
 
   if (loading || !localDriver) return <Loading />;
+
+  const driverSettlements = settlements.filter(
+    (settlement) => settlement.driver._id === localDriver._id
+  );
 
   const isDirty = JSON.stringify(localDriver) !== JSON.stringify(driver);
 
@@ -313,10 +327,52 @@ const DriverDetail = () => {
         />
       </div>
 
-      <div className={styles.settlementDetail}>
-        <button className={styles.settlementBtn} onClick={() => {
-          navigate(`/journey/driver-detail/${localDriver._id}/settlement`);
-        }}>Calculate Settlement</button>
+      <div className={styles.settlementsContainer}>
+        <HeaderWithChild
+          heading="All Settlements"
+          child={
+            <button
+              className={styles.settlementBtn}
+              onClick={() => {
+                navigate(
+                  `/journey/driver-detail/${localDriver._id}/settlement`
+                );
+              }}
+            >
+              Calculate Settlement
+            </button>
+          }
+        />
+        <div className={styles.settlements}>
+          <table className={styles.settlementTable}>
+            <thead>
+              <tr>
+                <th>S. No.</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Journeys Count</th>
+                <th>Total Distance</th>
+                <th>Overall Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {driverSettlements.map((settlement, index) => (
+                <tr key={settlement._id} onClick={() => {
+                  navigate(`settlement/${settlement._id}`);
+                }}>
+                  <td>{index + 1}</td>
+                  <td>{safeDate(settlement.period.from)}</td>
+                  <td>{safeDate(settlement.period.to)}</td>
+                  <td>{settlement.journeys.length}</td>
+                  <td>{settlement.total_distance}</td>
+                  <td>{settlement.overall_total}</td>
+                  <td>{settlement.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

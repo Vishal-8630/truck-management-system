@@ -13,6 +13,8 @@ export interface SettlementType {
     total_driver_expenses: string;
     total_diesel_expenses: string;
     total_diesel_quantity: string;
+    total_driver_expense: string;
+    total_diesel_expense: string;
     total_journey_starting_cash: string;
     total_rate_per_km: string;
     total_distance: string;
@@ -21,6 +23,10 @@ export interface SettlementType {
     total_diesel_used: string; // distance / mileage
     diesel_diff: string; // used - given
     diesel_value: string; // diesel compensation
+
+    rate_per_km: string;
+    diesel_rate: string;
+    extra_expense: string;
 
     driver_total: string;
     owner_total: string;
@@ -51,6 +57,8 @@ export const EmptySettlementType: SettlementType = {
     total_diesel_expenses: "",
     total_diesel_quantity: "",
     total_journey_starting_cash: "",
+    total_diesel_expense: "",
+    total_driver_expense: "",
     total_rate_per_km: "",
     total_distance: "",
     avg_mileage: "",
@@ -62,6 +70,10 @@ export const EmptySettlementType: SettlementType = {
     driver_total: "",
     owner_total: "",
     overall_total: "",
+
+    rate_per_km: "",
+    diesel_rate: "",
+    extra_expense: "",
 
     status: "Pending",
 
