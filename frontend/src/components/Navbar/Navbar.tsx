@@ -6,37 +6,22 @@ import api from "../../api/axios";
 import { logout } from "../../features/auth";
 import { addMessage } from "../../features/message";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import NavButton from "../NavButton/NavButton";
 import { FaChevronDown } from "react-icons/fa";
-import DRL from '../../assets/drl.png';
+import DRL from "../../assets/drl.png";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
-  const [show, setShow] = useState(true);
-  const [lastScroll, setLastScroll] = useState(0);
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
+  // Lock body scroll when navbar is open
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 750);
-    handleResize(); // initial check
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    document.body.style.overflow = isNavOpen ? "hidden" : "";
+  }, [isNavOpen]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScroll = window.scrollY;
-      setShow(currentScroll < lastScroll || currentScroll < 50);
-      setLastScroll(currentScroll);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScroll]);
-
+  // Handle logout
   const handleLogout = async () => {
     try {
       const response = await api.post("/auth/logout");
@@ -61,14 +46,12 @@ const Navbar = () => {
               {
                 to: "/bill-entry/new-entry",
                 label: "New Bill Entry",
-                content:
-                  "Click here to create new Billing Entry.",
+                content: "Click here to create new Billing Entry.",
               },
               {
                 to: "/bill-entry/all-bill-entries",
                 label: "All Bill Entries",
-                content:
-                  "Click here to view all Billing Entries.",
+                content: "Click here to view all Billing Entries.",
               },
               {
                 to: "/bill-entry/lrcopy",
@@ -83,8 +66,7 @@ const Navbar = () => {
               {
                 to: "/bill-entry/billing-party",
                 label: "Billing Party",
-                content:
-                  "Click here to add Billing Party.",
+                content: "Click here to add Billing Party.",
               },
             ],
           },
@@ -100,8 +82,7 @@ const Navbar = () => {
               {
                 to: "/vehicle-entry/all-vehicle-entries",
                 label: "All Vehicle Entries",
-                content:
-                  "Click here to view all Vehicle Entries.",
+                content: "Click here to view all Vehicle Entries.",
               },
               {
                 to: "/vehicle-entry/new-balance-party",
@@ -132,8 +113,7 @@ const Navbar = () => {
               {
                 to: "/journey/all-journey-entries",
                 label: "All Journey Entries",
-                content:
-                  "Click here to view all Journey Entries.",
+                content: "Click here to view all Journey Entries.",
               },
               {
                 to: "/journey/new-truck-entry",
@@ -166,24 +146,14 @@ const Navbar = () => {
 
   return (
     <div className={styles.navbar}>
-      <motion.nav
-        initial={{ opacity: 0, y: 0 }}
-        animate={{ opacity: show ? 1 : 0, y: show ? 0 : -120 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-      >
+      <nav>
         <div className={styles.brand}>
           <img src={DRL} alt="DRL" />
         </div>
-        <motion.ul
-          className={styles.links}
-          variants={{
-            hidden: { opacity: isMobile ? 0 : 1, y: isMobile ? -500 : 0 },
-            visible: { opacity: 1, y: 0 },
-          }}
-          initial="hidden"
-          animate={isNavOpen ? "visible" : "hidden"}
-          exit="exit"
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+
+        {/* Navbar Links */}
+        <ul
+          className={`${styles.links} ${isNavOpen ? styles.open : ""}`}
         >
           {links.map((link) => (
             <NavButton
@@ -197,19 +167,18 @@ const Navbar = () => {
               }}
             />
           ))}
-        </motion.ul>
-        <div className={styles.burger} onClick={() => setIsNavOpen(!isNavOpen)}>
-          <motion.span
-            animate={isNavOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
-          ></motion.span>
-          <motion.span
-            animate={isNavOpen ? { opacity: 0 } : { opacity: 1 }}
-          ></motion.span>
-          <motion.span
-            animate={isNavOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
-          ></motion.span>
+        </ul>
+
+        {/* Burger Button */}
+        <div
+          className={`${styles.burger} ${isNavOpen ? styles.active : ""}`}
+          onClick={() => setIsNavOpen(!isNavOpen)}
+        >
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
-      </motion.nav>
+      </nav>
     </div>
   );
 };
