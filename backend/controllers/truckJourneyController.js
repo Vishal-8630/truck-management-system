@@ -3,7 +3,7 @@ import Journey from '../models/truckJourneyModel.js';
 import AppError from "../utils/appError.js";
 
 const newJourney = async (req, res) => {
-    const { truck, driver, from, to, journey_days, distance_km } = req.body;
+    const { truck, driver, from, to, journey_starting_cash, starting_kms, journey_days, distance_km, loaded_weight } = req.body;
 
     const journey = await Journey.create({
         truck,

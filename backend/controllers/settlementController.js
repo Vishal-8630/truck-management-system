@@ -83,21 +83,21 @@ export const previewSettlement = async (req, res, next) => {
         }
 
         const avgMileage = mileageCount ? (totalAvgMileageSum / mileageCount) : (toNum(req.query.defaultMileage) || 1);
-        const totalDieselUsed = avgMileage ? (totalDistance / avgMileage) : 0;
+        const totalDieselUsed = avgMileage ? Math.floor((totalDistance / avgMileage)) : 0;
         const dieselDiff = totalDieselUsed - totalDieselQty;
         const dieselValue = dieselDiff * DIESEL_RATE;
 
         const fuelMoneyAdjustment = dieselDiff * avgMileage;
-        console.log("Total Distance: ", totalDistance);
-        console.log("Rate per KM: ", RATE_PER_KM);
         totalRatePerKm = (totalDistance * RATE_PER_KM);
 
         let driverTotal = totalRatePerKm + totalDriverExpense;
         let ownerTotal = totalJourneyGivenCash;
 
         if (dieselDiff > 0) {
+            dieselValue = Math.floor(dieselValue);
             driverTotal += dieselValue;
         } else {
+            dieselValue = Math.ceil(dieselValue);
             ownerTotal += (-dieselValue);
         }
 
@@ -140,10 +140,7 @@ export const previewSettlement = async (req, res, next) => {
 }
 
 export const confirmSettlement = async (req, res, next) => {
-    const session = await mongoose.startSession();
     try {
-        session.startTransaction();
-
         const {
             data, period, driver
         } = req.body;
@@ -151,22 +148,18 @@ export const confirmSettlement = async (req, res, next) => {
         const { journeys, totals } = data;
 
         if (!driver) {
-            await session.abortTransaction();
-            session.endSession();
             return next(new AppError("Driver ID, From and To are required", 400));
         }
 
         if (!journeys.length) {
-            await session.abortTransaction();
-            session.endSession();
             return next(new AppError("No journeys found to settle", 400));
         }
 
         // create DriverSettlement doc (snapshot)
-        const settlementDoc = await Settlement.create([{
+        const savedSettlement = await Settlement.create({
             driver: driver._id,
-            period: { from, to },
-            journeys: journeys.map(j => j._id),
+            period: { from: period.from, to: period.to },
+            journeys: journeys,
 
             total_driver_expense: Number(totals.total_driver_expense.toFixed(2)),
             total_diesel_expense: Number(totals.total_diesel_expense.toFixed(2)),
@@ -179,7 +172,6 @@ export const confirmSettlement = async (req, res, next) => {
             total_diesel_used: Number(totals.total_diesel_used.toFixed(2)),
             diesel_diff: Number(totals.diesel_diff.toFixed(2)),
             diesel_value: Number(totals.diesel_value.toFixed(2)),
-            final_amount: Number(totals.final_amount.toFixed(2)),
 
             driver_total: Number(totals.driver_total.toFixed(2)),
             owner_total: Number(totals.owner_total.toFixed(2)),
@@ -189,22 +181,19 @@ export const confirmSettlement = async (req, res, next) => {
             rate_per_km: Number(totals.rate_per_km.toFixed(2)),
             diesel_rate: Number(totals.diesel_rate.toFixed(2)),
 
-            status: totals.final_amount > 0 ? "Paid to Driver" : "Received from Driver",
-        }], { session });
-
-        const savedSettlement = settlementDoc[0];
+            status: totals.overall_total === 0 ? "Settled" : totals.overall_total > 0 ? "Driver needs to pay" : "DRL needs to pay",
+        });
 
         // mark journeys settled and link them
         const journeyIdsToUpdate = journeys.map(j => j._id);
         await TruckJourney.updateMany(
             { _id: { $in: journeyIdsToUpdate } },
             { $set: { settled: true, settlement_ref: savedSettlement._id } },
-            { session }
         );
 
         // If finalAmount > 0 -> company pays driver -> increase driver's last_payment fields, adjust amount_to_receive/amount_to_pay
-        const finalAbs = Math.abs(finalAmount);
-        const isCompanyPays = finalAmount > 0;
+        const finalAbs = Math.abs(totals.overall_total);
+        const isCompanyPays = totals.overall_total > 0;
 
         const updates = {};
         const today = (new Date()).toISOString().split("T")[0];
@@ -225,15 +214,20 @@ export const confirmSettlement = async (req, res, next) => {
         // reset advance amount after settlement (depends on your policy)
         updates.advance_amount = "0";
 
-        await Driver.findByIdAndUpdate(driver._id, { $set: updates }, { session });
-
-        await session.commitTransaction();
-        session.endSession();
-
+        await Driver.findByIdAndUpdate(driver._id, { $set: updates });
         return successResponse(res, "Settlement Created Successfully", savedSettlement);
     } catch (err) {
-        await session.abortTransaction();
-        session.endSession();
+        console.log("Error in confirmSettlement: ", err);
+        next(err);
+    }
+};
+
+export const allSettlements = async (req, res, next) => {
+    try {
+        const settlements = await Settlement.find().populate("journeys").populate("driver");
+        return successResponse(res, "Success", settlements);
+    } catch (err) {
+        console.log("Error in allSettlements: ", err);
         next(err);
     }
 };

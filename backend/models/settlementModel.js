@@ -17,10 +17,9 @@ const settlementSchema = new mongoose.Schema({
   total_distance: { type: Number, default: 0 },
   avg_mileage: { type: Number, default: 0 },
 
-  total_diesel_used: { type: Number, default: 0 }, // distance / mileage
-  diesel_diff: { type: Number, default: 0 }, // used - given
-  diesel_value: { type: Number, default: 0 }, // diesel compensation
-  final_amount: { type: Number, default: 0 }, // +ve => company pays driver, -ve => driver owes
+  total_diesel_used: { type: Number, default: 0 },
+  diesel_diff: { type: Number, default: 0 },
+  diesel_value: { type: Number, default: 0 },
 
   driver_total: { type: Number, default: 0 },
   owner_total: { type: Number, default: 0 },
@@ -32,7 +31,7 @@ const settlementSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["Pending", "Paid to Driver", "Received from Driver"],
+    enum: ["Settled", "Driver needs to pay", "DRL needs to pay"],
     default: "Pending"
   },
 
