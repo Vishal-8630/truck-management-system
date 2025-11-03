@@ -1,0 +1,91 @@
+@use '../../../../styles/globals' as *;
+
+.heading {
+    @include main-heading();
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.detailBox {
+    border-bottom: 1px dashed gray;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+
+    .detailContainer {
+        display: flex;
+        gap: 10px;
+        flex: 1 1 calc(50% - 10px);
+    }
+}
+
+.block {
+    display: flex;
+    flex-direction: column;
+}
+
+.subBlock {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.text {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.value {
+    color: gray;
+}
+
+.journeySettlementContainer {
+    border-bottom: 1px dashed gray;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.journeyHeader {
+    padding-bottom: 1rem;
+    border: 1px dashed gray;
+    display: inline-block;
+    padding: 10px;
+    margin-bottom: 1rem;
+}
+
+table {
+    margin: 10px 0px;
+
+    th {
+        font-size: 1rem;
+    }
+
+    th, td {
+        border: 1px dashed gray;
+    }
+}
+
+.total {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.overallTotal {
+    border: 1px dashed gray;
+    padding: 15px;
+}
+
+.confirmBtnContainer {
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.confirmBtn {
+    @include primary-btn();
+}

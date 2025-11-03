@@ -1,4 +1,5 @@
 import { EmptyDriverType, type DriverType } from "./driver";
+import { EmptySettlementType, type SettlementType } from "./settlement";
 import { EmptyTruckType, type TruckType } from "./truck";
 
 export interface JourneyType {
@@ -13,14 +14,18 @@ export interface JourneyType {
   journey_days: string;
   journey_start_date: string;
   journey_end_date: string;
+  journey_starting_cash: string;
 
   distance_km: string;
   loaded_weight: string;
   average_mileage: string;
 
+  starting_kms: string;
+  ending_kms: string;
+
   status: "Active" | "Completed" | "Delayed" | "Cancelled";
 
-  working_expenses: {
+  driver_expenses: {
     amount: string;
     reason: string;
     date: string;
@@ -45,7 +50,7 @@ export interface JourneyType {
     remarks: string;
   };
 
-  total_working_expense: string;
+  total_driver_expense: string;
   total_diesel_expense: string;
 
   daily_progress: {
@@ -76,6 +81,9 @@ export interface JourneyType {
 
   total_expense: string;
 
+  settled: boolean;
+  settlement_ref: SettlementType;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -92,14 +100,18 @@ export const EmptyJourneyType: JourneyType = {
     journey_days: "5",
     journey_start_date: "",
     journey_end_date: "",
+    journey_starting_cash: "",
 
     distance_km: "",
     loaded_weight: "",
     average_mileage: "",
 
+    starting_kms: "",
+    ending_kms: "",
+
     status: "Active",
 
-    working_expenses: [],
+    driver_expenses: [],
     diesel_expenses: [],
     delays: [],
     settlement: {
@@ -109,7 +121,7 @@ export const EmptyJourneyType: JourneyType = {
         remarks: ""
     },
 
-    total_working_expense: "",
+    total_driver_expense: "",
     total_diesel_expense: "",
 
     daily_progress: [],
@@ -125,6 +137,9 @@ export const EmptyJourneyType: JourneyType = {
 
     status_updates: [],
     total_expense: "",
+
+    settled: false,
+    settlement_ref: EmptySettlementType,
 
     createdAt: "",
     updatedAt: ""
@@ -147,12 +162,12 @@ export const JOURNEY_ENTRY_LABELS = {
 
     status: "Status",
 
-    working_expenses: "Working Expenses",
+    driver_expenses: "Working Expenses",
     diesel_expenses: "Diesel Expenses",
     delays: "Delays",
     settlement: "Settlement",
 
-    total_working_expense: "Total Working Expense",
+    total_driver_expense: "Total Working Expense",
     total_diesel_expense: "Total Diesel Expense",
 
     daily_progress: "Daily Progress",

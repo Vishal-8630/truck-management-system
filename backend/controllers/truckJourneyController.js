@@ -11,6 +11,9 @@ const newJourney = async (req, res) => {
         from,
         to,
         journey_days,
+        journey_starting_cash,
+        starting_kms,
+        loaded_weight,
         distance_km
     });
 
@@ -36,14 +39,17 @@ const updateJourney = async (req, res, next) => {
 
     Object.keys(req.body).forEach((key) => {
         if (typeof req.body[key] === "object" && !Array.isArray(req.body[key]) && req.body[key] !== null) {
-            journey[key] = {...journey[key], ...req.body[key] };
+            journey[key] = { ...journey[key], ...req.body[key] };
         } else {
             journey[key] = req.body[key];
         }
     });
 
     const updatedJourney = await journey.save();
-    return successResponse(res, "Journey Updated Successfully", updatedJourney);
+    const populatedJourney = await Journey.findById(updatedJourney._id)
+        .populate("truck")
+        .populate("driver");
+    return successResponse(res, "Journey Updated Successfully", populatedJourney);
 }
 
 const deleteJourney = async (req, res, next) => {

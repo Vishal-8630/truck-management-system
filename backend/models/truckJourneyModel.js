@@ -11,10 +11,14 @@ const truckJourneySchema = new mongoose.Schema({
   journey_days: { type: String, required: true, default: "5" },
   journey_start_date: { type: String },
   journey_end_date: { type: String },
+  journey_starting_cash: { type: String },
 
   distance_km: { type: String },
   loaded_weight: { type: String },
   average_mileage: { type: String },
+
+  starting_kms: { type: String },
+  ending_kms: { type: String },
 
   status: {
     type: String,
@@ -22,7 +26,7 @@ const truckJourneySchema = new mongoose.Schema({
     default: "Active"
   },
 
-  working_expenses: {
+  driver_expenses: {
     type: [
       {
         amount: { type: String, default: "0" },
@@ -62,7 +66,7 @@ const truckJourneySchema = new mongoose.Schema({
     remarks: String
   },
 
-  total_working_expense: { type: String, default: "0" },
+  total_driver_expense: { type: String, default: "0" },
   total_diesel_expense: { type: String, default: "0" },
 
   daily_progress: {
@@ -108,7 +112,10 @@ const truckJourneySchema = new mongoose.Schema({
     default: []
   },
 
-  is_deleted: { type: Boolean, default: false }
+  is_deleted: { type: Boolean, default: false },
+
+  settled: { type: Boolean, default: false },
+  settlement_ref: { type: mongoose.Schema.Types.ObjectId, ref: "DriverSettlement", default: null }
 
 }, { timestamps: true });
 
@@ -135,7 +142,7 @@ truckJourneySchema.pre("save", function (next) {
     ? arr.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0)
     : 0;
 
-  this.total_working_expense = String(sum(this.working_expenses));
+  this.total_driver_expense = String(sum(this.driver_expenses));
   this.total_diesel_expense = String(sum(this.diesel_expenses));
 
   // ✅ (5) Auto-generate daily progress if missing or mismatched with journey_days
@@ -164,7 +171,7 @@ truckJourneySchema.pre("save", function (next) {
 truckJourneySchema.virtual("total_expense").get(function() {
   const total = 
     parseFloat(this.total_diesel_expense || 0) + 
-    parseFloat(this.total_working_expense || 0);
+    parseFloat(this.total_driver_expense || 0);
   return String(total);
 });
 

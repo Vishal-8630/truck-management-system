@@ -3,6 +3,7 @@ import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import generateToken from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
+import { errorResponse } from '../utils/response.js';
 
 const registerUser = async (req, res, next) => {
     const { fullname, username, email, password } = req.body;

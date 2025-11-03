@@ -19,16 +19,24 @@ import {
 import { EmptyTruckType, type TruckType } from "../../../types/truck";
 import { EmptyDriverType, type DriverType } from "../../../types/driver";
 import { addMessage } from "../../../features/message";
+import { useNavigate } from "react-router-dom";
 
 const JOURNEY_FIELD_INPUTS: InputType[] = [
   { type: "select", label: "Truck", name: "truck" },
   { type: "select", label: "Driver", name: "driver" },
   { type: "input", label: "From", name: "from", inputType: "text" },
   { type: "input", label: "To", name: "to", inputType: "text" },
+  { type: "input", label: "Starting Kms", name: "starting_kms", inputType: "number" },
   {
     type: "number",
     label: "Journey Days",
     name: "journey_days",
+    inputType: "number",
+  },
+  {
+    type: "number",
+    label: "Journey Starting Cash",
+    name: "journey_starting_cash",
     inputType: "number",
   },
   {
@@ -47,6 +55,7 @@ const JOURNEY_FIELD_INPUTS: InputType[] = [
 
 const NewJourneyEntry = () => {
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [journey, setJourney] =
     useState<Omit<JourneyType, "_id">>(EmptyJourneyType);
@@ -151,6 +160,7 @@ const NewJourneyEntry = () => {
       const resultAction = await dispatch(addJourneyEntryAsync(journey));
       if (addJourneyEntryAsync.fulfilled.match(resultAction)) {
         dispatch(addMessage({ type: "success", text: "Journey added successfully" }));
+        navigate("/journey/all-journey-entries");
       } else if (addJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {

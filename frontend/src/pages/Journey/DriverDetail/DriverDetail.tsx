@@ -312,6 +312,12 @@ const DriverDetail = () => {
           }
         />
       </div>
+
+      <div className={styles.settlementDetail}>
+        <button className={styles.settlementBtn} onClick={() => {
+          navigate(`/journey/driver-detail/${localDriver._id}/settlement`);
+        }}>Calculate Settlement</button>
+      </div>
     </div>
   );
 };

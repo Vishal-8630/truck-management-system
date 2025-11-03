@@ -64,7 +64,7 @@ const JourneyDetail = () => {
       nextDate.setDate(nextDate.getDate() + 1);
 
       const updates: Record<string, any> = {
-        working_expense: { amount: "", reason: "", date: now },
+        driver_expense: { amount: "", reason: "", date: now },
         diesel_expense: { amount: "", quantity: "", filling_date: now },
         delay: { place: "", reason: "", date: now },
         issue: { note: "", date: now },
@@ -77,8 +77,8 @@ const JourneyDetail = () => {
       };
 
       const key =
-        field === "working_expense"
-          ? "working_expenses"
+        field === "driver_expense"
+          ? "driver_expenses"
           : field === "diesel_expense"
           ? "diesel_expenses"
           : field === "delay"
@@ -176,12 +176,31 @@ const JourneyDetail = () => {
         {/* Journey Detail - Readonly */}
         <DetailBlock
           title="Journey Detail"
+          isEditMode={isEditMode}
+          onChange={(key, value) => {
+            setLocalJourney((prev) => {
+              if (!prev) return prev;
+              return { ...prev, [key]: value };
+            });
+          }}
           fields={[
             { label: "Truck Number", value: localJourney.truck?.truck_no },
             { label: "Driver", value: localJourney.driver?.name },
             { label: "From", value: localJourney.from },
             { label: "To", value: localJourney.to },
             { label: "Weight (Kg)", value: localJourney.loaded_weight },
+            {
+              label: "Mileage",
+              key: "average_mileage",
+              value: localJourney.average_mileage,
+              isEditable: true,
+            },
+            {
+              label: "Starting Cash",
+              key: "journey_starting_cash",
+              value: localJourney.journey_starting_cash,
+              isEditable: true,
+            },
           ]}
         />
 
@@ -209,6 +228,18 @@ const JourneyDetail = () => {
               isEditable: true,
             },
             {
+              label: "Starting Kms",
+              value: localJourney.starting_kms,
+              key: "starting_kms",
+              isEditable: true,
+            },
+            {
+              label: "Ending Kms",
+              value: localJourney.ending_kms,
+              key: "ending_kms",
+              isEditable: true,
+            },
+            {
               label: "Route",
               value: localJourney.route?.join(", "),
               key: "route",
@@ -223,6 +254,8 @@ const JourneyDetail = () => {
             {
               label: "Journey End Date",
               value: safeDate(localJourney.journey_end_date),
+              key: "journey_end_date",
+              isEditable: true
             },
             {
               label: "Journey Status",
@@ -236,17 +269,17 @@ const JourneyDetail = () => {
 
         {/* Editable Expense Sections */}
         <ExpenseSection
-          title="Working Expense"
-          data={localJourney.working_expenses || []}
+          title="Driver Expense"
+          data={localJourney.driver_expenses || []}
           fields={[
             { label: "Amount", key: "amount" },
             { label: "Reason", key: "reason" },
             { label: "Date", key: "date" },
           ]}
-          onAdd={() => handleBtnClick("working_expense")}
+          onAdd={() => handleBtnClick("driver_expense")}
           onChange={(updatedData) =>
             setLocalJourney((prev) =>
-              prev ? { ...prev, working_expenses: updatedData } : prev
+              prev ? { ...prev, driver_expenses: updatedData } : prev
             )
           }
           isEditMode={isEditMode}
@@ -326,7 +359,7 @@ const JourneyDetail = () => {
           fields={[
             {
               label: "Total Working Expense",
-              value: localJourney.total_working_expense,
+              value: localJourney.total_driver_expense,
             },
             {
               label: "Total Diesel Expense",

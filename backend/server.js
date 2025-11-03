@@ -16,6 +16,7 @@ import balancePartyRoutes from "./routes/balancePartyRoutes.js";
 import truckRoutes from './routes/truckRoute.js';
 import driverRoutes from './routes/driverRoute.js';
 import truckJourneyRoutes from './routes/truckJourneyRoutes.js';
+import settlementRoutes from './routes/settlementRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -50,6 +51,7 @@ app.use("/api/balance-party", balancePartyRoutes);
 app.use("/api/truck", truckRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/journey", truckJourneyRoutes);
+app.use("/api/settlements", settlementRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {

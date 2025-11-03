@@ -13,6 +13,13 @@ const driverSchema = new mongoose.Schema(
     adhaar_back_img: { type: String },
     dl_img: { type: String },
     is_deleted: { type: Boolean, default: false },
+
+    last_payment_clear_date: { type: String },
+    last_payment_amount: { type: String, default: "0" },
+    advance_amount: { type: String, default: "0" },
+    amount_to_pay: { type: String, default: "0" },       // company owes driver
+    amount_to_receive: { type: String, default: "0" },   // driver owes company
+    
     vehicles: {
       type: [
         {
