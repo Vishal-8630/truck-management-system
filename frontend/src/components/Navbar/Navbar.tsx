@@ -6,7 +6,6 @@ import api from "../../api/axios";
 import { logout } from "../../features/auth";
 import { addMessage } from "../../features/message";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import NavButton from "../NavButton/NavButton";
 import { FaChevronDown } from "react-icons/fa";
 import DRL from "../../assets/drl.png";
@@ -16,15 +15,13 @@ const Navbar = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
+  // Lock body scroll when navbar is open
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 750);
-    handleResize(); // initial check
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    document.body.style.overflow = isNavOpen ? "hidden" : "";
+  }, [isNavOpen]);
 
+  // Handle logout
   const handleLogout = async () => {
     try {
       const response = await api.post("/auth/logout");
@@ -153,16 +150,10 @@ const Navbar = () => {
         <div className={styles.brand}>
           <img src={DRL} alt="DRL" />
         </div>
-        <motion.ul
-          className={styles.links}
-          variants={{
-            hidden: { opacity: isMobile ? 0 : 1, y: isMobile ? -800 : 0 },
-            visible: { opacity: 1, y: 0 },
-          }}
-          initial="hidden"
-          animate={isNavOpen ? "visible" : "hidden"}
-          exit="exit"
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+
+        {/* Navbar Links */}
+        <ul
+          className={`${styles.links} ${isNavOpen ? styles.open : ""}`}
         >
           {links.map((link) => (
             <NavButton
@@ -176,17 +167,16 @@ const Navbar = () => {
               }}
             />
           ))}
-        </motion.ul>
-        <div className={styles.burger} onClick={() => setIsNavOpen(!isNavOpen)}>
-          <motion.span
-            animate={isNavOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
-          ></motion.span>
-          <motion.span
-            animate={isNavOpen ? { opacity: 0 } : { opacity: 1 }}
-          ></motion.span>
-          <motion.span
-            animate={isNavOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
-          ></motion.span>
+        </ul>
+
+        {/* Burger Button */}
+        <div
+          className={`${styles.burger} ${isNavOpen ? styles.active : ""}`}
+          onClick={() => setIsNavOpen(!isNavOpen)}
+        >
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </nav>
     </div>
