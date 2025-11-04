@@ -26,7 +26,12 @@ const JOURNEY_FIELD_INPUTS: InputType[] = [
   { type: "select", label: "Driver", name: "driver" },
   { type: "input", label: "From", name: "from", inputType: "text" },
   { type: "input", label: "To", name: "to", inputType: "text" },
-  { type: "input", label: "Starting Kms", name: "starting_kms", inputType: "number" },
+  {
+    type: "input",
+    label: "Starting Kms",
+    name: "starting_kms",
+    inputType: "number",
+  },
   {
     type: "number",
     label: "Journey Days",
@@ -41,14 +46,8 @@ const JOURNEY_FIELD_INPUTS: InputType[] = [
   },
   {
     type: "number",
-    label: "Distance (Km)",
-    name: "distance_km",
-    inputType: "number",
-  },
-  {
-    type: "number",
-    label: "Weight (Kg)",
-    name: "loaded_weight",
+    label: "Truck Mileage",
+    name: "average_mileage",
     inputType: "number",
   },
 ];
@@ -116,13 +115,17 @@ const NewJourneyEntry = () => {
           ? setSelectedTruck(EmptyTruckType)
           : setSelectDriver(EmptyDriverType);
       } else {
-        name === "truck"
-          ? setSelectedTruck(
-              trucks.find((t) => t.truck_no === val) || selectedTruck
-            )
-          : setSelectDriver(
-              drivers.find((d) => d.name === val) || selectedDriver
-            );
+        if (name === "truck") {
+          setSelectedTruck(
+            trucks.find((t) => t.truck_no === val) || selectedTruck
+          );
+          errorsRef.current.truck = "";
+        } else {
+          setSelectDriver(
+            drivers.find((d) => d.name === val) || selectedDriver
+          );
+          errorsRef.current.driver = "";
+        }
       }
     }
   };
@@ -159,14 +162,23 @@ const NewJourneyEntry = () => {
     try {
       const resultAction = await dispatch(addJourneyEntryAsync(journey));
       if (addJourneyEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(addMessage({ type: "success", text: "Journey added successfully" }));
+        dispatch(
+          addMessage({ type: "success", text: "Journey added successfully" })
+        );
         navigate("/journey/all-journey-entries");
       } else if (addJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
-        if (errors) {
-          console.log("Errors while adding new journey", errors);
-          dispatch(addMessage({ type: "error", text: "Failed to add new journey" }));
+        if (errors && !errors?.general && Object.keys(errors)?.length > 0) {
+          console.log(errors);
+          errorsRef.current = errors;
+          forceRender({});
         }
+        dispatch(
+          addMessage({
+            type: "error",
+            text: errors?.general || "Failed to add new journey",
+          })
+        );
       }
     } catch (error: any) {
       console.log("Error: ", error);
@@ -181,17 +193,19 @@ const NewJourneyEntry = () => {
         journey[input.name as keyof Omit<JourneyType, "_id">] || ""
       );
       let placeholder: string = input.label;
-      let inputRef: React.RefObject<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      > | undefined = undefined;
+      let inputRef:
+        | React.RefObject<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+          >
+        | undefined = undefined;
 
-      if (input.name === 'truck') {
+      if (input.name === "truck") {
         placeholder = "Select a Truck";
         value = selectedTruck.truck_no;
         inputRef = truckRef as React.RefObject<HTMLInputElement>;
       }
 
-      if (input.name === 'driver') {
+      if (input.name === "driver") {
         placeholder = "Select a Driver";
         value = selectedDriver.name;
         inputRef = driverRef as React.RefObject<HTMLInputElement>;

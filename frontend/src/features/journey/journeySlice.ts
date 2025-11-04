@@ -31,16 +31,21 @@ export const fetchJourneyEntriesAsync = createAsyncThunk<
 export const addJourneyEntryAsync = createAsyncThunk<
   JourneyType,
   Omit<JourneyType, "_id">,
-  { rejectValue: string }
+  { rejectValue: Record<string, string> }
 >("journey/add", async (newJourney, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
     const response = await api.post("/journey/new", newJourney);
     return response.data.data as JourneyType;
   } catch (error: any) {
-    const errMsg =
-      error.response?.data?.message || "Failed to add truck journey";
-    return rejectWithValue(errMsg);
+    const errorData = error.response?.data?.errors;
+    let normalized: Record<string, string> = {};
+    if (errorData && typeof errorData === 'object') {
+      normalized = errorData;
+    } else {
+      normalized = { general: error.message || "Failed to add truck journey" }
+    }
+    return rejectWithValue(normalized);
   }
 });
 
@@ -52,7 +57,10 @@ export const updateJourneyEntryAsync = createAsyncThunk<
 >("journey/update", async (updatedJourney, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
-    const response = await api.put(`/journey/update/${updatedJourney._id}`, updatedJourney);
+    const response = await api.put(
+      `/journey/update/${updatedJourney._id}`,
+      updatedJourney
+    );
     return response.data.data as JourneyType;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to update truck journey");
@@ -75,72 +83,72 @@ export const deleteJourneyEntryAsync = createAsyncThunk<
 });
 
 const journeySlice = createSlice({
-    name: "journey",
-    initialState: journeyAdapter.getInitialState({
-        loading: false,
-    }),
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchJourneyEntriesAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(fetchJourneyEntriesAsync.fulfilled, (state, action) => {
-                state.loading = false;
-                journeyAdapter.setAll(state, action.payload);
-            })
-            .addCase(fetchJourneyEntriesAsync.rejected, (state) => {
-                state.loading = false;
-            })
+  name: "journey",
+  initialState: journeyAdapter.getInitialState({
+    loading: false,
+  }),
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchJourneyEntriesAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchJourneyEntriesAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        journeyAdapter.setAll(state, action.payload);
+      })
+      .addCase(fetchJourneyEntriesAsync.rejected, (state) => {
+        state.loading = false;
+      });
 
-        // Add
-        builder
-            .addCase(addJourneyEntryAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(addJourneyEntryAsync.fulfilled, (state, action) => {
-                state.loading = false;
-                journeyAdapter.addOne(state, action.payload);
-            })
-            .addCase(addJourneyEntryAsync.rejected, (state) => {
-                state.loading = false;
-            })
+    // Add
+    builder
+      .addCase(addJourneyEntryAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(addJourneyEntryAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        journeyAdapter.addOne(state, action.payload);
+      })
+      .addCase(addJourneyEntryAsync.rejected, (state) => {
+        state.loading = false;
+      });
 
-        // Update
-        builder
-            .addCase(updateJourneyEntryAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(updateJourneyEntryAsync.fulfilled, (state, action) => {
-                state.loading = false;
-                journeyAdapter.updateOne(state, {
-                    id: action.payload._id,
-                    changes: action.payload
-                });
-            })
-            .addCase(updateJourneyEntryAsync.rejected, (state) => {
-                state.loading = false;
-            })
-        
-        // Delete
-        builder
-            .addCase(deleteJourneyEntryAsync.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(deleteJourneyEntryAsync.fulfilled, (state, action) => {
-                state.loading = false;
-                journeyAdapter.removeOne(state, action.payload);
-            })
-            .addCase(deleteJourneyEntryAsync.rejected, (state) => {
-                state.loading = false;
-            })
-    }
+    // Update
+    builder
+      .addCase(updateJourneyEntryAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateJourneyEntryAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        journeyAdapter.updateOne(state, {
+          id: action.payload._id,
+          changes: action.payload,
+        });
+      })
+      .addCase(updateJourneyEntryAsync.rejected, (state) => {
+        state.loading = false;
+      });
+
+    // Delete
+    builder
+      .addCase(deleteJourneyEntryAsync.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteJourneyEntryAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        journeyAdapter.removeOne(state, action.payload);
+      })
+      .addCase(deleteJourneyEntryAsync.rejected, (state) => {
+        state.loading = false;
+      });
+  },
 });
 
 export const selectJourneyLoading = (state: RootState) => state.journey.loading;
 
 export const journeySelectors = journeyAdapter.getSelectors(
-    (state: RootState) => state.journey
+  (state: RootState) => state.journey
 );
 
 export default journeySlice.reducer;
