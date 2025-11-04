@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
 
 import connectDB from "./config/db.js";
 import errorHandler from "./middlewares/errorHandler.js";
@@ -17,6 +18,7 @@ import truckRoutes from './routes/truckRoute.js';
 import driverRoutes from './routes/driverRoute.js';
 import truckJourneyRoutes from './routes/truckJourneyRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
+import invoiceRoutes from './routes/invoiceRoute.js';
 
 dotenv.config();
 connectDB();
@@ -40,6 +42,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: "50mb" }));
 app.use(cookieParser());
 
 // ✅ API Routes
@@ -52,6 +55,7 @@ app.use("/api/truck", truckRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/journey", truckJourneyRoutes);
 app.use("/api/settlements", settlementRoutes);
+app.use("/api/invoice", invoiceRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {
