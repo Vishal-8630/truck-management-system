@@ -66,13 +66,3 @@
     width: 100%;
     overflow-x: scroll;
 }
-
-@media print {
-    .invoiceContainer {
-        width: 210mm;
-        min-height: 297mm;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-}

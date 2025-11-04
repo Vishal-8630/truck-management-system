@@ -1,25 +1,27 @@
-@use '../../styles/globals' as *;
-
+// ========== 💻 SCREEN STYLES ==========
 .billInvoiceContainer {
     font-family: Arial, sans-serif;
     font-size: 12px;
     border: 1px solid #000;
-    max-width: 80%;
-    min-width: 850px;
+    width: 90%;
+    max-width: 900px;
     margin: 1.1rem auto;
     display: flex;
     flex-direction: column;
     flex: 1;
+    box-sizing: border-box;
 }
 
 .header {
-    @include flex-center();
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
     text-align: center;
     gap: 3rem;
     font-weight: bold;
 
     .secondRow {
-
         .drl {
             font-size: 3rem;
             font-weight: bold;
@@ -106,6 +108,7 @@
         border-collapse: collapse;
         width: 100%;
         table-layout: fixed;
+        margin-top: 0;
 
         th,
         td {
@@ -119,21 +122,24 @@
         }
     }
 
-    >:last-child {
+    > :last-child {
         margin-top: 20px;
         font-size: 1rem;
 
         div {
-            @include flex-center();
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
 
-            >:first-child {
+            > :first-child {
                 font-style: italic;
                 font-size: 1rem;
                 flex: 1;
                 text-align: center;
             }
 
-            >:last-child {
+            > :last-child {
                 margin-right: 20px;
             }
         }
@@ -141,18 +147,26 @@
 }
 
 .gstSection {
+    display: flex;
+
+    .space {
+        width: 100%;
+    }
 
     table {
         float: right;
+        width: 20%;
         border: 1px solid black;
         border-collapse: collapse;
         border-right: none;
         border-bottom: none;
+        margin-bottom: 0;
 
         th,
         td {
             border: 1px solid black;
             border-collapse: collapse;
+            border-left: none;
             padding: 4px;
             text-align: center;
         }
@@ -162,7 +176,6 @@
         }
 
         tbody {
-
             tr:last-child td {
                 border-bottom: none;
             }
@@ -175,7 +188,7 @@
     display: flex;
     font-weight: bold;
 
-    >:first-child {
+    > :first-child {
         border-right: 1px solid black;
         display: flex;
         flex-direction: column;
@@ -184,7 +197,7 @@
         flex: 2;
     }
 
-    >:last-child {
+    > :last-child {
         display: flex;
         flex-direction: column;
         flex: 1;
@@ -206,7 +219,7 @@
             }
         }
 
-        >:last-child>* {
+        > :last-child>* {
             border-bottom: none;
         }
     }
@@ -221,7 +234,7 @@
         margin-left: 30px;
     }
 
-    >:last-child {
+    > :last-child {
         margin-top: 20px;
 
         div {
@@ -230,63 +243,91 @@
         }
 
         span {
-            color: lighten(red, 10%)
+            color: lighten(red, 10%);
         }
     }
 }
 
+// ========== 🖨 PRINT STYLES ==========
 @media print {
+    @page {
+        size: A4 portrait;
+        margin: 5mm;
+    }
+
+    body,
+    html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
     .billInvoiceContainer {
-        min-height: 230mm;
-        width: 210mm;
-        max-width: 90%;
-        margin: 2rem auto 0 auto;
+        width: 200mm !important;
+        max-width: 200mm !important;
+        min-height: 287mm;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: white !important;
+        transform: scale(0.96);
+        transform-origin: top center;
+        box-sizing: border-box !important;
+        border: 1px solid black !important;
+    }
 
-        .header {
-            margin: 15px;
+    .billInvoiceContainer *,
+    .billInvoiceContainer *::before,
+    .billInvoiceContainer *::after {
+        box-sizing: border-box !important;
+        max-width: 100% !important;
+        word-break: break-word !important;
+    }
 
-            .drl {
-                font-size: 1.8rem;
-            }
+    .header {
+        margin: 10px !important;
 
-            p {
-                margin: 3px;
-            }
+        .drl {
+            font-size: 2rem !important;
+            color: red !important;
         }
 
-        .section_1, .section_2, .section_3 {
-            font-size: 0.7rem;
-            >:last-child {
-                >:last-child {
-                    div >:last-child {
-                        text-align: left;
-                        flex: 2;
-                    }
-                }
-            }
+        p {
+            margin: 3px 0 !important;
         }
+    }
 
-        .billRow {
-            table {
-                tr {
-                    th {
-                        font-size: 0.6rem;
-                    }
-                    td {
-                        font-size: 0.5rem;
-                    }
-                }
-            }
-            >:last-child {
-                div {
-                    >:first-child {
-                        font-size: 0.7rem;
-                    }
-                    >:last-child {
-                        font-size: 0.7rem;
-                    }
-                }
-            }
+    .section_1,
+    .section_2,
+    .section_3 {
+        font-size: 0.7rem !important;
+    }
+
+    table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+
+        th,
+        td {
+            font-size: 0.6rem !important;
+            padding: 2px !important;
+            border: 1px solid black !important;
+        }
+    }
+
+    .gstSection table {
+        width: 40mm !important;
+    }
+
+    .section_3 {
+        font-size: 0.65rem !important;
+        padding: 8px !important;
+
+        ol {
+            margin-left: 20px !important;
         }
     }
 }

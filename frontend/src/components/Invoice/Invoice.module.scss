@@ -243,6 +243,8 @@ hr {
     >:first-child {
         table {
 
+            margin: 0;
+
             thead,
             tbody {
                 tr {
@@ -409,90 +411,4 @@ hr {
         justify-content: center;
         gap: 20px;
     }
-}
-
-@media print {
-
-    .invoiceContainer {
-        width: 100%;
-        min-height: 100%;
-        margin: 2rem auto 0 auto;
-    }
-
-    // .bold {
-    //     font-size: 0.5rem;
-    // }
-
-    // .auto_populated {
-    //     font-size: 0.5rem;
-    // }
-
-    // .header {
-    //     .logo {
-    //         img {
-
-    //             width: 70px;
-    //             height: 70px;
-    //         }
-    //     }
-
-    //     .drl {
-    //         font-size: 1.5rem;
-    //         padding: 5px 0;
-    //     }
-
-    //     >:first-child {
-    //         padding: 0.6rem;
-    //         text-align: center;
-    //     }
-
-    //     .field_name {
-    //         font-size: 0.5rem;
-    //     }
-
-    //     .underlineText {
-    //         font-size: 0.5rem;
-    //     }
-
-    //     >:last-child {
-    //         padding: 0.6rem;
-    //     }
-    // }
-
-    // .lr_no_box {
-    //     flex: 1;
-
-    //     div {
-    //         margin: 0;
-    //     }
-
-    //     .lr_header {
-    //         margin-right: 5px;
-    //     }
-    // }
-
-    // .owner_risk {
-    //     flex: 3;
-
-    //     >:nth-child(1),
-    //     >:nth-child(2),
-    //     >:nth-child(3) {
-    //         font-size: 0.5rem;
-    //     }
-    // }
-
-    // .damage_section {
-    //     flex: 1;
-
-    //     p,
-    //     div {
-    //         font-size: 0.5rem;
-    //     }
-    // }
-
-    // table {
-    //     th {
-    //         font-size: 0.5rem;
-    //     }
-    // }
 }

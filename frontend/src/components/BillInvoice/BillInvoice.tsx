@@ -150,6 +150,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
         </div>
       </div>
       <div className={styles.gstSection}>
+        <div className={styles.space}></div>
         <table>
           <thead>
             <tr>
@@ -159,15 +160,15 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
           </thead>
           <tbody>
             <tr>
-              <td>CGST 6%</td>
+              <td>CGST 9%</td>
               <td>{formatNumber(entry?.cgst!!) || "0.00"}</td>
             </tr>
             <tr>
-              <td>SGST 6%</td>
+              <td>SGST 9%</td>
               <td>{formatNumber(entry?.sgst!!) || "0.00"}</td>
             </tr>
             <tr>
-              <td>IGST 12%</td>
+              <td>IGST 18%</td>
               <td>{formatNumber(entry?.igst!!) || "0.00"}</td>
             </tr>
           </tbody>
