@@ -31,7 +31,7 @@ export const fetchTrucksEntriesAsync = createAsyncThunk<
 export const addTruckEntryAsync = createAsyncThunk<
   TruckType,
   FormData,
-  { rejectValue: string }
+  { rejectValue: Record<string, string> }
 >("truck/add", async (newTruck, thunkAPI) => {
   const { rejectWithValue } = thunkAPI;
   try {
@@ -41,9 +41,16 @@ export const addTruckEntryAsync = createAsyncThunk<
       },
     });
     return response.data.data as TruckType;
-  } catch (err: any) {
-    const errMsg = err.response?.data?.message || "Failed to add truck";
-    return rejectWithValue(errMsg);
+  } catch (error: any) {
+    const errorData = error.response?.data?.errors;
+    let normalized: Record<string, string> = {};
+    if (errorData && typeof errorData === 'object') {
+      normalized = errorData;
+      normalized.general = "Please fill all the required fields";
+    } else {
+      normalized = { general: error.message || "Failed to add truck" }
+    }
+    return rejectWithValue(normalized);
   }
 });
 

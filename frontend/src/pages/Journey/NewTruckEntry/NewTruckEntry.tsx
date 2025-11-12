@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import FormInput from "../../../components/FormInput";
 import FormSection from "../../../components/FormSection";
 import styles from "./NewTruckEntry.module.scss";
@@ -54,12 +54,19 @@ const NewTruckEntry = () => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
 
+  const errorsRef = useRef<Record<string, string>>({});
+  const [, forceRender] = useState({});
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = e.target;
+    if (errorsRef.current[name]) {
+      errorsRef.current[name] = "";
+      forceRender({});
+    }
     setTruck((prevTruck) => ({
       ...prevTruck,
       [name]: value,
@@ -99,12 +106,17 @@ const NewTruckEntry = () => {
         );
         navigate("/journey/all-truck-entries");
       } else if (addTruckEntryAsync.rejected.match(resultAction)) {
-        const error = resultAction.payload;
-        if (error) {
-          dispatch(
-            addMessage({ type: "error", text: error || "Failed to add truck" })
-          );
+        const errors = resultAction.payload;
+        if (errors && !errors?.length && Object.keys(errors)?.length > 0) {
+          errorsRef.current = errors;
+          forceRender({});
         }
+        dispatch(
+          addMessage({
+            type: "error",
+            text: errors?.general || "Failed to add new truck"
+          })
+        )
       }
     } catch (error: any) {
       console.log("Error: ", error.response);
@@ -129,6 +141,7 @@ const NewTruckEntry = () => {
               value={truck.truck_no}
               name="truck_no"
               label="Truck Number"
+              error={errorsRef.current['truck_no'] || ""}
               placeholder="Enter Truck Number"
               onChange={handleInputChange}
             />
@@ -136,26 +149,30 @@ const NewTruckEntry = () => {
           {DOCUMENTS.map((document) => {
             const imgValue = truck[document.field as keyof TruckType];
             const expiryValue = truck[document.expiry_field as keyof TruckType];
-            
-            return <FormSection key={document.field} title={document.label}>
-              <FormInputImage
-                id={document.field}
-                value={imgValue === 'string' ? imgValue : ''}
-                name={document.field}
-                label={document.label}
-                isEditMode={true}
-                onFileSelect={(file) => handleFileSelect(file, document.field as keyof TruckType)}
-              />
-              <FormInput
-                type="date"
-                id={document.expiry_field}
-                value={expiryValue as string ?? ''}
-                name={document.expiry_field}
-                label={document.expiry_label}
-                inputType="date"
-                onChange={handleInputChange}
-              />
-            </FormSection>
+
+            return (
+              <FormSection key={document.field} title={document.label}>
+                <FormInputImage
+                  id={document.field}
+                  value={imgValue === "string" ? imgValue : ""}
+                  name={document.field}
+                  label={document.label}
+                  isEditMode={true}
+                  onFileSelect={(file) =>
+                    handleFileSelect(file, document.field as keyof TruckType)
+                  }
+                />
+                <FormInput
+                  type="date"
+                  id={document.expiry_field}
+                  value={(expiryValue as string) ?? ""}
+                  name={document.expiry_field}
+                  label={document.expiry_label}
+                  inputType="date"
+                  onChange={handleInputChange}
+                />
+              </FormSection>
+            );
           })}
         </div>
         <button className={styles.btn}>Add Truck</button>

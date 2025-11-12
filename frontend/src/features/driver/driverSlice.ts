@@ -42,10 +42,16 @@ export const addDriverEntryAsync = createAsyncThunk<
       },
     });
     return response.data.data as DriverType;
-  } catch (err: any) {
-    const errorMsg = err?.response?.data?.message || "Failed to add new driver";
-    console.error("Driver add error:", err.response.data);
-    return rejectWithValue({ error: errorMsg });
+  } catch (error: any) {
+    const errorData = error.response?.data?.errors;
+    let normalized: Record<string, string> = {};
+    if (errorData && typeof errorData === 'object') {
+      normalized = errorData;
+      normalized.general = "Please fill all the required fields";
+    } else {
+      normalized = { general: error.message || "Failed to add new driver" }
+    }
+    return rejectWithValue(normalized);
   }
 });
 

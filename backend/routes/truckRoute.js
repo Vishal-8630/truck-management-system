@@ -1,6 +1,7 @@
 import express from 'express';
 import { allTrucks, deleteTruck, newTruck, updateTruck } from '../controllers/truckController.js';
 import upload from '../middlewares/uploadMiddleware.js';
+import { truckValidation } from '../validators/truckValidator.js';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const truckUploads = upload.fields([
     { name: "pollution_doc", maxCount: 1 }
 ])
 
-router.post("/new", truckUploads, newTruck);
+router.post("/new", truckUploads, truckValidation, newTruck);
 router.get("/all", allTrucks);
 router.put("/update/:id", truckUploads, updateTruck);
 router.delete("/delete/:id", deleteTruck);

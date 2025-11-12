@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import FormInput from "../../../components/FormInput";
 import FormSection from "../../../components/FormSection";
 import styles from "./NewDriverEntry.module.scss";
@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 const NewDriverEntry: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const errorsRef = useRef<Record<string, string>>({});
+  const [, forceRender] = useState({});
 
   const [driver, setDriver] =
     useState<Omit<DriverType, "_id">>(EmptyDriverType);
@@ -27,6 +29,10 @@ const NewDriverEntry: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
+    if (errorsRef.current[name]) {
+      errorsRef.current[name] = "";
+      forceRender({});
+    }
     if (name === "phone" || name === "home_phone") {
       const phone_no = value.replace(/[^0-9]/g, "").slice(0, 10);
       setDriver((prev) => ({ ...prev, [name]: phone_no }));
@@ -77,11 +83,11 @@ const NewDriverEntry: React.FC = () => {
 
         if (value instanceof File) {
           formData.append(key, value);
-        } else if (typeof value === 'string') {
+        } else if (typeof value === "string") {
           formData.append(key, value);
         } else if (Array.isArray(value)) {
           formData.append(key, JSON.stringify(value));
-        } else if (typeof value === 'object') {
+        } else if (typeof value === "object") {
           formData.append(key, JSON.stringify(value));
         }
       });
@@ -95,9 +101,16 @@ const NewDriverEntry: React.FC = () => {
         navigate("/journey/all-driver-entries");
       } else if (addDriverEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
-        if (errors) {
-          dispatch(addMessage({ type: "error", text: errors.error }));
+        if (errors && !errors?.length && Object.keys(errors)?.length > 0) {
+          errorsRef.current = errors;
+          forceRender({});
         }
+        dispatch(
+          addMessage({
+            type: "error",
+            text: errors?.general || "Failed to add new driver"
+          })
+        )
       }
     } catch {
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
@@ -114,6 +127,7 @@ const NewDriverEntry: React.FC = () => {
             name="name"
             label="Name"
             value={driver.name}
+            error={errorsRef.current['name']}
             placeholder="Name"
             onChange={handleTextInputChange}
           />
@@ -133,6 +147,7 @@ const NewDriverEntry: React.FC = () => {
             type="textarea"
             id="address"
             name="address"
+            error={errorsRef.current['address']}
             label="Address"
             value={driver.address || ""}
             placeholder="Address"
@@ -145,6 +160,7 @@ const NewDriverEntry: React.FC = () => {
             name="phone"
             label="Phone Number"
             value={driver.phone}
+            error={errorsRef.current['phone']}
             placeholder="Phone Number"
             onChange={handleTextInputChange}
           />
@@ -165,6 +181,7 @@ const NewDriverEntry: React.FC = () => {
             name="adhaar_no"
             label="Adhaar Number"
             value={driver.adhaar_no}
+            error={errorsRef.current['adhaar_no']}
             placeholder="Adhaar Number"
             onChange={handleTextInputChange}
           />
@@ -175,6 +192,7 @@ const NewDriverEntry: React.FC = () => {
             name="dl"
             label="Driving License"
             value={driver.dl}
+            error={errorsRef.current['dl']}
             placeholder="Driving License"
             onChange={handleTextInputChange}
           />

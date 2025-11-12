@@ -1,6 +1,7 @@
 import express from 'express';
 import { allDrivers, deleteDriver, newDriver, updateDriver } from '../controllers/driverController.js';
 import upload from '../middlewares/uploadMiddleware.js';
+import { driverValidation } from '../validators/driverValidator.js';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const driverUploads = upload.fields([
   { name: "dl_img", maxCount: 1 },
 ]);
 
-router.post("/new", driverUploads, newDriver);
+router.post("/new", driverUploads, driverValidation, newDriver);
 router.get("/all", allDrivers);
 router.put("/update/:id", driverUploads, updateDriver);
 router.delete("/delete/:id", deleteDriver);
