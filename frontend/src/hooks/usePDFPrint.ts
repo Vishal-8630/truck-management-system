@@ -7,24 +7,14 @@ import { useReactToPrint } from "react-to-print";
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 interface UsePDFPrintOptions<T> {
-  /** Ref of the element you want to print */
   ref: React.RefObject<HTMLDivElement | null>;
-  /** The data object (like entry, report, etc.) */
   data: T | null;
-  /** Message to show if data is missing */
   emptyMessage?: string;
-  /** Page orientation ('p' for portrait, 'l' for landscape) */
   orientation?: "p" | "l";
-  /** Server endpoint for mobile print generation */
   endpoint?: string;
-  /** Whether to use Puppeteer server route for mobile */
   serverMode?: boolean;
 }
 
-/**
- * Generic hook for printing PDFs (client + server)
- * Works with any DOM ref and data type.
- */
 export const usePDFPrint = <T>({
   ref,
   data,
@@ -35,19 +25,27 @@ export const usePDFPrint = <T>({
 }: UsePDFPrintOptions<T>) => {
   const dispatch: AppDispatch = useDispatch();
 
-  // ✅ Setup printer once — cannot be inside another function
+  const pageOrientation = orientation === "l" ? "landscape" : "portrait";
+
   const printNow = useReactToPrint({
     contentRef: ref,
     documentTitle: "Invoice",
     pageStyle: `
       @page {
-        size: A4 ${orientation === "l" ? "landscape" : "portrait"};
+        size: A4 ${pageOrientation};
         margin: 5mm;
       }
-      body {
-        -webkit-print-color-adjust: exact !important;
-        color-adjust: exact !important;
-        font-family: Arial, sans-serif;
+
+      @media print {
+        html, body {
+          width: ${pageOrientation === "landscape" ? "297mm" : "210mm"};
+          height: ${pageOrientation === "landscape" ? "210mm" : "297mm"};
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+        }
       }
     `,
   });
@@ -59,22 +57,57 @@ export const usePDFPrint = <T>({
     }
 
     if (!ref.current) return;
+    console.log(`Print clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
     // ========== MOBILE / SERVER FLOW ==========
     if (isMobile && serverMode) {
-      const html = ref.current.outerHTML;
+      // Collect <style> + <link> CSS from document head
+      const styles = Array.from(
+        document.querySelectorAll("style, link[rel='stylesheet']")
+      )
+        .map((el) => el.outerHTML)
+        .join("\n");
+
+      // Wrap the target HTML in a full printable document
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            ${styles}
+            <style>
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+              }
+            </style>
+          </head>
+          <body>${ref.current.outerHTML}</body>
+        </html>
+      `;
+
+      // Convert relative URLs → absolute (important for images, CSS)
+      const baseURL = window.location.origin;
+      const processedHTML = html.replace(
+        /src="\/(.*?)"/g,
+        (_, p1) => `src="${baseURL}/${p1}"`
+      );
 
       try {
         const res = await api.post<Blob>(
           endpoint,
-          { html, landscape: orientation === "l" },
+          { html: processedHTML, landscape: orientation === "l" },
           { responseType: "blob" }
         );
 
         const blobUrl = URL.createObjectURL(res.data);
-        window.open(blobUrl, "_blank"); // 👈 opens in new tab on mobile
+        window.open(blobUrl, "_blank"); // Opens PDF in new tab (for printing)
         dispatch(
-          addMessage({ type: "success", text: "Opening PDF for print..." })
+          addMessage({ type: "success", text: "Opening styled PDF for print..." })
         );
       } catch (error) {
         console.error("PDF print error:", error);
@@ -91,7 +124,7 @@ export const usePDFPrint = <T>({
 
     // ========== DESKTOP / CLIENT FLOW ==========
     if (printNow) {
-      printNow(); // 👈 just trigger the print
+      printNow();
     } else {
       dispatch(addMessage({ type: "error", text: "Print function not ready." }));
     }

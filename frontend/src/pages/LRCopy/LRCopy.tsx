@@ -44,23 +44,25 @@ const LRCopy = () => {
     }
   };
 
-    const handlePrintInvoice = usePDFPrint({
-      ref: invoiceRef,
-      data: entry,
-      emptyMessage: "Please search an invoice first",
-      orientation: "l",
-      endpoint: "/invoice/generate-pdf",
-      serverMode: true
-    })
+  const handlePrintInvoice = usePDFPrint({
+    ref: invoiceRef,
+    data: entry,
+    emptyMessage: "Please search an invoice first",
+    orientation: "l",
+    endpoint: "/invoice/generate-pdf",
+    serverMode: true,
+  });
 
   const handleDownloadInvoice = usePDFDownload({
     ref: invoiceRef,
     data: entry,
     emptyMessage: "Please search an invoice first",
-    filename: "invoice.pdf",
+    filename: `invoice-${entry?.lr_no}-${
+      new Date().toISOString().split("T")[0]
+    }.pdf`,
     orientation: "l",
     endpoint: "/invoice/generate-pdf",
-    serverMode: true
+    serverMode: true,
   });
 
   return (

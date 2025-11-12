@@ -8,12 +8,11 @@ import {
 import { useEffect, useRef } from "react";
 import type { AppDispatch } from "../../../../app/store";
 import Loading from "../../../../components/Loading";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import { useReactToPrint } from "react-to-print";
 import styles from "./SettlementDetail.module.scss";
 import type { JourneyType } from "../../../../types/journey";
 import { formatDate } from "../../../../utils/formatDate";
+import { usePDFPrint } from "../../../../hooks/usePDFPrint";
+import { usePDFDownload } from "../../../../hooks/usePDFDownload";
 
 const SettlementDetail = () => {
   const { settlementId } = useParams();
@@ -30,31 +29,24 @@ const SettlementDetail = () => {
     (settlement) => settlement._id === settlementId
   );
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Settlement_${settlement?.driver?.name || "Driver"}`,
-    pageStyle: `
-    @page { size: A4; margin: 20mm; }
-    body {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      font-family: Arial, sans-serif;
-      background: white;
-      color: black;
-    }
-  `,
+  const handlePrint = usePDFPrint({
+    ref: printRef,
+    data: settlement,
+    emptyMessage: "Please select a settlemen first",
+    endpoint: "/invoice/generate-pdf",
+    serverMode: true,
   });
 
-  const handleDownloadPDF = async () => {
-    if (!printRef.current) return;
-    const canvas = await html2canvas(printRef.current);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Settlement_${settlement?.driver?.name || "Driver"}.pdf`);
-  };
+  const handleDownloadPDF = usePDFDownload({
+    ref: printRef,
+    data: settlement,
+    emptyMessage: "Please select a settlemen first",
+    filename: `Settlement-${settlement?.driver.name}-${
+      new Date().toISOString().split("T")[0]
+    }.pdf`,
+    endpoint: "/invoice/generate-pdf",
+    serverMode: true,
+  });
 
   if (loading && !settlement) return <Loading />;
   if (!settlement) return <p>No settlement found</p>;
@@ -90,8 +82,8 @@ const SettlementDetail = () => {
             FLEET OWNER • TRANSPORT CONTRACTORS • COMMISSION AGENT
           </div>
           <div className={styles.address}>
-           <strong> Head Office:</strong> Near Essar Fuel Pump, Lohvan Bhagichi,
-            Laxmi Nagar, Mathura - 281001
+            <strong> Head Office:</strong> Near Essar Fuel Pump, Lohvan
+            Bhagichi, Laxmi Nagar, Mathura - 281001
           </div>
           <div className={styles.address}>
             <strong>Branch Office:</strong> Near Kuber Jee Dharam Kanta,
@@ -109,7 +101,8 @@ const SettlementDetail = () => {
               <strong>Driver:</strong> {settlement.driver?.name}
             </p>
             <p>
-              <strong>Period:</strong> {formatDate(new Date(settlement.period.from))} →{" "}
+              <strong>Period:</strong>{" "}
+              {formatDate(new Date(settlement.period.from))} →{" "}
               {formatDate(new Date(settlement.period.to))}
             </p>
             <p>

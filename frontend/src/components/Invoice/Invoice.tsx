@@ -18,7 +18,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
       <div className={styles.header}>
         <div className={`${styles.box} ${styles.flex_1} ${styles.text_center}`}>
           <div className={styles.logo}>
-            <img src={Logo} alt="Logo" />
+            <img src={Logo} alt="Logo" id="logo"/>
           </div>
           <div>
             <div className={styles.field_name}>Address of Deliver Office:</div>
@@ -29,7 +29,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <div className={`${styles.bold}`}>
             Subject to Mathura Juridiction Only
           </div>
-          <div className={styles.drl}>Divyanshi Road Lines</div>
+          <div className={styles.drl} id="title">Divyanshi Road Lines</div>
           <div className={`${styles.bold}`}>
             FLEET OWNER & TRANSPORT CONTRACTORS & COMMISION AGENT
           </div>
