@@ -24,27 +24,38 @@ export const usePDFPrint = <T>({
   serverMode = true,
 }: UsePDFPrintOptions<T>) => {
   const dispatch: AppDispatch = useDispatch();
-
-  const pageOrientation = orientation === "l" ? "landscape" : "portrait";
+  const isLandscape = orientation === "l";
 
   const printNow = useReactToPrint({
     contentRef: ref,
     documentTitle: "Invoice",
     pageStyle: `
       @page {
-        size: A4 ${pageOrientation};
+        size: A4 ${isLandscape ? "landscape" : "portrait"};
         margin: 5mm;
       }
-
       @media print {
         html, body {
-          width: ${pageOrientation === "landscape" ? "297mm" : "210mm"};
-          height: ${pageOrientation === "landscape" ? "210mm" : "297mm"};
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          font-family: Arial, sans-serif;
           margin: 0;
           padding: 0;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          font-family: Arial, sans-serif;
+        }
+
+        /* ---- Force Landscape Transform ---- */
+        ${
+          isLandscape
+            ? `
+          body {
+            transform: rotate(-90deg) translate(-100%);
+            transform-origin: top left;
+            width: 100vh;
+            height: 100vw;
+            overflow: visible;
+          }
+        `
+            : ""
         }
       }
     `,
@@ -57,18 +68,17 @@ export const usePDFPrint = <T>({
     }
 
     if (!ref.current) return;
+
     console.log(`Print clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
-    // ========== MOBILE / SERVER FLOW ==========
+    // ======= MOBILE / SERVER PDF FLOW =======
     if (isMobile && serverMode) {
-      // Collect <style> + <link> CSS from document head
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
         .map((el) => el.outerHTML)
         .join("\n");
 
-      // Wrap the target HTML in a full printable document
       const html = `
         <!DOCTYPE html>
         <html>
@@ -78,7 +88,7 @@ export const usePDFPrint = <T>({
             ${styles}
             <style>
               body {
-                -webkit-print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
                 margin: 0;
                 padding: 0;
@@ -90,7 +100,6 @@ export const usePDFPrint = <T>({
         </html>
       `;
 
-      // Convert relative URLs → absolute (important for images, CSS)
       const baseURL = window.location.origin;
       const processedHTML = html.replace(
         /src="\/(.*?)"/g,
@@ -100,14 +109,17 @@ export const usePDFPrint = <T>({
       try {
         const res = await api.post<Blob>(
           endpoint,
-          { html: processedHTML, landscape: orientation === "l" },
+          { html: processedHTML, landscape: isLandscape },
           { responseType: "blob" }
         );
 
         const blobUrl = URL.createObjectURL(res.data);
-        window.open(blobUrl, "_blank"); // Opens PDF in new tab (for printing)
+        window.open(blobUrl, "_blank");
         dispatch(
-          addMessage({ type: "success", text: "Opening styled PDF for print..." })
+          addMessage({
+            type: "success",
+            text: "Opening styled PDF for print...",
+          })
         );
       } catch (error) {
         console.error("PDF print error:", error);
@@ -122,11 +134,13 @@ export const usePDFPrint = <T>({
       return;
     }
 
-    // ========== DESKTOP / CLIENT FLOW ==========
+    // ======= DESKTOP / CLIENT FLOW =======
     if (printNow) {
       printNow();
     } else {
-      dispatch(addMessage({ type: "error", text: "Print function not ready." }));
+      dispatch(
+        addMessage({ type: "error", text: "Print function not ready." })
+      );
     }
   };
 

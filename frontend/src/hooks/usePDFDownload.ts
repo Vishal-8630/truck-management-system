@@ -39,14 +39,12 @@ export const usePDFDownload = <T>({
 
     // ================== MOBILE / SERVER FLOW ==================
     if (isMobile && serverMode) {
-      // Collect styles from <style> and <link>
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
         .map((el) => el.outerHTML)
         .join("\n");
 
-      // Wrap target HTML in full document
       const html = `
         <!DOCTYPE html>
         <html>
@@ -54,20 +52,11 @@ export const usePDFDownload = <T>({
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             ${styles}
-            <style>
-              body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                margin: 0;
-                padding: 0;
-              }
-            </style>
           </head>
           <body>${ref.current.outerHTML}</body>
         </html>
       `;
 
-      // Convert relative image paths → absolute URLs
       const baseURL = window.location.origin;
       const processedHTML = html.replace(
         /src="\/(.*?)"/g,
@@ -84,9 +73,7 @@ export const usePDFDownload = <T>({
           }
         );
 
-        console.log("📦 Received bytes:", (res.data as ArrayBuffer).byteLength);
-
-        const uint8Array = new Uint8Array(res.data); // ✅ FIX
+        const uint8Array = new Uint8Array(res.data);
         const blob = new Blob([uint8Array], { type: "application/pdf" });
 
         const blobUrl = URL.createObjectURL(blob);
@@ -109,14 +96,60 @@ export const usePDFDownload = <T>({
 
     // ================== DESKTOP / CLIENT FLOW ==================
     const clone = ref.current.cloneNode(true) as HTMLElement;
+
+    // 🧩 Inject same Puppeteer-like CSS
+    const style = document.createElement("style");
+    style.textContent = `
+      @page {
+        size: A4 ${orientation === "l" ? "landscape" : "portrait"} !important;
+        margin: 5mm;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: ${orientation === "l" ? "297mm" : "210mm"} !important;
+        height: ${orientation === "l" ? "210mm" : "297mm"} !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      * {
+        page-break-before: avoid !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      body {
+        transform: scale(0.98);
+        transform-origin: top left;
+      }
+      #logo {
+        width: 80px !important;
+        height: 60px !important;
+      }
+      #title {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+      }
+      .header {
+        padding: 4mm 0 !important;
+      }
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      body > * {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    `;
+    clone.prepend(style);
+
     clone.style.width = orientation === "l" ? "297mm" : "210mm";
     clone.style.margin = "0 auto";
-    clone.style.fontSize = "12px";
-    clone.style.transform = "scale(1)";
-    clone.style.transformOrigin = "top left";
-    clone.classList.add("pdf-mode");
+    clone.style.background = "#fff";
     document.body.appendChild(clone);
 
+    // 🖼️ Render to canvas
     const canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
@@ -129,23 +162,13 @@ export const usePDFDownload = <T>({
     const pdf = new jsPDF(orientation, "mm", "a4");
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const horizontalPadding = 5;
-    const verticalPadding = 5;
-    const availableWidth = pdfWidth - horizontalPadding * 2;
-    const availableHeight = pdfHeight - verticalPadding * 2;
+    const margin = 5;
 
-    let renderWidth = availableWidth;
-    let renderHeight = (canvas.height * renderWidth) / canvas.width;
+    const renderWidth = pdfWidth - margin * 2;
+    const renderHeight = (canvas.height * renderWidth) / canvas.width;
 
-    if (renderHeight > availableHeight) {
-      const scaleFactor = availableHeight / renderHeight;
-      renderWidth *= scaleFactor;
-      renderHeight = availableHeight;
-    }
-
-    const x = horizontalPadding + (availableWidth - renderWidth) / 2;
-    const y = verticalPadding;
+    const x = margin;
+    const y = margin;
 
     pdf.addImage(imgData, "PNG", x, y, renderWidth, renderHeight);
     pdf.save(filename);
