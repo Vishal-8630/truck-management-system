@@ -17,6 +17,8 @@ import EditHeader from "../../../components/EditHeader";
 import DetailBlock from "../JourneyDetail/components/DetailBlock";
 import FormInputImage from "../../../components/FormInputImage";
 import { addMessage } from "../../../features/message";
+import Overlay from "../../../components/Overlay";
+import { FaDownload } from "react-icons/fa";
 
 const TruckDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,7 +26,6 @@ const TruckDetail = () => {
   const navigate = useNavigate();
   const loading = useSelector(selectTruckLoading);
   const trucks = useSelector(truckSelectors.selectAll);
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [backupTruck, setBackupTruck] = useState<TruckType | null>(null);
   const [localTruck, setLocalTruck] = useState<TruckType | null>(null);
@@ -32,6 +33,7 @@ const TruckDetail = () => {
     new Set()
   );
   const emptyFieldValue = "----------";
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
 
   void isEditMode;
 
@@ -229,6 +231,7 @@ const TruckDetail = () => {
                     (prev) => new Set([...prev, "fitness_doc"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="Insurance Document"
@@ -246,6 +249,7 @@ const TruckDetail = () => {
                     (prev) => new Set([...prev, "insurance_doc"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="National Permit Document"
@@ -263,6 +267,7 @@ const TruckDetail = () => {
                     (prev) => new Set([...prev, "national_permit_doc"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="State Permit Document"
@@ -280,6 +285,7 @@ const TruckDetail = () => {
                     (prev) => new Set([...prev, "state_permit_doc"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="Tax Document"
@@ -295,6 +301,7 @@ const TruckDetail = () => {
                   handleFileSelect(file, "tax_doc");
                   setChangedDocuments((prev) => new Set([...prev, "tax_doc"]));
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="Pollution Document"
@@ -312,32 +319,34 @@ const TruckDetail = () => {
                     (prev) => new Set([...prev, "pollution_doc"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
             </div>
           }
         />
       </div>
 
-      {fullscreenImage && (
-        <div
-          className={styles.fullscreenOverlay}
-          onClick={() => setFullscreenImage(null)}
-        >
-          <span
-            className={styles.closeButton}
-            onClick={(e) => {
-              e.stopPropagation();
-              setFullscreenImage(null);
-            }}
-          >
-            ✕
-          </span>
-          <img
-            src={fullscreenImage}
-            alt="Full view"
-            className={styles.fullscreenImage}
-          />
-        </div>
+      {previewImg && (
+        <Overlay onCancel={() => setPreviewImg("")}>
+          <div className={styles.overlayImgContainer}>
+            <img
+              src={previewImg}
+              alt="Preview Image"
+              className={styles.overlayPreviewImg}
+            />
+            <button
+              className={styles.downloadBtn}
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = previewImg;
+                link.download = "image.jpg";
+                link.click();
+              }}
+            >
+              <FaDownload />
+            </button>
+          </div>
+        </Overlay>
       )}
     </div>
   );
