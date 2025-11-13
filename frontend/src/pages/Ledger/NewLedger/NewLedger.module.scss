@@ -1,0 +1,6 @@
+@use '../../../styles/globals' as *;
+
+.heading {
+    @include main-heading();
+    margin-top: 2rem;
+}

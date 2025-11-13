@@ -38,8 +38,14 @@ import {
   EmptyBillingParty,
   type BillingPartyType,
 } from "../../../types/billingParty";
-import { EmptySettlementType, type SettlementType } from "../../../types/settlement";
-import { EmptyVehicleEntry, type VehicleEntryType } from "../../../types/vehicleEntry";
+import {
+  EmptySettlementType,
+  type SettlementType,
+} from "../../../types/settlement";
+import {
+  EmptyVehicleEntry,
+  type VehicleEntryType,
+} from "../../../types/vehicleEntry";
 import { formatDate } from "../../../utils/formatDate";
 
 const LIKED_OBJ_INPUTS: InputType[] = [
@@ -164,7 +170,9 @@ const NewLedger = () => {
         });
         if (filteredJournies.length > 0) {
           const options: Option[] = filteredJournies.map((j: JourneyType) => ({
-            label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${j.to} | ${formatDate(new Date(j.journey_start_date))}`,
+            label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${
+              j.to
+            } | ${formatDate(new Date(j.journey_start_date))}`,
             value: j._id,
           }));
           return options;
@@ -217,35 +225,48 @@ const NewLedger = () => {
         }
       }
       case "settlement": {
-        const filteredSettlements = settlements.filter((s) => s.driver.name.toLowerCase().includes(search.toLowerCase()));
+        const filteredSettlements = settlements.filter((s) =>
+          s.driver.name.toLowerCase().includes(search.toLowerCase())
+        );
         if (filteredSettlements.length > 0) {
-            const options: Option[] = filteredSettlements.map((s: SettlementType) => ({
-                label: `${s.driver.name} | ${formatDate(new Date(s.period.from))} | ${formatDate(new Date(s.period.to))}`,
-                value: s._id
-            }));
-            return options;
+          const options: Option[] = filteredSettlements.map(
+            (s: SettlementType) => ({
+              label: `${s.driver.name} | ${formatDate(
+                new Date(s.period.from)
+              )} | ${formatDate(new Date(s.period.to))}`,
+              value: s._id,
+            })
+          );
+          return options;
         } else {
-            return [];
+          return [];
         }
       }
       case "vehicle_entry": {
         const filteredVehicleEntries = vehicleEntries.filter((ve) => {
-            if (ve.vehicle_no.toLowerCase().includes(search.toLowerCase()) || ve.from.toLowerCase().includes(search.toLowerCase()) || ve.to.toLowerCase().includes(search.toLowerCase())) {
-                return true;
-            }
-            return false;
+          if (
+            ve.vehicle_no.toLowerCase().includes(search.toLowerCase()) ||
+            ve.from.toLowerCase().includes(search.toLowerCase()) ||
+            ve.to.toLowerCase().includes(search.toLowerCase())
+          ) {
+            return true;
+          }
+          return false;
         });
         if (filteredVehicleEntries.length > 0) {
-            const options: Option[] = filteredVehicleEntries.map((ve: VehicleEntryType) => ({
-                label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`,
-                value: ve._id
-            }));
-            return options;
+          const options: Option[] = filteredVehicleEntries.map(
+            (ve: VehicleEntryType) => ({
+              label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`,
+              value: ve._id,
+            })
+          );
+          return options;
         } else {
-            return [];
+          return [];
         }
       }
-      default: return [];
+      default:
+        return [];
     }
   };
 
@@ -263,29 +284,26 @@ const NewLedger = () => {
           >
         | undefined = undefined;
 
-        if (input.name === 'journey') {
+      if (input.name === "journey") {
+        placeholder = "Select a Journey";
+        // value = `${ledger.journey?.truck?.truck_no} | ${ledger.journey?.driver?.name}`;
+      }
 
-        }
+      if (input.name === "truck") {
+        placeholder = "Select a Truck";
+      }
 
-        if (input.name === 'truck') {
+      if (input.name === "driver") {
+      }
 
-        }
+      if (input.name === "party") {
+      }
 
-        if (input.name === 'driver') {
+      if (input.name === "settlement") {
+      }
 
-        }
-
-        if (input.name === 'party') {
-
-        }
-
-        if (input.name === 'settlement') {
-
-        }
-
-        if (input.name === 'vehicle_entry') {
-
-        }
+      if (input.name === "vehicle_entry") {
+      }
 
       return (
         <FormInput
