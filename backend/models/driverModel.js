@@ -11,7 +11,8 @@ const driverSchema = new mongoose.Schema(
     dl: { type: String, unique: true },
     adhaar_front_img: { type: String },
     adhaar_back_img: { type: String },
-    dl_img: { type: String },
+    dl_front_img: { type: String },
+    dl_back_img: { type: String },
     is_deleted: { type: Boolean, default: false },
 
     last_payment_clear_date: { type: String },

@@ -80,3 +80,22 @@
     min-width: 700px;
   }
 }
+
+.overlayImgContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlayPreviewImg {
+  width: 20rem;
+}
+
+.downloadBtn {
+  position: absolute;
+  font-size: 1.3rem;
+  border: none;
+  cursor: pointer;
+  bottom: 30px;
+  right: 30px;
+}

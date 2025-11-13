@@ -30,7 +30,8 @@ const newDriver = async (req, res, next) => {
             driver_img: getFile("driver_img"),
             adhaar_front_img: getFile("adhaar_front_img"),
             adhaar_back_img: getFile("adhaar_back_img"),
-            dl_img: getFile("dl_img"),
+            dl_front_img: getFile("dl_front_img"),
+            dl_back_img: getFile("dl_back_img"),
             vehicles: parsedVehicles
         };
 
@@ -68,7 +69,8 @@ const allDrivers = async (req, res) => {
             driver_img: await getSignedS3Url(driver.driver_img),
             adhaar_front_img: await getSignedS3Url(driver.adhaar_front_img),
             adhaar_back_img: await getSignedS3Url(driver.adhaar_back_img),
-            dl_img: await getSignedS3Url(driver.dl_img),
+            dl_front_img: await getSignedS3Url(driver.dl_front_img),
+            dl_back_img: await getSignedS3Url(driver.dl_back_img),
         }))
     );
 
@@ -146,8 +148,10 @@ const updateDriver = async (req, res, next) => {
                 driver.adhaar_front_img = getFile("adhaar_front_img");
             } else if (key === 'adhaar_back_img') {
                 driver.adhaar_back_img = getFile("adhaar_back_img");
-            } else if (key === 'dl_img') {
-                driver.dl_img = getFile("dl_img");
+            } else if (key === 'dl_front_img') {
+                driver.dl_front_img = getFile("dl_front_img");
+            } else if (key === 'dl_back_img') {
+                driver.dl_back_img = getFile("dl_back_img");
             }
         });
 
@@ -157,7 +161,8 @@ const updateDriver = async (req, res, next) => {
             driver_img: await getSignedS3Url(updatedDriver.driver_img),
             adhaar_front_img: await getSignedS3Url(updatedDriver.adhaar_front_img),
             adhaar_back_img: await getSignedS3Url(updatedDriver.adhaar_back_img),
-            dl_img: await getSignedS3Url(updatedDriver.dl_img),
+            dl_front_img: await getSignedS3Url(updatedDriver.dl_front_img),
+            dl_back_img: await getSignedS3Url(updatedDriver.dl_back_img),
         }
 
         return successResponse(res, "Driver Updated Successfully", signedDrivers);

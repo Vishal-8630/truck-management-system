@@ -23,6 +23,8 @@ import {
 } from "../../../features/settlement";
 import HeaderWithChild from "../../../components/HeaderWithChild";
 import { formatDate } from "../../../utils/formatDate";
+import Overlay from "../../../components/Overlay";
+import { FaDownload } from "react-icons/fa";
 
 const DriverDetail = () => {
   const { id } = useParams();
@@ -38,6 +40,7 @@ const DriverDetail = () => {
     new Set()
   );
   const emptyFieldValue = "---------";
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
 
   const safeDate = (date?: string) =>
     date ? formatDate(new Date(date)) : emptyFieldValue;
@@ -272,6 +275,7 @@ const DriverDetail = () => {
                     (prev) => new Set([...prev, "driver_img"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="Adhaar Front Image"
@@ -289,6 +293,7 @@ const DriverDetail = () => {
                     (prev) => new Set([...prev, "adhaar_front_img"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
                 label="Adhaar Back Image"
@@ -306,26 +311,72 @@ const DriverDetail = () => {
                     (prev) => new Set([...prev, "adhaar_back_img"])
                   );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
               <FormInputImage
-                label="Driving License Image"
-                id="dl_img"
-                name="dl_img"
+                label="Driving License Front Image"
+                id="dl_front_img"
+                name="dl_front_img"
                 isEditMode={isEditMode}
                 value={
-                  typeof localDriver.dl_img === "string"
-                    ? localDriver.dl_img
+                  typeof localDriver.dl_front_img === "string"
+                    ? localDriver.dl_front_img
                     : ""
                 }
                 onFileSelect={(file) => {
-                  handleFileSelect(file, "dl_img");
-                  setChangedDocuments((prev) => new Set([...prev, "dl_img"]));
+                  handleFileSelect(file, "dl_front_img");
+                  setChangedDocuments(
+                    (prev) => new Set([...prev, "dl_front_img"])
+                  );
                 }}
+                onFileClick={(preview) => setPreviewImg(preview)}
+              />
+
+              <FormInputImage
+                label="Driving License Back Image"
+                id="dl_back_img"
+                name="dl_back_img"
+                isEditMode={isEditMode}
+                value={
+                  typeof localDriver.dl_back_img === "string"
+                    ? localDriver.dl_back_img
+                    : ""
+                }
+                onFileSelect={(file) => {
+                  handleFileSelect(file, "dl_back_img");
+                  setChangedDocuments(
+                    (prev) => new Set([...prev, "dl_back_img"])
+                  );
+                }}
+                onFileClick={(preview) => setPreviewImg(preview)}
               />
             </div>
           }
         />
       </div>
+
+      {previewImg && (
+        <Overlay onCancel={() => setPreviewImg("")}>
+          <div className={styles.overlayImgContainer}>
+            <img
+              src={previewImg}
+              alt="Preview Image"
+              className={styles.overlayPreviewImg}
+            />
+            <button
+              className={styles.downloadBtn}
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = previewImg;
+                link.download = "image.jpg";
+                link.click();
+              }}
+            >
+              <FaDownload />
+            </button>
+          </div>
+        </Overlay>
+      )}
 
       <div className={styles.settlementsContainer}>
         <HeaderWithChild
@@ -358,9 +409,12 @@ const DriverDetail = () => {
             </thead>
             <tbody>
               {driverSettlements.map((settlement, index) => (
-                <tr key={settlement._id} onClick={() => {
-                  navigate(`settlement/${settlement._id}`);
-                }}>
+                <tr
+                  key={settlement._id}
+                  onClick={() => {
+                    navigate(`settlement/${settlement._id}`);
+                  }}
+                >
                   <td>{index + 1}</td>
                   <td>{safeDate(settlement.period.from)}</td>
                   <td>{safeDate(settlement.period.to)}</td>

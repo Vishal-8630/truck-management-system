@@ -8,6 +8,7 @@ interface FormInputImageProps {
   value?: string;
   isEditMode?: boolean;
   onFileSelect: (file: File | null) => void;
+  onFileClick?: (file: string) => void;
 }
 
 const FormInputImage: React.FC<FormInputImageProps> = ({
@@ -17,6 +18,7 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
   value,
   isEditMode,
   onFileSelect,
+  onFileClick,
 }) => {
   const [preview, setPreview] = useState<string | null>(value || null);
 
@@ -50,7 +52,12 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
       <div className={styles.uploadContainer}>
         {preview ? (
           <div className={styles.previewWrapper}>
-            <img src={preview} alt="preview" className={styles.previewImage} />
+            <img
+              src={preview}
+              alt="preview"
+              className={styles.previewImage}
+              onClick={() => onFileClick?.(preview)}
+            />
             {isEditMode && (
               <button
                 type="button"

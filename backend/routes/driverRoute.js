@@ -9,7 +9,8 @@ const driverUploads = upload.fields([
   { name: "driver_img", maxCount: 1 },
   { name: "adhaar_front_img", maxCount: 1 },
   { name: "adhaar_back_img", maxCount: 1 },
-  { name: "dl_img", maxCount: 1 },
+  { name: "dl_front_img", maxCount: 1 },
+  { name: "dl_back_img", maxCount: 1 },
 ]);
 
 router.post("/new", driverUploads, driverValidation, newDriver);

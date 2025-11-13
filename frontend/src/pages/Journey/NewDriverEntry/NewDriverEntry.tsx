@@ -225,11 +225,20 @@ const NewDriverEntry: React.FC = () => {
 
           <FormInputImage
             label="Driving License Image"
-            id="dl_img"
-            name="dl_img"
+            id="dl_front_img"
+            name="dl_front_img"
             isEditMode
-            value={typeof driver.dl_img === "string" ? driver.dl_img : ""}
-            onFileSelect={(file) => handleFileSelect(file, "dl_img")}
+            value={typeof driver.dl_front_img === "string" ? driver.dl_front_img : ""}
+            onFileSelect={(file) => handleFileSelect(file, "dl_front_img")}
+          />
+
+          <FormInputImage
+            label="Driving License Image"
+            id="dl_back_img"
+            name="dl_back_img"
+            isEditMode
+            value={typeof driver.dl_back_img === "string" ? driver.dl_back_img : ""}
+            onFileSelect={(file) => handleFileSelect(file, "dl_back_img")}
           />
 
           <button type="submit" className={styles.addDriverBtn}>
