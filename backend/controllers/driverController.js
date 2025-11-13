@@ -3,6 +3,7 @@ import { successResponse } from "../utils/response.js";
 import AppError from '../utils/appError.js';
 import { deleteFromS3 } from "../middlewares/uploadMiddleware.js";
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
+import safeJSONParse from "../utils/safeJSONParse.js";
 
 const newDriver = async (req, res, next) => {
     try {
@@ -137,7 +138,8 @@ const updateDriver = async (req, res, next) => {
             }
         });
 
-        JSON.parse(changedDocuments).forEach((key) => {
+        let changedDocs = safeJSONParse(changedDocuments, []);
+        changedDocs.forEach((key) => {
             if (key === 'driver_img') {
                 driver.driver_img = getFile("driver_img");
             } else if (key === 'adhaar_front_img') {

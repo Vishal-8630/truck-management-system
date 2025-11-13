@@ -3,6 +3,7 @@ import Truck from '../models/truckModel.js';
 import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
+import safeJSONParse from '../utils/safeJSONParse.js';
 
 const newTruck = async (req, res, next) => {
     try {
@@ -146,7 +147,8 @@ const updateTruck = async (req, res, next) => {
             }
         });
 
-        JSON.parse(changedDocuments).forEach((key) => {
+        const changedDocs = safeJSONParse(changedDocuments, []);
+        changedDocs.forEach((key) => {
             if (key === "fitness_doc") {
                 truck.fitness_doc = getFile(key);
             } else if (key === "insurance_doc") {
