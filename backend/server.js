@@ -19,6 +19,7 @@ import driverRoutes from './routes/driverRoute.js';
 import truckJourneyRoutes from './routes/truckJourneyRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
 import invoiceRoutes from './routes/invoiceRoute.js';
+import ledgerRoutes from './routes/ledgerRoute.js';
 
 dotenv.config();
 connectDB();
@@ -56,6 +57,7 @@ app.use("/api/driver", driverRoutes);
 app.use("/api/journey", truckJourneyRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/invoice", invoiceRoutes);
+app.use("/api/ledger", ledgerRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {

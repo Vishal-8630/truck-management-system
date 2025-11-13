@@ -9,6 +9,7 @@ import { driverReducer } from "../features/driver";
 import { truckReducers } from "../features/truck";
 import { journeyReducers } from "../features/journey";
 import { settlementReducers } from "../features/settlement";
+import { ledgerReducers } from "../features/ledger";
 
 export const store = configureStore({
     reducer: {
@@ -21,7 +22,8 @@ export const store = configureStore({
         driver: driverReducer,
         truck: truckReducers,
         journey: journeyReducers,
-        settlement: settlementReducers
+        settlement: settlementReducers,
+        ledger: ledgerReducers
     },
 });
 

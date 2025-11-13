@@ -137,6 +137,17 @@ const Navbar = () => {
               },
             ],
           },
+          {
+            label: "Ledger",
+            icon: <FaChevronDown />,
+            subLinks: [
+              {
+                to: "/ledger/new-ledger",
+                label: "New Ledger",
+                content: "Click to create new Ledger Entry"
+              }
+            ]
+          },
           { to: "/profile", label: "Profile" },
           ...(user.isAdmin ? [{ to: "/register", label: "Add User" }] : []),
           { to: "/logout", label: "Logout", onClick: handleLogout },

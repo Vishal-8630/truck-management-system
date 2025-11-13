@@ -30,6 +30,7 @@ import DriverDetail from "../pages/Journey/DriverDetail";
 import DriverSettlement from "../pages/Journey/Settlements/DriverSettlement";
 import SettlementPreview from "../pages/Journey/Settlements/SettlementPreview";
 import SettlementDetail from "../pages/Journey/Settlements/SettlementDetail";
+import NewLedger from "../pages/Ledger/NewLedger";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -60,6 +61,10 @@ const journeyEntryRoutes = [
   { path: "driver-detail/:id/settlement", element: <DriverSettlement /> },
   { path: "driver-detail/:id/settlement/preview", element: <SettlementPreview /> },
   { path: "driver-detail/:id/settlement/:settlementId", element: <SettlementDetail /> },
+]
+
+const ledgerEntryRoutes = [
+  { path: "new-ledger", element: <NewLedger /> }
 ]
 
 const AppRoutes = () => {
@@ -125,6 +130,20 @@ const AppRoutes = () => {
       >
         <Route index element={<Navigate to="new-journey-entry" replace />} />
         {journeyEntryRoutes.map(({ path, element }) => (
+          <Route key={path} path={path} element={element} />
+        ))}
+      </Route>
+
+      <Route
+        path="/ledger/*"
+        element={
+          <ProtectedRoute>
+            <PagesOutlet />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="new-ledger" replace />} />
+        {ledgerEntryRoutes.map(({ path, element }) => (
           <Route key={path} path={path} element={element} />
         ))}
       </Route>

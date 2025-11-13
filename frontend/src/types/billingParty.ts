@@ -11,7 +11,8 @@ export const PARTY_LABELS: Record<string, string> = {
   gst_no: "Billing Party GST Number",
 };
 
-export const EmptyBillingParty: Omit<BillingPartyType, "_id"> = {
+export const EmptyBillingParty: BillingPartyType = {
+  _id: "",
   name: "",
   address: "",
   gst_no: "",
