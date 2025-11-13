@@ -9,7 +9,8 @@ export interface DriverType {
     dl: string,
     adhaar_front_img?: string | File,
     adhaar_back_img?: string | File,
-    dl_img?: string | File,
+    dl_front_img?: string | File,
+    dl_back_img? : string | File,
 
     last_payment_clear_date: string,
     last_payment_amount: string,
@@ -37,7 +38,8 @@ export const EmptyDriverType: DriverType = {
     dl: "",
     adhaar_front_img: "",
     adhaar_back_img: "",
-    dl_img: "",
+    dl_front_img: "",
+    dl_back_img: "",
 
     last_payment_clear_date: "",
     last_payment_amount: "",
@@ -59,7 +61,8 @@ export const DRIVER_ENTRY_LABELS = {
     adhaar_no: "Adhaar Number",
     dl: "Driving License",
     adhaar_img: "Adhaar Image",
-    dl_img: "Driving License Image",
+    dl_font_img: "Driving License Front Image",
+    dl_back_img: "Driving Licence Back Image",
 
     last_payment_clear_date: "Last Payment Clear Date",
     last_payment_amount: "Last Payment Amount",
