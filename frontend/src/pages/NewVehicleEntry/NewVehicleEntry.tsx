@@ -198,7 +198,7 @@ const NewVehicleEntry = () => {
         dispatch(
           addMessage({
             type: "error",
-            text: errors?.message || "Please fill all the require fields",
+            text: errors?.message || "Please fill all the required fields",
           })
         );
       }

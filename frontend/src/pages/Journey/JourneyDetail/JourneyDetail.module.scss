@@ -59,6 +59,7 @@
     border: $border-light;
     @include bg-color($secondary);
     flex: 1 1 calc(50% - 10px);
+    max-width: 50%;
 
     .heading {
         font-size: 1.5rem;

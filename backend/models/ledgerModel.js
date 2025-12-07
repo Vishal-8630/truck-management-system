@@ -54,6 +54,11 @@ const ledgerSchema = new mongoose.Schema(
       default: "Cash",
     },
     reference_no: { type: String },
+    reference_type: {
+      type: String,
+      enum: ["None", "Invoice", "Bill", "Voucher", "UTR", "Cheque", "LR", "Slip", "Ref"],
+      default: "Bill"
+    },
     notes: { type: String },
 
     is_auto_generated: { type: Boolean, default: false },
@@ -63,9 +68,6 @@ const ledgerSchema = new mongoose.Schema(
     is_verified: { type: Boolean, default: false },
     is_locked: { type: Boolean, default: false },
     locked_at: { type: Date },
-
-    created_by: { type: String },
-    updated_by: { type: String },
 
     gst_details: {
       rate: { type: Number, default: 0 },

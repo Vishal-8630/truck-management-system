@@ -63,7 +63,7 @@ const FormInput: React.FC<FormInputProps> = ({
 
   const isPassword = type === "password";
   const isTextarea = type === "textarea";
-  const isSelect = type === "select";
+  const isSelect = type === "select" || type === 'search';
   const hasIcon = !!icon;
 
   const handleFocus = () => setIsFocused(true);

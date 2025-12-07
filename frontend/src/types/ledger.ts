@@ -62,6 +62,16 @@ export interface LedgerType {
 
   payment_mode: "Cash" | "Bank" | "UPI" | "Cheque" | "Credit";
   reference_no?: string;
+  reference_type?: 
+  | "None"
+  | "Invoice"
+  | "Bill"
+  | "Voucher"
+  | "UTR"
+  | "Cheque"
+  | "LR"
+  | "Slip"
+  | "Ref";
   notes?: string;
 
   is_auto_generated?: boolean;
@@ -70,8 +80,6 @@ export interface LedgerType {
   is_locked?: boolean;
 
   locked_at?: string;
-  created_by?: string;
-  updated_by?: string;
 
   gst_details?: LedgerGSTDetails;
   meta?: LedgerMeta;
@@ -101,14 +109,13 @@ export const LEDGER_LABELS: Record<
   balance_type: "Balance Type",
   payment_mode: "Payment Mode",
   reference_no: "Reference No",
+  reference_type: "Reference Type",
   notes: "Notes",
   is_auto_generated: "Auto Generated",
   is_reversed: "Reversed",
   is_verified: "Verified",
   is_locked: "Locked",
   locked_at: "Locked At",
-  created_by: "Created By",
-  updated_by: "Updated By",
   balance_after_transaction: "Balance After Transaction",
   createdAt: "Created On",
   updatedAt: "Updated On",
@@ -132,13 +139,12 @@ export const EmptyLedgerEntry: LedgerType = {
   balance_type: "Debit",
   payment_mode: "Cash",
   reference_no: "",
+  reference_type: "None",
   notes: "",
   is_auto_generated: false,
   is_reversed: false,
   is_verified: false,
   is_locked: false,
-  created_by: "",
-  updated_by: "",
   gst_details: {
     rate: 0,
     amount: 0,

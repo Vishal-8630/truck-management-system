@@ -50,6 +50,33 @@ export const addLedgerEntryAsync = createAsyncThunk<
   }
 });
 
+export const updateLedgerEntryAsync = createAsyncThunk<
+  LedgerType,
+  LedgerType,
+  { rejectValue: Record<string, string> }
+>("ledger/update", async (updatedLedger, thunkAPI) => {
+  const { rejectWithValue } = thunkAPI;
+  try {
+    const response = await api.put(
+      `/ledger/update/${updatedLedger._id}`,
+      updatedLedger
+    );
+    return response.data.data as LedgerType;
+  } catch (error: any) {
+    const errorData = error.response?.data?.errors;
+    let normalized: Record<string, string> = {};
+    if (errorData && typeof errorData === "object") {
+      normalized = errorData;
+      normalized.general = "Please fill all the required fields";
+    } else {
+      normalized = {
+        general: error.message || "Failed to update ledger entry ",
+      };
+    }
+    return rejectWithValue(normalized);
+  }
+});
+
 const ledgerSlice = createSlice({
   name: "ledger",
   initialState: ledgerAdapter.getInitialState({

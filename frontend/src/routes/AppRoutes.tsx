@@ -31,6 +31,8 @@ import DriverSettlement from "../pages/Journey/Settlements/DriverSettlement";
 import SettlementPreview from "../pages/Journey/Settlements/SettlementPreview";
 import SettlementDetail from "../pages/Journey/Settlements/SettlementDetail";
 import NewLedger from "../pages/Ledger/NewLedger";
+import AllLedgers from "../pages/Ledger/AllLedgers";
+import LedgerDetail from "../pages/Ledger/LedgerDetail";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -64,7 +66,9 @@ const journeyEntryRoutes = [
 ]
 
 const ledgerEntryRoutes = [
-  { path: "new-ledger", element: <NewLedger /> }
+  { path: "new-ledger", element: <NewLedger /> },
+  { path: "all-ledgers", element: <AllLedgers /> },
+  { path: "ledger-detail/:id", element: <LedgerDetail /> },
 ]
 
 const AppRoutes = () => {

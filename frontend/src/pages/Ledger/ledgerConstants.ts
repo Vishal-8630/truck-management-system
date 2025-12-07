@@ -55,14 +55,15 @@ export const LEDGER_TRANSACTION_TYPES = [
 
 export type LedgerTransactionType = (typeof LEDGER_TRANSACTION_TYPES)[number];
 
-export const LEDGER_TRANSACTION_LABELS: Record<LedgerTransactionType, string> = {
-  Journey: "Journey",
-  "Vehicle Entry": "Vehicle Entry",
-  "Driver Settlement": "Driver Settlement",
-  "Manual Adjustment": "Manual Adjustment",
-  "Payment Receipt": "Payment Receipt",
-  Expense: "Expense",
-};
+export const LEDGER_TRANSACTION_LABELS: Record<LedgerTransactionType, string> =
+  {
+    Journey: "Journey",
+    "Vehicle Entry": "Vehicle Entry",
+    "Driver Settlement": "Driver Settlement",
+    "Manual Adjustment": "Manual Adjustment",
+    "Payment Receipt": "Payment Receipt",
+    Expense: "Expense",
+  };
 
 // --------------------------
 // PAYMENT MODE CONSTANTS
@@ -83,6 +84,38 @@ export const LEDGER_PAYMENT_MODE_LABELS: Record<LedgerPaymentMode, string> = {
   UPI: "UPI / QR",
   Cheque: "Cheque",
   Credit: "Credit / Pending",
+};
+
+// --------------------------
+// REFERENCE TYPE CONSTANTS
+// --------------------------
+export const LEDGER_REFERENCE_TYPES = [
+  "None",
+  "Invoice",
+  "Bill",
+  "Voucher",
+  "UTR",
+  "Cheque",
+  "LR",
+  "Slip",
+  "Ref",
+] as const;
+
+export type LedgerReferenceTypes = (typeof LEDGER_REFERENCE_TYPES)[number];
+
+export const LEDGER_REFERENCE_TYPES_LABELS: Record<
+  LedgerReferenceTypes,
+  string
+> = {
+  None: "None",
+  Invoice: "Invoice",
+  Bill: "Bill",
+  Voucher: "Voucher",
+  UTR: "UTR",
+  Cheque: "Cheque",
+  LR: "LR",
+  Slip: "Slip",
+  Ref: "Ref",
 };
 
 // --------------------------

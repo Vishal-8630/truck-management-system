@@ -145,6 +145,11 @@ const Navbar = () => {
                 to: "/ledger/new-ledger",
                 label: "New Ledger",
                 content: "Click to create new Ledger Entry"
+              },
+              {
+                to: "/ledger/all-ledgers",
+                label: "All Ledgers",
+                content: "Click to view all Ledger Entries"
               }
             ]
           },
