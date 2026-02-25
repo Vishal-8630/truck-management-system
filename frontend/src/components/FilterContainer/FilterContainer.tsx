@@ -1,11 +1,11 @@
 import { useState } from "react";
-import styles from "./FilterContainer.module.scss";
 import Button from "../Button";
 import Overlay from "../Overlay";
 import GenericFilter from "../GenericFilter";
 import type { FilterConfig } from "../../filters/filter";
 import { applyGenericFilters } from "../../filters/filerHelper";
 import { AnimatePresence } from "framer-motion";
+import { Filter, X } from "lucide-react";
 
 type FilterContainerProps<T> = {
   data: T[];
@@ -40,24 +40,27 @@ function FilterContainer<T>({
   };
 
   return (
-    <div className={styles.filterContainer}>
+    <div className="flex items-center gap-4 flex-wrap">
       {hasFilter && (
-        <div className={styles.clearContainer}>
-          <p className={styles.filterPara}>Filter is applied</p>
-          <Button
-            text="Clear"
-            variant="primary"
+        <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+          <p className="text-sm font-bold text-indigo-700">Filter Applied</p>
+          <button
             onClick={() => handleApplyFilter({})}
-            className="clearFilterBtn"
-          />
+            className="p-1 hover:bg-indigo-100 rounded-lg text-indigo-700 transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
+
       <Button
-        text="Filter"
+        text="Filter Results"
         variant="secondary"
-        className="filterBtn"
+        icon={<Filter size={18} />}
         onClick={() => setIsFilterOpen(true)}
+        className="!rounded-xl"
       />
+
       <AnimatePresence>
         {isFilterOpen && (
           <Overlay onCancel={() => setIsFilterOpen(false)}>
@@ -74,3 +77,4 @@ function FilterContainer<T>({
 }
 
 export default FilterContainer;
+

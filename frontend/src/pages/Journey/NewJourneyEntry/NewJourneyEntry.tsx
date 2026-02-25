@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import styles from "./NewJourneyEntry.module.scss";
 import { EmptyJourneyType, type JourneyType } from "../../../types/journey";
 import type { InputType, Option } from "../../NewBillingEntry/constants";
 import FormSection from "../../../components/FormSection";
 import FormInput from "../../../components/FormInput";
 import type { AppDispatch } from "../../../app/store";
-import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addJourneyEntryAsync } from "../../../features/journey";
 import {
   fetchTrucksEntriesAsync,
@@ -20,35 +18,50 @@ import { EmptyTruckType, type TruckType } from "../../../types/truck";
 import { EmptyDriverType, type DriverType } from "../../../types/driver";
 import { addMessage } from "../../../features/message";
 import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Truck,
+  User,
+  MapPin,
+  Navigation,
+  Calendar,
+  Wallet,
+  TrendingUp,
+  ArrowLeft
+} from "lucide-react";
 
 const JOURNEY_FIELD_INPUTS: InputType[] = [
-  { type: "select", label: "Truck", name: "truck" },
-  { type: "select", label: "Driver", name: "driver" },
-  { type: "input", label: "From", name: "from", inputType: "text" },
-  { type: "input", label: "To", name: "to", inputType: "text" },
+  { type: "select", label: "Truck", name: "truck", icon: <Truck size={18} /> },
+  { type: "select", label: "Driver", name: "driver", icon: <User size={18} /> },
+  { type: "input", label: "From", name: "from", inputType: "text", icon: <MapPin size={18} /> },
+  { type: "input", label: "To", name: "to", inputType: "text", icon: <Navigation size={18} /> },
   {
     type: "input",
     label: "Starting Kms",
     name: "starting_kms",
     inputType: "number",
+    icon: <TrendingUp size={18} />
   },
   {
     type: "number",
     label: "Journey Days",
     name: "journey_days",
     inputType: "number",
+    icon: <Calendar size={18} />
   },
   {
     type: "number",
-    label: "Journey Starting Cash",
+    label: "Starting Cash",
     name: "journey_starting_cash",
     inputType: "number",
+    icon: <Wallet size={18} />
   },
   {
     type: "number",
     label: "Truck Mileage",
     name: "average_mileage",
     inputType: "number",
+    icon: <Truck size={18} />
   },
 ];
 
@@ -169,7 +182,6 @@ const NewJourneyEntry = () => {
       } else if (addJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors && !errors?.general && Object.keys(errors)?.length > 0) {
-          console.log(errors);
           errorsRef.current = errors;
           forceRender({});
         }
@@ -181,7 +193,6 @@ const NewJourneyEntry = () => {
         );
       }
     } catch (error: any) {
-      console.log("Error: ", error);
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
   };
@@ -195,18 +206,18 @@ const NewJourneyEntry = () => {
       let placeholder: string = input.label;
       let inputRef:
         | React.RefObject<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-          >
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
         | undefined = undefined;
 
       if (input.name === "truck") {
-        placeholder = "Select a Truck";
+        placeholder = "Search truck registration...";
         value = selectedTruck.truck_no;
         inputRef = truckRef as React.RefObject<HTMLInputElement>;
       }
 
       if (input.name === "driver") {
-        placeholder = "Select a Driver";
+        placeholder = "Search driver by name...";
         value = selectedDriver.name;
         inputRef = driverRef as React.RefObject<HTMLInputElement>;
       }
@@ -228,19 +239,49 @@ const NewJourneyEntry = () => {
           onChange={handleInputChange}
           onSelectChange={handleSelectChange}
           fetchOptions={fetchOptions}
+          icon={input.icon}
         />
       );
     });
   };
 
   return (
-    <div className={styles.newJourneyContainer}>
-      <h1 className={styles.heading}>Add New Journey</h1>
-      <form className={styles.journeyForm} onSubmit={handleSubmit}>
-        <FormSection title="Journey Details">
-          {renderInputs(JOURNEY_FIELD_INPUTS)}
-          <button className={styles.btn}>Add Journey</button>
-        </FormSection>
+    <div className="flex flex-col gap-10 pb-20 max-w-4xl mx-auto">
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
+            <Plus className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
+            New <span className="text-indigo-600">Journey</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">Initialize a new trip with truck and driver details.</p>
+        </div>
+      </div>
+
+      <form className="grid grid-cols-1 gap-8" onSubmit={handleSubmit}>
+        <div className="card-premium p-8 lg:p-10 flex flex-col gap-10">
+          <FormSection title="Journey Information" icon={<Navigation size={18} />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {renderInputs(JOURNEY_FIELD_INPUTS)}
+            </div>
+          </FormSection>
+
+          <div className="flex justify-end pt-6 border-t border-slate-100">
+            <button
+              type="submit"
+              className="w-full lg:w-fit px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:translate-y-0"
+            >
+              <Plus size={20} strokeWidth={3} />
+              Start Journey
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

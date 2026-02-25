@@ -1,12 +1,11 @@
-import { Outlet } from 'react-router-dom'
-import styles from './PagesOutlet.module.scss';
+import { Outlet } from 'react-router-dom';
 
 const PagesOutlet = () => {
   return (
-    <div className={styles.outletContainer}>
-        <Outlet />
+    <div className="w-full max-w-7xl mx-auto">
+      <Outlet />
     </div>
   )
 }
 
-export default PagesOutlet
+export default PagesOutlet;

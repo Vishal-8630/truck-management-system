@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import styles from "./JourneyDetail.module.scss";
 import type { AppDispatch } from "../../../app/store";
 import {
   deleteJourneyEntryAsync,
@@ -18,6 +17,7 @@ import DetailBlock from "./components/DetailBlock";
 import { addMessage } from "../../../features/message";
 import EditHeader from "../../../components/EditHeader";
 import type { Option } from "../../NewBillingEntry/constants";
+import { ArrowLeft, Navigation, Truck, DollarSign, Activity, FileText } from "lucide-react";
 
 const JourneyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -80,12 +80,12 @@ const JourneyDetail = () => {
         field === "driver_expense"
           ? "driver_expenses"
           : field === "diesel_expense"
-          ? "diesel_expenses"
-          : field === "delay"
-          ? "delays"
-          : field === "issue"
-          ? "issues"
-          : "daily_progress";
+            ? "diesel_expenses"
+            : field === "delay"
+              ? "delays"
+              : field === "issue"
+                ? "issues"
+                : "daily_progress";
 
       return {
         ...prev,
@@ -106,14 +106,12 @@ const JourneyDetail = () => {
       } else if (updateJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
-          console.log("Errors while adding new journey", errors);
           dispatch(
             addMessage({ type: "error", text: "Failed to update journey" })
           );
         }
       }
     } catch (error: any) {
-      console.log("Error: ", error);
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
   };
@@ -129,14 +127,12 @@ const JourneyDetail = () => {
       } else if (deleteJourneyEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
-          console.log("Errors while deleting journey", errors);
           dispatch(
             addMessage({ type: "error", text: "Failed to delete journey" })
           );
         }
       }
     } catch (error: any) {
-      console.log("Error: ", error);
       dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
   };
@@ -149,325 +145,376 @@ const JourneyDetail = () => {
   if (loading || !localJourney) return <Loading />;
 
   return (
-    <div className={styles.journeyDetailContainer}>
-      <EditHeader
-        heading="Truck Journey"
-        isDirty={isDirty}
-        onEditClick={() => {
-          setBackupJourney(localJourney);
-          setIsEditMode(true);
-        }}
-        onSaveClick={() => {
-          handleSave();
-          setIsEditMode(false);
-        }}
-        onCancelClick={() => {
-          setLocalJourney(backupJourney);
-          setIsEditMode(false);
-        }}
-        onDeleteClick={() => handleDelete(localJourney._id)}
-        onDiscardClick={() => {
-          setLocalJourney(backupJourney);
-          setIsEditMode(false);
-        }}
-      />
+    <div className="flex flex-col gap-10 pb-20 max-w-7xl mx-auto">
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+        >
+          <ArrowLeft size={14} />
+          Back to Fleet
+        </button>
 
-      <div className={styles.journeyDetail}>
-        {/* Journey Detail - Readonly */}
-        <DetailBlock
-          title="Journey Detail"
-          isEditMode={isEditMode}
-          onChange={(key, value) => {
-            setLocalJourney((prev) => {
-              if (!prev) return prev;
-              return { ...prev, [key]: value };
-            });
+        <EditHeader
+          heading="Journey Roadmap"
+          isDirty={isDirty}
+          onEditClick={() => {
+            setBackupJourney(localJourney);
+            setIsEditMode(true);
           }}
-          fields={[
-            { label: "Truck Number", value: localJourney.truck?.truck_no },
-            { label: "Driver", value: localJourney.driver?.name },
-            { label: "From", value: localJourney.from },
-            { label: "To", value: localJourney.to },
-            { label: "Weight (Kg)", value: localJourney.loaded_weight },
-            {
-              label: "Mileage",
-              key: "average_mileage",
-              value: localJourney.average_mileage,
-              isEditable: true,
-            },
-            {
-              label: "Starting Cash",
-              key: "journey_starting_cash",
-              value: localJourney.journey_starting_cash,
-              isEditable: true,
-            },
-          ]}
+          onSaveClick={() => {
+            handleSave();
+            setIsEditMode(false);
+          }}
+          onCancelClick={() => {
+            setLocalJourney(backupJourney);
+            setIsEditMode(false);
+          }}
+          onDeleteClick={() => handleDelete(localJourney._id)}
+          onDiscardClick={() => {
+            setLocalJourney(backupJourney);
+            setIsEditMode(false);
+          }}
         />
+      </div>
 
-        {/* Journey Info - Editable Fields */}
-        <DetailBlock
-          title="Journey Information"
-          isEditMode={isEditMode}
-          onChange={(key, value) => {
-            setLocalJourney((prev) => {
-              if (!prev) return prev;
-              if (key === "route") {
-                return {
-                  ...prev,
-                  route: value.split(",").map((r) => r.trim()),
-                } as JourneyType;
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Main Details Area */}
+        <div className="lg:col-span-8 flex flex-col gap-10">
+          {/* Journey Status Ribbon */}
+          <div className={`
+                p-6 rounded-[2rem] flex items-center justify-between border-2
+                ${localJourney.status === 'Completed' ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' :
+              localJourney.status === 'Delayed' ? 'bg-amber-50/50 border-amber-100 text-amber-700' :
+                'bg-indigo-50/50 border-indigo-100 text-indigo-700'}
+            `}>
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white rounded-2xl shadow-sm">
+                <Activity size={24} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Live Journey Status</span>
+                <h2 className="text-xl font-black italic tracking-tight">{localJourney.status}</h2>
+              </div>
+            </div>
+            <div className="flex flex-col text-right">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Last Updated</span>
+              <span className="font-bold">{safeDate(String(new Date()))}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <DetailBlock
+              title="Operational Detail"
+              icon={<Truck size={18} />}
+              isEditMode={isEditMode}
+              onChange={(key, value) => {
+                setLocalJourney((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, [key]: value };
+                });
+              }}
+              fields={[
+                { label: "Truck Registration", value: localJourney.truck?.truck_no },
+                { label: "Assigned Driver", value: localJourney.driver?.name },
+                { label: "Starting Point", value: localJourney.from },
+                { label: "Destination", value: localJourney.to },
+                { label: "Payload Weight (Kg)", value: localJourney.loaded_weight },
+                {
+                  label: "Mileage Target",
+                  key: "average_mileage",
+                  value: localJourney.average_mileage,
+                  isEditable: true,
+                },
+                {
+                  label: "Allocated Cash",
+                  key: "journey_starting_cash",
+                  value: localJourney.journey_starting_cash,
+                  isEditable: true,
+                },
+              ]}
+            />
+
+            <DetailBlock
+              title="Travel Logs"
+              icon={<Navigation size={18} />}
+              isEditMode={isEditMode}
+              onChange={(key, value) => {
+                setLocalJourney((prev) => {
+                  if (!prev) return prev;
+                  if (key === "route") {
+                    return {
+                      ...prev,
+                      route: value.split(",").map((r) => r.trim()),
+                    } as JourneyType;
+                  }
+                  return { ...prev, [key]: value } as JourneyType;
+                });
+              }}
+              fields={[
+                {
+                  label: "Planned Days",
+                  value: localJourney.journey_days,
+                  key: "journey_days",
+                  isEditable: true,
+                },
+                {
+                  label: "Odometer Initial",
+                  value: localJourney.starting_kms,
+                  key: "starting_kms",
+                  isEditable: true,
+                },
+                {
+                  label: "Odometer Final",
+                  value: localJourney.ending_kms,
+                  key: "ending_kms",
+                  isEditable: true,
+                },
+                {
+                  label: "Assigned Route",
+                  value: localJourney.route?.join(", "),
+                  key: "route",
+                  isEditable: true,
+                },
+                {
+                  label: "Commencement Date",
+                  value: safeDate(localJourney.journey_start_date),
+                  key: "journey_start_date",
+                  isEditable: true,
+                },
+                {
+                  label: "Completion Date",
+                  value: safeDate(localJourney.journey_end_date),
+                  key: "journey_end_date",
+                  isEditable: true
+                },
+                {
+                  label: "Update Status",
+                  value: localJourney.status,
+                  isEditable: true,
+                  key: "status",
+                  options: status_options,
+                },
+              ]}
+            />
+          </div>
+
+          <div className="flex flex-col gap-10">
+            <ExpenseSection
+              title="Driver Ledger"
+              data={localJourney.driver_expenses || []}
+              fields={[
+                { label: "Amt", key: "amount" },
+                { label: "Note", key: "reason" },
+                { label: "Date", key: "date" },
+              ]}
+              onAdd={() => handleBtnClick("driver_expense")}
+              onChange={(updatedData) =>
+                setLocalJourney((prev) =>
+                  prev ? { ...prev, driver_expenses: updatedData } : prev
+                )
               }
-              return { ...prev, [key]: value } as JourneyType;
-            });
-          }}
-          fields={[
-            {
-              label: "Journey Days",
-              value: localJourney.journey_days,
-              key: "journey_days",
-              isEditable: true,
-            },
-            {
-              label: "Starting Kms",
-              value: localJourney.starting_kms,
-              key: "starting_kms",
-              isEditable: true,
-            },
-            {
-              label: "Ending Kms",
-              value: localJourney.ending_kms,
-              key: "ending_kms",
-              isEditable: true,
-            },
-            {
-              label: "Route",
-              value: localJourney.route?.join(", "),
-              key: "route",
-              isEditable: true,
-            },
-            {
-              label: "Journey Start Date",
-              value: safeDate(localJourney.journey_start_date),
-              key: "journey_start_date",
-              isEditable: true,
-            },
-            {
-              label: "Journey End Date",
-              value: safeDate(localJourney.journey_end_date),
-              key: "journey_end_date",
-              isEditable: true
-            },
-            {
-              label: "Journey Status",
-              value: localJourney.status,
-              isEditable: true,
-              key: "status",
-              options: status_options,
-            },
-          ]}
-        />
+              isEditMode={isEditMode}
+            />
 
-        {/* Editable Expense Sections */}
-        <ExpenseSection
-          title="Driver Expense"
-          data={localJourney.driver_expenses || []}
-          fields={[
-            { label: "Amount", key: "amount" },
-            { label: "Reason", key: "reason" },
-            { label: "Date", key: "date" },
-          ]}
-          onAdd={() => handleBtnClick("driver_expense")}
-          onChange={(updatedData) =>
-            setLocalJourney((prev) =>
-              prev ? { ...prev, driver_expenses: updatedData } : prev
-            )
-          }
-          isEditMode={isEditMode}
-        />
-
-        <ExpenseSection
-          title="Diesel Expense"
-          data={localJourney.diesel_expenses || []}
-          fields={[
-            { label: "Amount", key: "amount" },
-            { label: "Quantity", key: "quantity" },
-            { label: "Date", key: "filling_date" },
-          ]}
-          onAdd={() => handleBtnClick("diesel_expense")}
-          onChange={(updatedData) =>
-            setLocalJourney((prev) =>
-              prev ? { ...prev, diesel_expenses: updatedData } : prev
-            )
-          }
-          isEditMode={isEditMode}
-        />
-
-        <ExpenseSection
-          title="Delay"
-          data={localJourney.delays || []}
-          fields={[
-            { label: "Place", key: "place" },
-            { label: "Reason", key: "reason" },
-            { label: "Date", key: "date" },
-          ]}
-          onAdd={() => handleBtnClick("delay")}
-          onChange={(updatedData) =>
-            setLocalJourney((prev) =>
-              prev ? { ...prev, delays: updatedData } : prev
-            )
-          }
-          isEditMode={isEditMode}
-        />
-
-        <ExpenseSection
-          title="Daily Progress"
-          data={localJourney.daily_progress || []}
-          fields={[
-            { label: "Day", key: "day_number" },
-            { label: "Date", key: "date" },
-            { label: "Location", key: "location" },
-            { label: "Remarks", key: "remarks" },
-          ]}
-          onAdd={() => handleBtnClick("daily_progress")}
-          onChange={(updatedData) =>
-            setLocalJourney((prev) =>
-              prev ? { ...prev, daily_progress: updatedData } : prev
-            )
-          }
-          isEditMode={isEditMode}
-        />
-
-        <ExpenseSection
-          title="Issues"
-          data={localJourney.issues || []}
-          fields={[
-            { label: "Note", key: "note" },
-            { label: "Date", key: "date" },
-          ]}
-          onAdd={() => handleBtnClick("issue")}
-          onChange={(updatedData) =>
-            setLocalJourney((prev) =>
-              prev ? { ...prev, issues: updatedData } : prev
-            )
-          }
-          isEditMode={isEditMode}
-        />
-
-        {/* Expense Summary - Readonly */}
-        <DetailBlock
-          title="Expenses Summary"
-          fields={[
-            {
-              label: "Total Working Expense",
-              value: localJourney.total_driver_expense,
-            },
-            {
-              label: "Total Diesel Expense",
-              value: localJourney.total_diesel_expense,
-            },
-            { label: "Total Expense", value: localJourney.total_expense },
-          ]}
-        />
-
-        {/* Delivery Details - Editable Fields */}
-        <DetailBlock
-          title="Delivery Details"
-          isEditMode={isEditMode}
-          onChange={(key, value) => {
-            setLocalJourney((prev) => {
-              if (!prev) return prev;
-
-              if (key.startsWith("delivery_details.")) {
-                const subKey = key.split(".")[1];
-                return {
-                  ...prev,
-                  delivery_details: {
-                    ...prev.delivery_details,
-                    [subKey]: value,
-                  },
-                } as JourneyType;
+            <ExpenseSection
+              title="Diesel Logs"
+              data={localJourney.diesel_expenses || []}
+              fields={[
+                { label: "Amt", key: "amount" },
+                { label: "Qty", key: "quantity" },
+                { label: "Date", key: "filling_date" },
+              ]}
+              onAdd={() => handleBtnClick("diesel_expense")}
+              onChange={(updatedData) =>
+                setLocalJourney((prev) =>
+                  prev ? { ...prev, diesel_expenses: updatedData } : prev
+                )
               }
+              isEditMode={isEditMode}
+            />
 
-              return { ...prev, [key]: value } as JourneyType;
-            });
-          }}
-          fields={[
-            {
-              label: "Delivered To",
-              value: localJourney.delivery_details?.delivered_to,
-              key: "delivery_details.delivered_to",
-              isEditable: true,
-            },
-            {
-              label: "Entry Date",
-              value: localJourney.delivery_details?.entry_date,
-              key: "delivery_details.entry_date",
-              isEditable: true,
-            },
-            {
-              label: "Empty Date",
-              value: localJourney.delivery_details?.empty_date,
-              key: "delivery_details.empty_date",
-              isEditable: true,
-            },
-            {
-              label: "Remarks",
-              value: localJourney.delivery_details?.remarks,
-              key: "delivery_details.remarks",
-              isEditable: true,
-            },
-          ]}
-        />
-
-        {/* Settlements - Editable Fields */}
-        <DetailBlock
-          title="Settlements"
-          isEditMode={isEditMode}
-          onChange={(key, value) => {
-            setLocalJourney((prev) => {
-              if (!prev) return prev;
-
-              if (key.startsWith("settlements.")) {
-                const subKey = key.split(".")[1];
-                return {
-                  ...prev,
-                  settlement: {
-                    ...prev.settlement,
-                    [subKey]: value,
-                  },
-                } as JourneyType;
+            <ExpenseSection
+              title="Transit Delays"
+              data={localJourney.delays || []}
+              fields={[
+                { label: "Location", key: "place" },
+                { label: "Cause", key: "reason" },
+                { label: "Date", key: "date" },
+              ]}
+              onAdd={() => handleBtnClick("delay")}
+              onChange={(updatedData) =>
+                setLocalJourney((prev) =>
+                  prev ? { ...prev, delays: updatedData } : prev
+                )
               }
+              isEditMode={isEditMode}
+            />
 
-              return { ...prev, [key]: value } as JourneyType;
-            });
-          }}
-          fields={[
-            {
-              label: "Amount Paid",
-              value: localJourney.settlement?.amount_paid,
-              key: "settlement.amount_paid",
-              isEditable: true,
-            },
-            {
-              label: "Date",
-              value: localJourney.settlement?.date_paid,
-              key: "settlement.date_paid",
-              isEditable: true,
-            },
-            {
-              label: "Mode",
-              value: localJourney.settlement.mode,
-              key: "settlement.mode",
-              isEditable: true,
-            },
-            {
-              label: "Remarks",
-              value: localJourney.settlement?.remarks,
-              key: "settlement.remarks",
-              isEditable: true,
-            },
-          ]}
-        />
+            <ExpenseSection
+              title="Route Checkpoints"
+              data={localJourney.daily_progress || []}
+              fields={[
+                { label: "Day", key: "day_number" },
+                { label: "Date", key: "date" },
+                { label: "At", key: "location" },
+                { label: "Note", key: "remarks" },
+              ]}
+              onAdd={() => handleBtnClick("daily_progress")}
+              onChange={(updatedData) =>
+                setLocalJourney((prev) =>
+                  prev ? { ...prev, daily_progress: updatedData } : prev
+                )
+              }
+              isEditMode={isEditMode}
+            />
+
+            <ExpenseSection
+              title="Reported Incidents"
+              data={localJourney.issues || []}
+              fields={[
+                { label: "Observation", key: "note" },
+                { label: "Date", key: "date" },
+              ]}
+              onAdd={() => handleBtnClick("issue")}
+              onChange={(updatedData) =>
+                setLocalJourney((prev) =>
+                  prev ? { ...prev, issues: updatedData } : prev
+                )
+              }
+              isEditMode={isEditMode}
+            />
+          </div>
+        </div>
+
+        {/* Sidebar Summary Area */}
+        <div className="lg:col-span-4 flex flex-col gap-8">
+          <div className="card-premium p-8 bg-slate-900 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            <div className="flex flex-col gap-8 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <DollarSign size={18} className="text-emerald-400" />
+                </div>
+                <h3 className="text-sm font-black uppercase tracking-widest italic">Financial Overview</h3>
+              </div>
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Total Running Expense</span>
+                  <span className="text-2xl font-black italic">₹{localJourney.total_driver_expense || 0}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Total Diesel Cost</span>
+                  <span className="text-2xl font-black italic">₹{localJourney.total_diesel_expense || 0}</span>
+                </div>
+                <div className="pt-6 border-t border-white/10">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Total Trip Investment</span>
+                  <div className="text-4xl font-black italic">₹{localJourney.total_expense || 0}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DetailBlock
+            title="Delivery & POD"
+            icon={<FileText size={18} />}
+            isEditMode={isEditMode}
+            onChange={(key, value) => {
+              setLocalJourney((prev) => {
+                if (!prev) return prev;
+
+                if (key.startsWith("delivery_details.")) {
+                  const subKey = key.split(".")[1];
+                  return {
+                    ...prev,
+                    delivery_details: {
+                      ...prev.delivery_details,
+                      [subKey]: value,
+                    },
+                  } as JourneyType;
+                }
+
+                return { ...prev, [key]: value } as JourneyType;
+              });
+            }}
+            fields={[
+              {
+                label: "Receiver Name",
+                value: localJourney.delivery_details?.delivered_to,
+                key: "delivery_details.delivered_to",
+                isEditable: true,
+              },
+              {
+                label: "Warehouse Entry",
+                value: safeDate(localJourney.delivery_details?.entry_date),
+                key: "delivery_details.entry_date",
+                isEditable: true,
+              },
+              {
+                label: "Container Empty",
+                value: safeDate(localJourney.delivery_details?.empty_date),
+                key: "delivery_details.empty_date",
+                isEditable: true,
+              },
+              {
+                label: "POD Remarks",
+                value: localJourney.delivery_details?.remarks,
+                key: "delivery_details.remarks",
+                isEditable: true,
+              },
+            ]}
+          />
+
+          <DetailBlock
+            title="Account Settlements"
+            icon={<DollarSign size={18} />}
+            isEditMode={isEditMode}
+            onChange={(key, value) => {
+              setLocalJourney((prev) => {
+                if (!prev) return prev;
+
+                if (key.startsWith("settlements.")) {
+                  const subKey = key.split(".")[1];
+                  return {
+                    ...prev,
+                    settlement: {
+                      ...prev.settlement,
+                      [subKey]: value,
+                    },
+                  } as JourneyType;
+                }
+
+                return { ...prev, [key]: value } as JourneyType;
+              });
+            }}
+            fields={[
+              {
+                label: "Final Paid Amt",
+                value: localJourney.settlement?.amount_paid,
+                key: "settlement.amount_paid",
+                isEditable: true,
+              },
+              {
+                label: "Payment Date",
+                value: safeDate(localJourney.settlement?.date_paid),
+                key: "settlement.date_paid",
+                isEditable: true,
+              },
+              {
+                label: "Txn Mode",
+                value: localJourney.settlement.mode,
+                key: "settlement.mode",
+                isEditable: true,
+              },
+              {
+                label: "Final Remarks",
+                value: localJourney.settlement?.remarks,
+                key: "settlement.remarks",
+                isEditable: true,
+              },
+            ]}
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import type React from "react";
-import styles from "./EditHeader.module.scss";
 import { useState } from "react";
 import Overlay from "../Overlay";
+import { Edit3, Save, X, Trash2, AlertCircle } from "lucide-react";
 
 interface EditHeaderProps {
   heading: string;
@@ -27,104 +27,135 @@ const EditHeader: React.FC<EditHeaderProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
-    <div className={styles.editHeaderContainer}>
-      <h1 className={styles.heading}>{heading}</h1>
-      <div className={styles.controls}>
-        <div className={styles.controls}>
-          {!isEditMode ? (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-slate-100">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight italic">
+          {heading}
+        </h1>
+        {isEditMode && (
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-400 animate-pulse' : 'bg-slate-300'}`}></span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+              {isDirty ? 'Unsaved Changes' : 'Editing Mode'}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        {!isEditMode ? (
+          <>
             <button
-              className={`${styles.controlBtn} ${styles.editBtn}`}
               onClick={() => {
                 onEditClick();
                 setIsEditMode(true);
               }}
+              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-100"
             >
+              <Edit3 size={16} />
               Edit
             </button>
-          ) : (
-            <>
-              <button
-                className={`${styles.controlBtn} ${styles.saveBtn}`}
-                disabled={!isDirty}
-                onClick={() => {
-                  onSaveClick();
-                  setIsEditMode(false);
-                }}
-              >
-                Save
-              </button>
-              <button
-                className={`${styles.controlBtn} ${styles.cancelBtn}`}
-                onClick={() => {
-                  if (isDirty) {
-                    setShowCancelConfirm(true);
-                    return;
-                  }
-                  onCancelClick();
-                  setIsEditMode(false);
-                }}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-          <button
-            className={styles.controlBtn}
-            onClick={() => {
-              setShowDeleteConfirm(true);
-            }}
-          >
-            Delete
-          </button>
-        </div>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+              title="Delete Record"
+            >
+              <Trash2 size={20} />
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                onSaveClick();
+                setIsEditMode(false);
+              }}
+              disabled={!isDirty}
+              className={`
+                px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg
+                ${isDirty
+                  ? 'bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'}
+              `}
+            >
+              <Save size={16} />
+              Save Changes
+            </button>
+            <button
+              onClick={() => {
+                if (isDirty) {
+                  setShowCancelConfirm(true);
+                  return;
+                }
+                onCancelClick();
+                setIsEditMode(false);
+              }}
+              className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-200 transition-all active:scale-95"
+            >
+              <X size={16} />
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
+
       {showCancelConfirm && (
-        <Overlay
-          onCancel={() => {
-            setShowCancelConfirm(false);
-          }}
-        >
-          <div className={styles.overlay}>
-            <h1>Discard changes?</h1>
-            <p>
-              You have unsaved changes. Are you sure you want to discard them?
-            </p>
-            <div className={styles.popupControls}>
+        <Overlay onCancel={() => setShowCancelConfirm(false)}>
+          <div className="p-8 max-w-sm w-full bg-white rounded-[2rem] shadow-2xl flex flex-col items-center text-center gap-6">
+            <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
+              <AlertCircle size={32} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-2xl font-bold text-slate-900">Discard changes?</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">You have unsaved changes that will be lost. Are you sure you want to proceed?</p>
+            </div>
+            <div className="flex flex-col w-full gap-2">
               <button
-                className={styles.controlBtn}
                 onClick={() => {
                   setIsEditMode(false);
                   setShowCancelConfirm(false);
                   onDiscardClick();
                 }}
+                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-100"
               >
-                Discard
+                Discard Changes
+              </button>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="w-full py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+              >
+                Keep Editing
               </button>
             </div>
           </div>
         </Overlay>
       )}
+
       {showDeleteConfirm && (
-        <Overlay
-          onCancel={() => {
-            setShowDeleteConfirm(false);
-          }}
-        >
-          <div className={styles.overlay}>
-            <h1>Delete Journey?</h1>
-            <p>
-              Are you sure you want to delete this journey? This action cannot
-              be undone.
-            </p>
-            <div className={styles.popupControls}>
+        <Overlay onCancel={() => setShowDeleteConfirm(false)}>
+          <div className="p-8 max-w-sm w-full bg-white rounded-[2rem] shadow-2xl flex flex-col items-center text-center gap-6">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+              <Trash2 size={32} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Remove Record?</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">This action is permanent and cannot be undone. All associated data will be removed.</p>
+            </div>
+            <div className="flex flex-col w-full gap-2">
               <button
-                className={styles.controlBtn}
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   onDeleteClick();
                 }}
+                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg"
               >
-                Delete
+                Confirm Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="w-full py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -135,3 +166,4 @@ const EditHeader: React.FC<EditHeaderProps> = ({
 };
 
 export default EditHeader;
+

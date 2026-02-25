@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import type { AppDispatch } from "../../../app/store";
@@ -42,7 +42,6 @@ import Loading from "../../../components/Loading";
 import EditHeader from "../../../components/EditHeader";
 import DetailBlock from "../../Journey/JourneyDetail/components/DetailBlock";
 
-import styles from "./LedgerDetail.module.scss";
 import { formatDate } from "../../../utils/formatDate";
 import {
   LEDGER_CATEGORIES,
@@ -52,6 +51,7 @@ import {
 } from "../ledgerConstants";
 import MetaFields from "../../../components/MetaFields";
 import { addMessage } from "../../../features/message";
+import { ArrowLeft } from "lucide-react";
 
 type LedgerRelationKey =
   | "journey"
@@ -63,6 +63,7 @@ type LedgerRelationKey =
 
 const LedgerDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
 
   const journies = useSelector(journeySelectors.selectAll);
@@ -112,9 +113,8 @@ const LedgerDetail = () => {
   const optionConfig: Record<LedgerRelationKey, () => Option[]> = {
     journey: () =>
       journies.map((j) => ({
-        label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${
-          j.to
-        } | ${formatDate(new Date(j.journey_start_date))}`,
+        label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${j.to
+          } | ${formatDate(new Date(j.journey_start_date))}`,
         value: j._id,
       })),
 
@@ -169,8 +169,8 @@ const LedgerDetail = () => {
     settlement: () =>
       localLedger.settlement?._id
         ? `${localLedger.settlement.driver.name} | ${formatDate(
-            new Date(localLedger.settlement.period.from)
-          )} | ${formatDate(new Date(localLedger.settlement.period.to))}`
+          new Date(localLedger.settlement.period.from)
+        )} | ${formatDate(new Date(localLedger.settlement.period.to))}`
         : "----------",
 
     vehicle_entry: () =>
@@ -242,8 +242,11 @@ const LedgerDetail = () => {
   /* ------------------------------------------
        DELETE + SAVE (PLACEHOLDER)
   ------------------------------------------ */
-  const handleDelete = (id: string) => {};
-  
+  const handleDelete = (id: string) => {
+    // Implement delete logic if needed
+    dispatch(addMessage({ type: "info", text: `Delete action triggered for ${id}` }));
+  };
+
   const handleSave = async () => {
     try {
       const resultAction = await dispatch(updateLedgerEntryAsync(localLedger));
@@ -253,7 +256,7 @@ const LedgerDetail = () => {
           addMessage({ type: "success", text: "Ledger updated successfully" })
         );
       } else if (updateLedgerEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
+        const errors = resultAction.payload as Record<string, string>;
         if (errors && Object.keys(errors).length > 0) {
           errorsRef.current = errors;
           forceRender({});
@@ -294,9 +297,17 @@ const LedgerDetail = () => {
        RENDER
   ------------------------------------------ */
   return (
-    <div className={styles.ledgerDetailContainer}>
+    <div className="flex flex-col gap-8 pb-20">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+      >
+        <ArrowLeft size={14} />
+        Back to list
+      </button>
+
       <EditHeader
-        heading="Ledger Detail"
+        heading="Ledger Details"
         isDirty={isDirty}
         onEditClick={() => {
           setIsEditMode(true);
@@ -306,7 +317,7 @@ const LedgerDetail = () => {
           setIsEditMode(false);
           setLocalLedger(backupLedger);
         }}
-        onDeleteClick={() => handleDelete(localLedger._id)}
+        onDeleteClick={() => handleDelete(localLedger?._id || "")}
         onDiscardClick={() => {
           setIsEditMode(false);
           setLocalLedger(backupLedger);
@@ -317,74 +328,77 @@ const LedgerDetail = () => {
         }}
       />
 
-      <div className={styles.detailContainer}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <DetailBlock
-          title="Ledger Information"
+          title="Relation Mapping"
           isEditMode={isEditMode}
           onChange={handleChange}
           fields={fields}
         />
+        <div className="flex flex-col gap-8">
+          <DetailBlock
+            title="Core Transaction"
+            isEditMode={isEditMode}
+            onChange={(key, value) => handleChange(key, value)}
+            fields={[
+              {
+                label: "Transaction Date",
+                key: "date",
+                value: formatDate(new Date(localLedger.date)),
+                isEditable: isEditMode,
+              },
+              {
+                label: "Category",
+                key: "category",
+                value: localLedger.category,
+                isEditable: isEditMode,
+                options: getOptions("category"),
+              },
+              {
+                label: "Transaction Type",
+                key: "transaction_type",
+                value: localLedger.transaction_type,
+                isEditable: isEditMode,
+                options: getOptions("transaction_type"),
+              },
+              {
+                label: "Description",
+                key: "description",
+                value: localLedger.description || "----------",
+                isEditable: isEditMode,
+              },
+            ]}
+          />
+          <DetailBlock
+            title="Financials"
+            isEditMode={isEditMode}
+            onChange={(key, value) => handleChange(key, value)}
+            fields={[
+              {
+                label: "Debit (Outgoing)",
+                key: "debit",
+                value: localLedger.debit ? `₹${localLedger.debit}` : "0",
+                isEditable: isEditMode,
+              },
+              {
+                label: "Credit (Incoming)",
+                key: "credit",
+                value: localLedger.credit ? `₹${localLedger.credit}` : "0",
+                isEditable: isEditMode,
+              },
+              {
+                label: "Payment Mode",
+                key: "payment_mode",
+                value: localLedger.payment_mode,
+                isEditable: isEditMode,
+                options: getOptions("payment_mode"),
+              },
+            ]}
+          />
+        </div>
+
         <DetailBlock
-          title="Ledger Information"
-          isEditMode={isEditMode}
-          onChange={(key, value) => handleChange(key, value)}
-          fields={[
-            {
-              label: "Transaction Date",
-              key: "date",
-              value: formatDate(new Date(localLedger.date)),
-              isEditable: isEditMode,
-            },
-            {
-              label: "Category",
-              key: "category",
-              value: localLedger.category,
-              isEditable: isEditMode,
-              options: getOptions("category"),
-            },
-            {
-              label: "Transaction Type",
-              key: "transaction_type",
-              value: localLedger.transaction_type,
-              isEditable: isEditMode,
-              options: getOptions("transaction_type"),
-            },
-            {
-              label: "Description",
-              key: "description",
-              value: localLedger.description || "----------",
-              isEditable: isEditMode,
-            },
-          ]}
-        />
-        <DetailBlock
-          title="Payment Information"
-          isEditMode={isEditMode}
-          onChange={(key, value) => handleChange(key, value)}
-          fields={[
-            {
-              label: "Debit",
-              key: "debit",
-              value: localLedger.debit,
-              isEditable: isEditMode,
-            },
-            {
-              label: "Credit",
-              key: "credit",
-              value: localLedger.credit,
-              isEditable: isEditMode,
-            },
-            {
-              label: "Payment Mode",
-              key: "payment_mode",
-              value: localLedger.payment_mode,
-              isEditable: isEditMode,
-              options: getOptions("payment_mode"),
-            },
-          ]}
-        />
-        <DetailBlock
-          title="Reference Information"
+          title="References & Traceability"
           isEditMode={isEditMode}
           onChange={(key, value) => handleChange(key, value)}
           fields={[
@@ -409,23 +423,26 @@ const LedgerDetail = () => {
             },
           ]}
         />
+
         <DetailBlock
-          title="Addition Information (Meta)"
+          title="System Metadata"
           fields={[]}
           childs={
-            <MetaFields
-              value={localLedger.meta}
-              isEditMode={isEditMode}
-              onChange={(meta) =>
-                setLocalLedger((prev) => {
-                  if (!prev) return prev;
-                  return {
-                    ...prev,
-                    meta,
-                  };
-                })
-              }
-            />
+            <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-100">
+              <MetaFields
+                value={localLedger.meta}
+                isEditMode={isEditMode}
+                onChange={(meta) =>
+                  setLocalLedger((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      meta,
+                    };
+                  })
+                }
+              />
+            </div>
           }
         />
       </div>
@@ -434,3 +451,4 @@ const LedgerDetail = () => {
 };
 
 export default LedgerDetail;
+

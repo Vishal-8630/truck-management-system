@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import styles from "./NewLedger.module.scss";
 import { EmptyLedgerEntry, type LedgerType } from "../../../types/ledger";
 import type { InputType, Option } from "../../NewBillingEntry/constants";
 import FormSection from "../../../components/FormSection";
 import FormInput from "../../../components/FormInput";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   fetchJourneyEntriesAsync,
   journeySelectors,
@@ -30,7 +29,6 @@ import {
   vehicleEntrySelectors,
 } from "../../../features/vehicleEntry";
 import type { AppDispatch } from "../../../app/store";
-import { useDispatch } from "react-redux";
 import { EmptyJourneyType, type JourneyType } from "../../../types/journey";
 import { EmptyTruckType, type TruckType } from "../../../types/truck";
 import { EmptyDriverType, type DriverType } from "../../../types/driver";
@@ -57,6 +55,7 @@ import MetaFields from "../../../components/MetaFields";
 import { addMessage } from "../../../features/message";
 import { addLedgerEntryAsync } from "../../../features/ledger";
 import { useNavigate } from "react-router-dom";
+import { BookOpen, Plus, Sparkles, Receipt, Link2, Wallet, ArrowLeft } from "lucide-react";
 
 const LINKED_OBJ_INPUTS: InputType[] = [
   { type: "search", label: "Journey", name: "journey" },
@@ -70,7 +69,7 @@ const LINKED_OBJ_INPUTS: InputType[] = [
 const LEDGER_INFO_INPUTS: InputType[] = [
   { type: "date", label: "Transaction Date", name: "date" },
   { type: "select", label: "Category", name: "category" },
-  { type: "select", label: "Transaction Type", name: "transaction_type" },
+  { type: "select", label: "Type", name: "transaction_type" },
   {
     type: "textarea",
     label: "Description",
@@ -81,12 +80,12 @@ const LEDGER_INFO_INPUTS: InputType[] = [
 const LEDGER_MONEY_INPUTS: InputType[] = [
   { type: "number", label: "Debit", name: "debit" },
   { type: "number", label: "Credit", name: "credit" },
-  { type: "select", label: "Payment Mode", name: "payment_mode" },
+  { type: "select", label: "Mode", name: "payment_mode" },
 ];
 
 const LEDGER_REFERENCE_INPUTS: InputType[] = [
-  { type: "select", label: "Reference Type", name: "reference_type" },
-  { type: "text", label: "Reference Number", name: "reference_no" },
+  { type: "select", label: "Ref Type", name: "reference_type" },
+  { type: "text", label: "Ref No.", name: "reference_no" },
   { type: "textarea", label: "Notes", name: "notes" },
 ];
 
@@ -242,9 +241,8 @@ const NewLedger = () => {
         });
         if (filteredJournies.length > 0) {
           const options: Option[] = filteredJournies.map((j: JourneyType) => ({
-            label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${
-              j.to
-            } | ${formatDate(new Date(j.journey_start_date))}`,
+            label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${j.to
+              } | ${formatDate(new Date(j.journey_start_date))}`,
             value: j._id,
           }));
           return options;
@@ -355,7 +353,7 @@ const NewLedger = () => {
         );
         navigate("/ledger/all-ledgers");
       } else if (addLedgerEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
+        const errors = resultAction.payload as Record<string, string>;
         if (errors && Object.keys(errors).length > 0) {
           errorsRef.current = errors;
           forceRender({});
@@ -382,48 +380,48 @@ const NewLedger = () => {
       let placeholder: string = input.label;
       let inputRef:
         | React.RefObject<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-          >
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
         | undefined = undefined;
 
       if (input.name === "journey") {
-        placeholder = "Select a Journey";
+        placeholder = "Search Journey...";
         value = ledger?.journey?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "truck") {
-        placeholder = "Select a Truck";
+        placeholder = "Search Truck...";
         value = ledger?.truck?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "driver") {
-        placeholder = "Select a Driver";
+        placeholder = "Search Driver...";
         value = ledger?.driver?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "party") {
-        placeholder = "Select a Party";
+        placeholder = "Search Party...";
         value = ledger?.party?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "settlement") {
-        placeholder = "Select a Settlement";
+        placeholder = "Search Settlement...";
         value = ledger?.settlement?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "vehicle_entry") {
-        placeholder = "Select a Vehicle Entry";
+        placeholder = "Search Vehicle Entry...";
         value = ledger?.vehicle_entry?._id || "";
         selectMode = "search";
       }
 
       if (input.name === "category") {
-        placeholder = "Select a Category";
+        placeholder = "Select Category";
         value = ledger?.category || "";
         selectMode = "select";
         options = LEDGER_CATEGORIES.map((c) => ({
@@ -433,7 +431,7 @@ const NewLedger = () => {
       }
 
       if (input.name === "transaction_type") {
-        placeholder = "Select a Transaction Type";
+        placeholder = "Select Type";
         value = ledger?.transaction_type || "";
         selectMode = "select";
         options = LEDGER_TRANSACTION_TYPES.map((t) => ({
@@ -443,7 +441,7 @@ const NewLedger = () => {
       }
 
       if (input.name === "payment_mode") {
-        placeholder = "Select a Payment Mode";
+        placeholder = "Select Mode";
         value = ledger?.payment_mode || "";
         options = LEDGER_PAYMENT_MODES.map((p) => ({
           label: p,
@@ -452,7 +450,7 @@ const NewLedger = () => {
       }
 
       if (input.name === "reference_type") {
-        placeholder = "Select a Reference Type";
+        placeholder = "Select Reference";
         value = ledger?.reference_type || "";
         options = LEDGER_REFERENCE_TYPES.map((r) => ({
           label: r,
@@ -485,23 +483,57 @@ const NewLedger = () => {
   };
 
   return (
-    <div className={styles.ledgerContainer}>
-      <h1 className={styles.heading}>New Ledger Entry</h1>
-      <form className={styles.ledgerForm} onSubmit={handleLedgerSubmit}>
-        <div className={styles.inputArea}>
-          <FormSection title="Linked Information">
-            {renderInputs(LINKED_OBJ_INPUTS)}
-          </FormSection>
-          <FormSection title="Ledger Information">
-            {renderInputs(LEDGER_INFO_INPUTS)}
-          </FormSection>
-          <FormSection title="Payment Information">
-            {renderInputs(LEDGER_MONEY_INPUTS)}
-          </FormSection>
-          <FormSection title="Reference Information">
-            {renderInputs(LEDGER_REFERENCE_INPUTS)}
-          </FormSection>
-          <FormSection title="Additional Information (Meta)">
+    <div className="flex flex-col gap-10 pb-20">
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
+            <BookOpen className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
+            New Ledger <span className="text-indigo-600">Entry</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">Record a new financial transaction in the company ledger.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleLedgerSubmit} className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            <FormSection title="Linked Objects" icon={<Link2 size={18} />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInputs(LINKED_OBJ_INPUTS)}
+              </div>
+            </FormSection>
+
+            <FormSection title="Transaction Details" icon={<Receipt size={18} />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInputs(LEDGER_INFO_INPUTS)}
+              </div>
+            </FormSection>
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-8 sticky top-24">
+            <FormSection title="Financials" icon={<Wallet size={18} />}>
+              <div className="flex flex-col gap-6">
+                {renderInputs(LEDGER_MONEY_INPUTS)}
+              </div>
+            </FormSection>
+
+            <FormSection title="Traceability" icon={<Sparkles size={18} />}>
+              <div className="flex flex-col gap-6">
+                {renderInputs(LEDGER_REFERENCE_INPUTS)}
+              </div>
+            </FormSection>
+          </div>
+        </div>
+
+        <FormSection title="Additional Metadata" icon={<Plus size={18} />}>
+          <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200">
             <MetaFields
               value={ledger.meta}
               isEditMode={true}
@@ -512,11 +544,16 @@ const NewLedger = () => {
                 }))
               }
             />
-          </FormSection>
-        </div>
-        <div className={styles.buttonArea}>
-          <button type="submit" className={styles.submitBtn}>
-            Add Ledger
+          </div>
+        </FormSection>
+
+        <div className="flex justify-end pt-6 border-t border-slate-100">
+          <button
+            type="submit"
+            className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center gap-3 shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:translate-y-0"
+          >
+            <Plus size={20} />
+            Create Ledger Entry
           </button>
         </div>
       </form>
@@ -525,3 +562,4 @@ const NewLedger = () => {
 };
 
 export default NewLedger;
+

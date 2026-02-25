@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import FormInput from "../../../components/FormInput";
 import FormSection from "../../../components/FormSection";
-import styles from "./NewDriverEntry.module.scss";
 import { EmptyDriverType, type DriverType } from "../../../types/driver";
 import FormInputImage from "../../../components/FormInputImage";
 import { useDispatch } from "react-redux";
@@ -9,6 +8,17 @@ import { addMessage } from "../../../features/message";
 import { addDriverEntryAsync } from "../../../features/driver";
 import type { AppDispatch } from "../../../app/store";
 import { useNavigate } from "react-router-dom";
+import {
+  UserPlus,
+  ArrowLeft,
+  User,
+  MapPin,
+  Phone,
+  Home,
+  CreditCard,
+  FileText,
+  Image as ImageIcon
+} from "lucide-react";
 
 const NewDriverEntry: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -18,10 +28,6 @@ const NewDriverEntry: React.FC = () => {
 
   const [driver, setDriver] =
     useState<Omit<DriverType, "_id">>(EmptyDriverType);
-
-  // Need to work on this logic
-  // const isValidDL = (value: string) =>
-  //   /^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(value);
 
   const handleTextInputChange = (
     e: React.ChangeEvent<
@@ -67,14 +73,6 @@ const NewDriverEntry: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    /*
-     TODO: Need to fix the valid dl logic
-    const isDLValid = isValidDL(driver.dl || "");
-    if (!isDLValid) {
-      dispatch(addMessage({ type: "error", text: "Invalid DL Number" }));
-    }
-    */
-
     try {
       const formData = new FormData();
 
@@ -118,133 +116,174 @@ const NewDriverEntry: React.FC = () => {
   };
 
   return (
-    <div className={styles.newDriverEntryContainer}>
-      <form className={styles.newDriverForm} onSubmit={handleSubmit}>
-        <FormSection title="Add Driver">
-          <FormInput
-            type="text"
-            id="name"
-            name="name"
-            label="Name"
-            value={driver.name}
-            error={errorsRef.current['name']}
-            placeholder="Name"
-            onChange={handleTextInputChange}
-          />
+    <div className="flex flex-col gap-10 pb-20 max-w-5xl mx-auto">
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
+            <UserPlus className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
+            Register <span className="text-indigo-600">Driver</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">Onboard a new driver with personal information and documents.</p>
+        </div>
+      </div>
 
-          <FormInputImage
-            label="Driver Photo"
-            id="driver_img"
-            name="driver_img"
-            isEditMode
-            value={
-              typeof driver.driver_img === "string" ? driver.driver_img : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "driver_img")}
-          />
+      <form className="grid grid-cols-1 lg:grid-cols-3 gap-8" onSubmit={handleSubmit}>
+        {/* Left Column: Personal Info */}
+        <div className="lg:col-span-2 flex flex-col gap-8">
+          <div className="card-premium p-8 lg:p-10 flex flex-col gap-10">
+            <FormSection title="Personal Information" icon={<User size={18} />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormInput
+                  type="text"
+                  id="name"
+                  name="name"
+                  label="Full Name"
+                  value={driver.name}
+                  error={errorsRef.current['name']}
+                  placeholder="e.g. Rahul Sharma"
+                  onChange={handleTextInputChange}
+                  icon={<User size={18} />}
+                />
+                <FormInput
+                  type="text"
+                  id="adhaar_no"
+                  name="adhaar_no"
+                  label="Adhaar Card Number"
+                  value={driver.adhaar_no}
+                  error={errorsRef.current['adhaar_no']}
+                  placeholder="0000 0000 0000"
+                  onChange={handleTextInputChange}
+                  icon={<CreditCard size={18} />}
+                />
+                <FormInput
+                  type="text"
+                  id="phone"
+                  name="phone"
+                  label="Primary Phone"
+                  value={driver.phone}
+                  error={errorsRef.current['phone']}
+                  placeholder="Mobile number"
+                  onChange={handleTextInputChange}
+                  icon={<Phone size={18} />}
+                />
+                <FormInput
+                  type="text"
+                  id="home_phone"
+                  name="home_phone"
+                  label="Emergency/Home Phone"
+                  value={driver.home_phone || ""}
+                  placeholder="Alternative number"
+                  onChange={handleTextInputChange}
+                  icon={<Home size={18} />}
+                />
+              </div>
+              <div className="mt-6">
+                <FormInput
+                  type="textarea"
+                  id="address"
+                  name="address"
+                  error={errorsRef.current['address']}
+                  label="Permanent Address"
+                  value={driver.address || ""}
+                  placeholder="Enter full residential address"
+                  onChange={handleTextInputChange}
+                  icon={<MapPin size={18} />}
+                />
+              </div>
+            </FormSection>
 
-          <FormInput
-            type="textarea"
-            id="address"
-            name="address"
-            error={errorsRef.current['address']}
-            label="Address"
-            value={driver.address || ""}
-            placeholder="Address"
-            onChange={handleTextInputChange}
-          />
+            <FormSection title="Legal Documents" icon={<FileText size={18} />}>
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                <FormInput
+                  type="text"
+                  id="dl"
+                  name="dl"
+                  label="Driving License Number"
+                  value={driver.dl}
+                  error={errorsRef.current['dl']}
+                  placeholder="e.g. DL 0000 00000000"
+                  onChange={handleTextInputChange}
+                  icon={<CreditCard size={18} />}
+                />
+              </div>
+            </FormSection>
+          </div>
+        </div>
 
-          <FormInput
-            type="text"
-            id="phone"
-            name="phone"
-            label="Phone Number"
-            value={driver.phone}
-            error={errorsRef.current['phone']}
-            placeholder="Phone Number"
-            onChange={handleTextInputChange}
-          />
+        {/* Right Column: Profile & Documents */}
+        <div className="flex flex-col gap-8">
+          <div className="card-premium p-8 flex flex-col gap-8 bg-slate-50/50">
+            <FormSection title="Driver Photo" icon={<User size={18} />}>
+              <FormInputImage
+                label="Upload Face Clear Photo"
+                id="driver_img"
+                name="driver_img"
+                isEditMode
+                value={typeof driver.driver_img === "string" ? driver.driver_img : ""}
+                onFileSelect={(file) => handleFileSelect(file, "driver_img")}
+              />
+            </FormSection>
 
-          <FormInput
-            type="text"
-            id="home_phone"
-            name="home_phone"
-            label="Home Phone Number"
-            value={driver.home_phone || ""}
-            placeholder="Home Phone Number"
-            onChange={handleTextInputChange}
-          />
+            <div className="flex flex-col gap-6 pt-6 border-t border-slate-200">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic flex items-center gap-2">
+                <ImageIcon size={16} className="text-indigo-600" />
+                Verification Docs
+              </h3>
+              <div className="grid grid-cols-1 gap-6">
+                <FormInputImage
+                  label="Adhaar Front"
+                  id="adhaar_front_img"
+                  name="adhaar_front_img"
+                  isEditMode
+                  value={typeof driver.adhaar_front_img === "string" ? driver.adhaar_front_img : ""}
+                  onFileSelect={(file) => handleFileSelect(file, "adhaar_front_img")}
+                />
+                <FormInputImage
+                  label="Adhaar Back"
+                  id="adhaar_back_img"
+                  name="adhaar_back_img"
+                  isEditMode
+                  value={typeof driver.adhaar_back_img === "string" ? driver.adhaar_back_img : ""}
+                  onFileSelect={(file) => handleFileSelect(file, "adhaar_back_img")}
+                />
+                <FormInputImage
+                  label="DL Front"
+                  id="dl_front_img"
+                  name="dl_front_img"
+                  isEditMode
+                  value={typeof driver.dl_front_img === "string" ? driver.dl_front_img : ""}
+                  onFileSelect={(file) => handleFileSelect(file, "dl_front_img")}
+                />
+                <FormInputImage
+                  label="DL Back"
+                  id="dl_back_img"
+                  name="dl_back_img"
+                  isEditMode
+                  value={typeof driver.dl_back_img === "string" ? driver.dl_back_img : ""}
+                  onFileSelect={(file) => handleFileSelect(file, "dl_back_img")}
+                />
+              </div>
+            </div>
 
-          <FormInput
-            type="text"
-            id="adhaar_no"
-            name="adhaar_no"
-            label="Adhaar Number"
-            value={driver.adhaar_no}
-            error={errorsRef.current['adhaar_no']}
-            placeholder="Adhaar Number"
-            onChange={handleTextInputChange}
-          />
-
-          <FormInput
-            type="text"
-            id="dl"
-            name="dl"
-            label="Driving License"
-            value={driver.dl}
-            error={errorsRef.current['dl']}
-            placeholder="Driving License"
-            onChange={handleTextInputChange}
-          />
-
-          <FormInputImage
-            label="Adhaar Front Image"
-            id="adhaar_front_img"
-            name="adhaar_front_img"
-            isEditMode
-            value={
-              typeof driver.adhaar_front_img === "string"
-                ? driver.adhaar_front_img
-                : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "adhaar_front_img")}
-          />
-
-          <FormInputImage
-            label="Adhaar Back Image"
-            id="adhaar_back_img"
-            name="adhaar_back_img"
-            isEditMode
-            value={
-              typeof driver.adhaar_back_img === "string"
-                ? driver.adhaar_back_img
-                : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "adhaar_back_img")}
-          />
-
-          <FormInputImage
-            label="Driving License Image"
-            id="dl_front_img"
-            name="dl_front_img"
-            isEditMode
-            value={typeof driver.dl_front_img === "string" ? driver.dl_front_img : ""}
-            onFileSelect={(file) => handleFileSelect(file, "dl_front_img")}
-          />
-
-          <FormInputImage
-            label="Driving License Image"
-            id="dl_back_img"
-            name="dl_back_img"
-            isEditMode
-            value={typeof driver.dl_back_img === "string" ? driver.dl_back_img : ""}
-            onFileSelect={(file) => handleFileSelect(file, "dl_back_img")}
-          />
-
-          <button type="submit" className={styles.addDriverBtn}>
-            Add
-          </button>
-        </FormSection>
+            <div className="flex flex-col gap-4 mt-4">
+              <button
+                type="submit"
+                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:translate-y-0 flex items-center justify-center gap-3"
+              >
+                <UserPlus size={20} />
+                Register Driver
+              </button>
+              <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">Double check information before submission</p>
+            </div>
+          </div>
+        </div>
       </form>
     </div>
   );

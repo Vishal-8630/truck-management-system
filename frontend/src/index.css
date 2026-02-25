@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+    --color-primary-50: #f5f3ff;
+    --color-primary-100: #ede9fe;
+    --color-primary-200: #ddd6fe;
+    --color-primary-300: #c4b5fd;
+    --color-primary-400: #a78bfa;
+    --color-primary-500: #8b5cf6;
+    --color-primary-600: #7c3aed;
+    --color-primary-700: #6d28d9;
+    --color-primary-800: #5b21b6;
+    --color-primary-900: #4c1d95;
+    --color-primary: #6366f1;
+
+    --color-brand-dark: #0f172a;
+    --color-brand-light: #f8fafc;
+
+    --font-heading: "Outfit", sans-serif;
+    --font-body: "Inter", sans-serif;
+
+    --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-premium-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply font-body bg-slate-50 text-slate-900 antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-heading font-bold;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-100/50 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 disabled:opacity-50 disabled:translate-y-0;
+    }
+
+    .btn-secondary {
+        @apply px-6 py-2.5 bg-white text-slate-800 border border-slate-200 rounded-xl font-semibold shadow-sm hover:bg-slate-50 hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0;
+    }
+
+    .card-premium {
+        @apply bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-100/30 transition-all duration-500;
+    }
+
+    .input-field {
+        @apply w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent rounded-2xl focus:outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-500 transition-all duration-300 placeholder:text-slate-400 font-medium text-slate-900;
+    }
+
+    .glass-morphism {
+        @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+    }
+
+    .animate-pulse-slow {
+        animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .animate-spin-slow {
+        animation: spin 8s linear infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .7;
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}

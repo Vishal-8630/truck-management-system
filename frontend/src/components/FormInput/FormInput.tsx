@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import styles from "./FormInput.module.scss";
+import { Eye, EyeOff } from "lucide-react";
 import SmartDropdown from "../SmartDropdown";
 import {
   filterAddress,
@@ -24,10 +22,10 @@ interface FormInputProps {
   selectMode?: "select" | "search";
   inputType?: string;
   inputRef?:
-    | React.RefObject<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    | undefined;
+  | React.RefObject<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >
+  | undefined;
   onChange: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -40,6 +38,7 @@ interface FormInputProps {
   ) => void;
   fetchOptions?: (val: string, field: string) => Option[];
 }
+
 
 const FormInput: React.FC<FormInputProps> = ({
   type,
@@ -63,34 +62,39 @@ const FormInput: React.FC<FormInputProps> = ({
 
   const isPassword = type === "password";
   const isTextarea = type === "textarea";
-  const isSelect = type === "select" || type === 'search';
+  const isSelect = type === "select" || type === "search";
   const hasIcon = !!icon;
-
-  const handleFocus = () => setIsFocused(true);
-  const handleBlur = () => setIsFocused(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    let value = e.target.value;
+    let val = e.target.value;
     if (inputType === "number") {
-      value = filterNumber(value);
+      val = filterNumber(val);
     } else if (inputType === "text") {
-      value = filterText(value);
+      val = filterText(val);
     } else if (inputType === "address") {
-      value = filterAddress(value);
+      val = filterAddress(val);
     }
-    onChange({
+
+    const syntheticEvent = {
       ...e,
-      target: { ...e.target, name: e.target.name, value: value },
-    } as React.ChangeEvent<typeof e.target>);
+      target: { ...e.target, name, value: val }
+    } as React.ChangeEvent<any>;
+
+    onChange(syntheticEvent);
   };
 
   return (
-    <div className={styles.formGroup}>
-      <label htmlFor={id}>{label}</label>
+    <div className="flex flex-col gap-1.5 mb-4 group">
+      <label
+        htmlFor={id}
+        className={`text-sm font-semibold transition-colors duration-200 ${error ? 'text-red-500' : isFocused ? 'text-indigo-600' : 'text-slate-700'}`}
+      >
+        {label}
+      </label>
 
       {isSelect ? (
         <SmartDropdown
@@ -107,13 +111,12 @@ const FormInput: React.FC<FormInputProps> = ({
           }
         />
       ) : (
-        <motion.div
-          className={styles.inputWrapper}
-          animate={{ scale: isFocused ? 1.05 : 1 }}
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", duration: 0.5 }}
-        >
-          {icon && <span className={styles.icon}>{icon}</span>}
+        <div className="relative flex items-center">
+          {icon && (
+            <span className={`absolute left-3.5 z-10 transition-colors duration-200 ${isFocused ? 'text-indigo-600' : 'text-slate-400'}`}>
+              {icon}
+            </span>
+          )}
 
           {isTextarea ? (
             <textarea
@@ -121,9 +124,10 @@ const FormInput: React.FC<FormInputProps> = ({
               name={name}
               value={value}
               placeholder={placeholder}
-              onChange={onChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
+              onChange={handleInputChange}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className={`input-field min-h-[100px] resize-y ${hasIcon ? 'pl-11' : ''} ${error ? 'border-red-300 ring-red-50' : ''}`}
             />
           ) : (
             <input
@@ -133,39 +137,29 @@ const FormInput: React.FC<FormInputProps> = ({
               value={value}
               placeholder={placeholder}
               onChange={handleInputChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              className={hasIcon ? `${styles.withIcon}` : ""}
-              onWheel={(e) => e.preventDefault()}
-              onMouseEnter={(e) =>
-                e.currentTarget.addEventListener(
-                  "wheel",
-                  (ev) => ev.preventDefault(),
-                  { passive: false }
-                )
-              }
-              onMouseLeave={(e) =>
-                e.currentTarget.removeEventListener("wheel", (ev) =>
-                  ev.preventDefault()
-                )
-              }
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className={`input-field ${hasIcon ? 'pl-11' : ''} ${isPassword ? 'pr-11' : ''} ${error ? 'border-red-300 ring-red-50' : ''}`}
+              onWheel={(e) => (e.target as HTMLInputElement).blur()}
             />
           )}
 
           {isPassword && (
-            <span
-              className={styles.togglePassword}
+            <button
+              type="button"
+              className="absolute right-3.5 text-slate-400 hover:text-indigo-600 transition-colors duration-200"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           )}
-        </motion.div>
+        </div>
       )}
 
-      {error && <p className={styles.errorText}>{error}</p>}
+      {error && <p className="text-xs font-medium text-red-500 mt-1">{error}</p>}
     </div>
   );
 };
 
 export default FormInput;
+

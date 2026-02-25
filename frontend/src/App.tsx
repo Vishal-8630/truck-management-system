@@ -3,7 +3,7 @@ import BottomBar from "./components/BottomBar";
 import MessageBar from "./components/MessageBar";
 import Navbar from "./components/Navbar";
 import AppRoutes from "./routes/AppRoutes";
-import styles from "./App.module.scss";
+
 import useAuthCheck from "./hooks/useAuthCheck";
 import Loading from "./components/Loading";
 import MoveToTopButton from "./components/MoveToTopButton";
@@ -23,21 +23,28 @@ function App() {
 
   return (
     <MotionConfig transition={{ duration: 0.3, ease: "easeInOut" }}>
-      <div className={styles.appContainer}>
-        <div className={styles.navbarContainer}>
-          <Navbar />
-        </div>
-        <div className={styles.contentContainer}>
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <header className="fixed top-0 left-0 right-0 z-50 flex justify-center py-4 px-4 bg-transparent pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-7xl">
+            <Navbar />
+          </div>
+        </header>
+
+        <main className="flex-1 flex flex-col pt-24 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <MessageBar />
-          <AppRoutes />
+          <div className="flex-1">
+            <AppRoutes />
+          </div>
           <MoveToTopButton />
-        </div>
-        <div className={styles.bottomBarContainer}>
+        </main>
+
+        <footer className="mt-auto">
           <BottomBar />
-        </div>
+        </footer>
       </div>
     </MotionConfig>
   );
 }
+
 
 export default App;

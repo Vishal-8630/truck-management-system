@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { FaLock, FaUser } from "react-icons/fa";
+import { User, Lock } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { type AppDispatch } from "../../app/store";
 import { authStart, authSuccess, authEnd } from "../../features/auth";
@@ -12,11 +13,8 @@ import {
 } from "../../features/auth/authSelectors";
 
 import api from "../../api/axios";
-import FormSection from "../../components/FormSection";
 import FormInput from "../../components/FormInput";
 import Button from "../../components/Button";
-
-import styles from "./Login.module.scss";
 
 interface FormData {
   username: string;
@@ -27,6 +25,7 @@ interface FormErrors {
   username: string;
   password: string;
 }
+
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -70,8 +69,6 @@ const Login: React.FC = () => {
 
     try {
       const { data } = await api.post("/auth/login", formData);
-      console.log("Data: ", data);
-
       dispatch(authSuccess(data.data.user));
       dispatch(
         addMessage({
@@ -82,7 +79,6 @@ const Login: React.FC = () => {
       resetForm();
       navigate("/");
     } catch (err: any) {
-      console.log("Error: ", err);
       const errors = err.response?.data?.errors || {};
       setFormErrors({
         username: errors.username || "",
@@ -99,18 +95,27 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <form onSubmit={handleSubmit} className={styles.loginForm}>
-        <FormSection title="Login">
+    <div className="flex flex-col items-center justify-center py-20 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.05),transparent)] min-h-[80vh]">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md bg-white p-8 lg:p-12 rounded-[2.5rem] shadow-premium border border-slate-100"
+      >
+        <div className="flex flex-col gap-2 mb-10 text-center">
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tight italic">Welcome Back</h1>
+          <p className="text-slate-500 font-medium">Please enter your details to login</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <FormInput
             type="text"
             id="username"
             name="username"
             label="Username"
             value={formData.username}
-            placeholder="Enter username"
+            placeholder="admin"
             error={formErrors.username}
-            icon={<FaUser />}
+            icon={<User size={18} />}
             onChange={handleInputChange}
           />
           <FormInput
@@ -119,33 +124,36 @@ const Login: React.FC = () => {
             name="password"
             label="Password"
             value={formData.password}
-            placeholder="Enter password"
+            placeholder="••••••••"
             error={formErrors.password}
-            icon={<FaLock />}
+            icon={<Lock size={18} />}
             onChange={handleInputChange}
           />
 
-          <div className={styles.formOptions}>
-            <label>
-              <input type="checkbox" /> Remember me
+          <div className="flex items-center justify-between mb-4">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-slate-200 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
+              />
+              <span className="text-sm text-slate-500 font-medium group-hover:text-indigo-600 transition-colors">Remember me</span>
             </label>
+            <a href="#" className="text-sm text-indigo-600 font-bold hover:text-indigo-700 transition-colors">Forgot Password?</a>
           </div>
 
           <Button
             type="submit"
-            text="Login"
+            text="Sign In"
             variant="primary"
             loading={loading}
             disabled={loading}
+            className="py-4 text-lg"
           />
-
-          <p className={styles.footerText}>
-            Don't have an account? <Link to="/register">Register</Link>
-          </p>
-        </FormSection>
-      </form>
+        </form>
+      </motion.div>
     </div>
   );
 };
 
 export default Login;
+

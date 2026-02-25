@@ -1,14 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import {
   VEHICLE_ENTRY_LABELS,
   type VehicleEntryType,
 } from "../../types/vehicleEntry";
-import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addMessage } from "../../features/message";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import styles from "./VehicleEntryDropdown.module.scss";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save } from "lucide-react";
 import { formatDate } from "../../utils/formatDate";
 import {
   selectVehicleEntryLoading,
@@ -32,12 +30,17 @@ interface VehicleEntryDropdownProps {
 }
 
 const dropDownVariants: Variants = {
-  hidden: { height: 0 },
-  visible: (height: number) => ({
-    height,
-    transition: { duration: 0.3, ease: "easeInOut" },
-  }),
-  exit: { height: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+  hidden: { height: 0, opacity: 0 },
+  visible: {
+    height: "auto",
+    opacity: 1,
+    transition: { height: { duration: 0.4, ease: "easeOut" }, opacity: { duration: 0.3 } }
+  },
+  exit: {
+    height: 0,
+    opacity: 0,
+    transition: { height: { duration: 0.3, ease: "easeIn" }, opacity: { duration: 0.2 } }
+  },
 };
 
 const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
@@ -51,18 +54,9 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const loading = useSelector(selectVehicleEntryLoading);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
 
   const isKeyDate = (key: keyof VehicleEntryType) =>
     key.toLowerCase().includes("date");
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setHeight(contentRef.current.scrollHeight);
-    }
-  }, [itemState.isOpen, vehicleEntry]);
-
 
   const handleEdit = (key: keyof VehicleEntryType) => {
     toggleEditing(vehicleEntry._id, key);
@@ -108,19 +102,12 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
         updateVehicleEntryAsync(itemState.localItem)
       );
       if (updateVehicleEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({
-            type: "success",
-            text: "Vehicle entry updated successfully",
-          })
-        );
+        dispatch(addMessage({ type: "success", text: "Vehicle entry updated successfully" }));
         onVehicleEntryUpdate(itemState.localItem);
       } else if (updateVehicleEntryAsync.rejected.match(resultAction)) {
         const errors = resultAction.payload;
         if (errors) {
-          dispatch(
-            addMessage({ type: "error", text: Object.entries(errors)[0][1] })
-          );
+          dispatch(addMessage({ type: "error", text: Object.entries(errors)[0][1] as string }));
         }
       }
     } catch {
@@ -128,134 +115,159 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
     }
   };
 
-  const hasChanges =
-    JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
+  const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
 
   return (
-    <div className={styles.container}>
-      <button
-        className={styles.header}
+    <div className={`
+      card-premium overflow-hidden transition-all duration-300
+      ${itemState.isOpen ? 'ring-2 ring-indigo-100 ring-offset-2' : ''}
+    `}>
+      <div
+        className={`
+          flex items-center justify-between p-6 cursor-pointer select-none
+          ${itemState.isOpen ? 'bg-indigo-50/50' : 'bg-white hover:bg-slate-50/80'}
+          transition-colors duration-200
+        `}
         onClick={() => toggleOpen(vehicleEntry._id)}
       >
-        <div className={styles.title}>
-          <div>
-            <span className={styles.headingLabel}>Date: </span>
-            <span className={styles.headingValue}>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className={`
+              w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
+              ${itemState.isOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}
+           `}>
+            <Truck size={22} />
+          </div>
+
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+              <Calendar size={10} /> Date
+            </span>
+            <span className="text-sm font-bold text-slate-900">
               {formatDate(new Date(itemState.localItem.date)) || "—"}
             </span>
-            <span>|</span>
           </div>
-          <div>
-            <span className={styles.headingLabel}>Vehicle Number:</span>
-            <span className={styles.headingValue}>
+
+          <div className="flex flex-col border-l border-slate-200 pl-6">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Vehicle No.</span>
+            <span className="text-sm font-bold text-slate-900 leading-tight uppercase tracking-tight">
               {itemState.localItem.vehicle_no || "—"}
             </span>
-            <span>|</span>
           </div>
-          <div>
-            <span className={styles.headingLabel}>From:</span>
-            <span className={styles.headingValue}>
-              {itemState.localItem.from || "—"}
-            </span>
-            <span>|</span>
-          </div>
-          <div>
-            <span className={styles.headingLabel}>To: </span>
-            <span className={styles.headingValue}>
-              {itemState.localItem.to || "—"}
-            </span>
-          </div>
-        </div>
-        <span className={styles.icon}>
-          {itemState.isOpen ? <FaChevronUp /> : <FaChevronDown />}
-        </span>
-      </button>
 
-      {hasChanges && (
-        <div className={styles.saveChangesWrapper}>
-          <button className={styles.saveChangesBtn} onClick={handleSaveChanges}>
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
-          <button className={styles.abortChanges} onClick={handleAbortChanges}>
-            Abort Changes
-          </button>
+          <div className="hidden lg:flex flex-col border-l border-slate-200 pl-6">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+              <MapPin size={10} /> Route
+            </span>
+            <span className="text-sm font-semibold text-slate-600">
+              {itemState.localItem.from || "—"} <span className="text-slate-300 mx-1">→</span> {itemState.localItem.to || "—"}
+            </span>
+          </div>
         </div>
-      )}
+
+        <div className="flex items-center gap-4">
+          {hasChanges && (
+            <div className="hidden sm:flex items-center gap-2 mr-2">
+              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-indigo-500 uppercase">Unsaved</span>
+            </div>
+          )}
+          <motion.div
+            animate={{ rotate: itemState.isOpen ? 180 : 0 }}
+            className={`
+              w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+              ${itemState.isOpen ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-300'}
+            `}
+          >
+            <ChevronDown size={20} />
+          </motion.div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {itemState.isOpen && (
           <motion.div
-            ref={contentRef}
-            className={styles.content}
             variants={dropDownVariants}
-            style={{ overflow: "hidden" }}
             initial="hidden"
             animate="visible"
             exit="exit"
-            custom={height}
+            className="border-t border-slate-100"
           >
-            <div className={styles.list}>
-              {(
-                Object.entries(VEHICLE_ENTRY_LABELS) as [
-                  keyof VehicleEntryType,
-                  string
-                ][]
-              ).map(([key, label]) => {
-                const isEditing = itemState.editing.has(key);
-                const isBalanceParty = (key as string) === "balance_party";
-                const value = isEditing
-                  ? itemState.drafts[key] ?? ""
-                  : isBalanceParty
-                  ? itemState.localItem["balance_party"]?.party_name ?? "-"
-                  : isKeyDate(key)
-                  ? formatDate(new Date(itemState.localItem[key] as string))
-                  : itemState.localItem[key] ?? "—";
+            <div className="p-6 lg:p-10 flex flex-col gap-10">
+              {hasChanges && (
+                <div className="flex items-center justify-between bg-indigo-600 p-4 rounded-2xl shadow-indigo-100 shadow-lg">
+                  <div className="flex items-center gap-3 text-white">
+                    <Save size={20} className="opacity-80" />
+                    <span className="text-sm font-bold tracking-tight">You have unsaved changes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleAbortChanges}
+                      className="px-4 py-2 text-xs font-bold text-white/70 hover:text-white transition-colors"
+                    >
+                      Discard
+                    </button>
+                    <button
+                      onClick={handleSaveChanges}
+                      disabled={loading}
+                      className="px-6 py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
+                    >
+                      {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
+                      Update Records
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                return (
-                  <div key={key} className={styles.row}>
-                    <div className={styles.label}>{label} : -</div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-6">
+                {(Object.entries(VEHICLE_ENTRY_LABELS) as [keyof VehicleEntryType, string][]).map(([key, label]) => {
+                  const isEditing = itemState.editing.has(key);
+                  const isBalanceParty = (key as string) === "balance_party";
+                  const value = isEditing
+                    ? itemState.drafts[key] ?? ""
+                    : isBalanceParty
+                      ? itemState.localItem["balance_party"]?.party_name ?? "-"
+                      : isKeyDate(key)
+                        ? formatDate(new Date(itemState.localItem[key] as string))
+                        : itemState.localItem[key] ?? "—";
 
-                    {isEditing ? (
-                      <div className={styles.editArea}>
-                        <input
-                          className={styles.input}
-                          value={value as string}
-                          onChange={(e) =>
-                            updateDraft(vehicleEntry._id, key, e.target.value)
-                          }
-                        />
-                        <div className={styles.actions}>
+                  return (
+                    <div key={key} className="flex flex-col gap-2 py-4 border-b border-slate-50 group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                          {label}
+                        </span>
+                        {!isEditing && !isBalanceParty && (
                           <button
-                            className={styles.saveBtn}
-                            onClick={() => handleSave(key)}
+                            onClick={() => handleEdit(key)}
+                            className="p-1 text-slate-300 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            Save
+                            <Edit3 size={12} />
                           </button>
-                          <button
-                            className={styles.cancelBtn}
-                            onClick={() => handleCancel(key)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className={styles.value}>{value as string}</div>
-                    )}
 
-                    <div className={styles.controls}>
-                      {!isEditing && !isBalanceParty && (
-                        <button
-                          className={styles.editBtn}
-                          onClick={() => handleEdit(key)}
-                        >
-                          Edit
-                        </button>
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50"
+                            value={value as string}
+                            onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
+                            autoFocus
+                          />
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleSave(key)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={16} /></button>
+                            <button onClick={() => handleCancel(key)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><X size={16} /></button>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-700 mt-1 min-h-[20px]">
+                          {value as string}
+                        </span>
                       )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
         )}
@@ -265,3 +277,4 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 };
 
 export default VehicleEntryDropdown;
+

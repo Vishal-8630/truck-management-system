@@ -1,17 +1,20 @@
 
+import React from "react";
+
 export interface InputType {
   type: string;
   label: string;
   name: string;
   inputType?: string;
   options?: string[];
+  icon?: React.ReactNode;
 }
 
 export type Option = { label: string; value: string };
 
 export const BILL_INFO_INPUTS: InputType[] = [
-  { type: "number", label: "Bill No.", name: "bill_no", inputType: "number"},
-  { type: "date", label: "Bill Date", name: "bill_date"},
+  { type: "number", label: "Bill No.", name: "bill_no", inputType: "number" },
+  { type: "date", label: "Bill Date", name: "bill_date" },
   { type: "select", label: "Billing Party", name: "billing_party" },
 ];
 

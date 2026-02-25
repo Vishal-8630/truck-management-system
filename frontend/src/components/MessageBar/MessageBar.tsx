@@ -1,51 +1,60 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
-
-import styles from "./MessageBar.module.scss";
+import { X } from "lucide-react";
 import type { RootState } from "../../app/store";
 import { removeMessage } from "../../features/message";
 
+
 // Animation variants
 const messageVariants: Variants = {
-  hidden: { opacity: 0, x: 30 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-  exit: { opacity: 0, x: -30, transition: { duration: 0.3 } },
+  hidden: { opacity: 0, y: -20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
 };
 
 const MessageBar = () => {
   const messages = useSelector((state: RootState) => state.messages);
   const dispatch = useDispatch();
 
-  // Auto-remove messages after 2s
   useEffect(() => {
     const timers = messages.map((msg) =>
-      setTimeout(() => dispatch(removeMessage(msg.id)), 2000)
+      setTimeout(() => dispatch(removeMessage(msg.id)), 3000)
     );
     return () => timers.forEach(clearTimeout);
   }, [messages, dispatch]);
 
   return (
-    <motion.div className={styles.messageContainer}>
-      <AnimatePresence>
+    <div className="fixed top-24 right-4 z-[9999] flex flex-col gap-3 max-w-sm w-full">
+      <AnimatePresence mode="popLayout">
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
             layout
-            className={`${styles.message} ${styles[msg.type]}`}
-            variants={messageVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            transition={{ layout: { duration: 0.3, ease: "easeInOut" } }}
+            variants={messageVariants}
+            className={`
+              flex items-start justify-between p-4 rounded-2xl shadow-xl border backdrop-blur-md
+              ${msg.type === 'success'
+                ? 'bg-emerald-50/90 border-emerald-100 text-emerald-800'
+                : 'bg-red-50/90 border-red-100 text-red-800'}
+            `}
           >
-            <span>{msg.text}</span>
-            <button onClick={() => dispatch(removeMessage(msg.id))}>✖</button>
+            <span className="text-sm font-semibold leading-relaxed">{msg.text}</span>
+            <button
+              onClick={() => dispatch(removeMessage(msg.id))}
+              className="p-1 hover:bg-black/5 rounded-lg transition-colors ml-2 shrink-0"
+            >
+              <X size={16} />
+            </button>
           </motion.div>
         ))}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 
 export default MessageBar;
+

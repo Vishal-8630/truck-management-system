@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { FaUser, FaEnvelope, FaLock, FaIdCard } from "react-icons/fa";
+import { User, Mail, Lock, Contact } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { type AppDispatch } from "../../app/store";
 import { authStart, authSuccess, authEnd } from "../../features/auth";
@@ -11,11 +12,8 @@ import {
 } from "../../features/auth/authSelectors";
 
 import api from "../../api/axios";
-import FormSection from "../../components/FormSection";
 import FormInput from "../../components/FormInput";
 import Button from "../../components/Button";
-
-import styles from "./Register.module.scss";
 
 interface FormData {
   fullname: string;
@@ -37,32 +35,32 @@ const fields = [
     name: "fullname",
     label: "Full Name",
     type: "text",
-    placeholder: "Enter your full name",
-    icon: <FaIdCard />,
+    placeholder: "John Doe",
+    icon: <Contact size={18} />,
   },
   {
     id: "email",
     name: "email",
     label: "Email",
     type: "email",
-    placeholder: "Enter your email",
-    icon: <FaEnvelope />,
+    placeholder: "john@example.com",
+    icon: <Mail size={18} />,
   },
   {
     id: "username",
     name: "username",
     label: "Username",
     type: "text",
-    placeholder: "Choose a username",
-    icon: <FaUser />,
+    placeholder: "johndoe",
+    icon: <User size={18} />,
   },
   {
     id: "password",
     name: "password",
     label: "Password",
     type: "password",
-    placeholder: "Set your password",
-    icon: <FaLock />,
+    placeholder: "••••••••",
+    icon: <Lock size={18} />,
   },
 ];
 
@@ -74,7 +72,6 @@ const Register: React.FC = () => {
     password: "",
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -86,12 +83,6 @@ const Register: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setFormErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const resetForm = () => {
-    setFormData({ fullname: "", username: "", email: "", password: "" });
-    setFormErrors({});
-    setShowPassword(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +98,6 @@ const Register: React.FC = () => {
           text: data.message || "Registration successful",
         })
       );
-      resetForm();
       navigate("/");
     } catch (err: any) {
       const errors = err.response?.data?.errors || {};
@@ -123,37 +113,62 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className={styles.registerContainer}>
-      <form onSubmit={handleSubmit} className={styles.registerForm}>
-        <FormSection title="Register">
-          {fields.map((field) => (
+    <div className="flex flex-col items-center justify-center py-20 bg-[radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.05),transparent)] min-h-[80vh]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-lg bg-white p-8 lg:p-12 rounded-[2.5rem] shadow-premium border border-slate-100"
+      >
+        <div className="flex flex-col gap-2 mb-10 text-center">
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tight italic">Join Us</h1>
+          <p className="text-slate-500 font-medium">Create your account to get started</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            {fields.slice(0, 2).map((field) => (
+              <FormInput
+                key={field.id}
+                {...field}
+                value={formData[field.name as keyof FormData]}
+                error={formErrors[field.name as keyof FormErrors]}
+                onChange={handleInputChange}
+              />
+            ))}
+          </div>
+
+          {fields.slice(2).map((field) => (
             <FormInput
               key={field.id}
               {...field}
-              type={
-                field.name === "password" && showPassword ? "text" : field.type
-              }
               value={formData[field.name as keyof FormData]}
               error={formErrors[field.name as keyof FormErrors]}
               onChange={handleInputChange}
             />
           ))}
-          
+
           <Button
             type="submit"
-            text="Register"
+            text="Create Account"
             variant="primary"
             loading={loading}
             disabled={loading}
+            className="py-4 text-lg mt-4"
           />
 
-          <p className={styles.footerText}>
-            Already a user? <Link to="/login">Login</Link>
-          </p>
-        </FormSection>
-      </form>
+          <div className="mt-8 text-center bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-sm text-slate-500 font-medium">
+              Already have an account?{" "}
+              <Link to="/login" className="text-indigo-600 font-bold hover:text-indigo-700 transition-colors">
+                Log In
+              </Link>
+            </p>
+          </div>
+        </form>
+      </motion.div>
     </div>
   );
 };
 
 export default Register;
+
