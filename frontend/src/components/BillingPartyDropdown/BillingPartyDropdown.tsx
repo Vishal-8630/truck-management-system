@@ -4,6 +4,8 @@ import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useParties } from "@/hooks/useParties";
 import { AnimatePresence, motion } from "framer-motion";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useState } from "react";
 
 interface PartyProps {
   billingParty: BillingPartyType;
@@ -35,6 +37,17 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   const updateBillingPartyMutation = useUpdateBillingPartyMutation();
   const deleteBillingPartyMutation = useDeleteBillingPartyMutation();
   const { addMessage } = useMessageStore();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      await deleteBillingPartyMutation.mutateAsync(billingParty._id);
+      addMessage({ type: "success", text: "Billing party deleted successfully" });
+      setShowDeleteModal(false);
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete billing party" });
+    }
+  };
   const contentRef = useRef<HTMLDivElement>(null);
 
   const loading = updateBillingPartyMutation.isPending;
@@ -86,13 +99,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this billing party?")) return;
-    try {
-      await deleteBillingPartyMutation.mutateAsync(billingParty._id);
-      addMessage({ type: "success", text: "Billing party deleted successfully" });
-    } catch {
-      addMessage({ type: "error", text: "Failed to delete billing party" });
-    }
+    setShowDeleteModal(true);
   };
 
   const hasChanges =
@@ -239,6 +246,15 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Billing Party?"
+        message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
+        confirmText="Confirm Delete"
+        isLoading={deleteBillingPartyMutation.isPending}
+      />
     </div>
   );
 };

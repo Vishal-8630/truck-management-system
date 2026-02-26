@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Save, FileText, CreditCard, Calculator, ArrowLeft, Milestone } from "lucide-react";
+import { Plus, Trash2, Save, FileText, CreditCard, Calculator, ArrowLeft, Milestone, Receipt } from "lucide-react";
 
 import { useMessageStore } from "@/store/useMessageStore";
 
@@ -41,8 +41,7 @@ const Entry: React.FC = () => {
   const { data: billingParties = [] } = useBillingPartiesQuery();
   const { addMessage } = useMessageStore();
 
-  const [entry, setEntry] =
-    useState<Omit<BillEntryType, "_id">>(EmptyBillEntry);
+  const [entry, setEntry] = useState<Omit<BillEntryType, "_id">>(EmptyBillEntry);
 
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
@@ -97,7 +96,6 @@ const Entry: React.FC = () => {
       errorsRef.current[name] = "";
       forceRender({});
     }
-
     setEntry((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -108,14 +106,24 @@ const Entry: React.FC = () => {
   ) => {
     if (mode === "select") {
       setState(val);
-      void name;
     } else {
       if (val === "") {
         setSelectedParty({ _id: "", name: "", address: "", gst_no: "" });
         setPartyError("Please select a Billing Party");
+        if (errorsRef.current[name]) {
+          errorsRef.current[name] = "";
+          forceRender({});
+        }
       } else {
-        setSelectedParty(billingParties.find((p: any) => p.name === val) || selectedParty);
-        setPartyError("");
+        const found = billingParties.find((p: any) => p.name === val);
+        if (found) {
+          setSelectedParty(found);
+          setPartyError("");
+          if (errorsRef.current[name]) {
+            errorsRef.current[name] = "";
+            forceRender({});
+          }
+        }
       }
     }
   };
@@ -125,11 +133,10 @@ const Entry: React.FC = () => {
     try {
       const filteredBillingParties = billingParties.filter((party: any) => party.name.toLowerCase().includes(search.toLowerCase()));
       if (filteredBillingParties.length > 0) {
-        const options: Option[] = filteredBillingParties.map((party: BillingPartyType) => ({
+        return filteredBillingParties.map((party: BillingPartyType) => ({
           label: party.name,
           value: party.name,
         }));
-        return options;
       } else {
         return [];
       }
@@ -229,7 +236,7 @@ const Entry: React.FC = () => {
         | undefined = undefined;
 
       if (input.name === "billing_party") {
-        error = partyError;
+        error = partyError || errorsRef.current["billing_party"];
         placeholder = "Select a Billing Party";
         value = selectedParty.name;
         selectMode = "search";
@@ -264,6 +271,7 @@ const Entry: React.FC = () => {
             handleSelectChange(val, name, mode)
           }
           fetchOptions={fetchOptions}
+          noResultsMessage="Party does not exist. Please add details."
         />
       );
     });
@@ -304,6 +312,7 @@ const Entry: React.FC = () => {
                   placeholder="Auto-populated..."
                   value={selectedParty.address}
                   onChange={() => { }}
+                  readOnly
                 />
                 <FormInput
                   type="input"
@@ -312,6 +321,7 @@ const Entry: React.FC = () => {
                   placeholder="Auto-populated..."
                   value={selectedParty.gst_no}
                   onChange={() => { }}
+                  readOnly
                 />
               </div>
             </FormSection>
@@ -394,7 +404,5 @@ const Entry: React.FC = () => {
     </div>
   );
 };
-
-const Receipt = ({ size }: { size: number }) => <FileText size={size} />;
 
 export default Entry;

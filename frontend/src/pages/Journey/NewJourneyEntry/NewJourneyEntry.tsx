@@ -12,12 +12,13 @@ import { Milestone, Save, ArrowLeft, Truck, User, MapPin, Calendar, Zap, FileTex
 const NewJourneyEntry = () => {
   const navigate = useNavigate();
   const addMessage = useMessageStore((s) => s.addMessage);
-  const { useAddJourneyMutation } = useJourneys();
+  const { useJourneysQuery, useAddJourneyMutation } = useJourneys();
   const { useTrucksQuery } = useTrucks();
   const { useDriversQuery } = useDrivers();
   const addJourney = useAddJourneyMutation();
   const { data: trucks = [] } = useTrucksQuery();
   const { data: drivers = [] } = useDriversQuery();
+  const { data: journeys = [] } = useJourneysQuery();
 
   const [form, setForm] = useState({
     truck: "",
@@ -37,7 +38,30 @@ const NewJourneyEntry = () => {
     status: "Active" as const,
   });
 
-  const handleChange = (name: string, value: string) => setForm((prev) => ({ ...prev, [name]: value }));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleChange = (name: string, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    if (name === "truck") {
+      // Find last journey for this truck
+      const truckJourneys = journeys
+        .filter((j) => (typeof j.truck === "string" ? j.truck === value : j.truck?._id === value))
+        .sort((a, b) => new Date(b.journey_start_date).getTime() - new Date(a.journey_start_date).getTime());
+
+      if (truckJourneys.length > 0) {
+        const lastJourney = truckJourneys[0];
+        setForm((prev) => ({ ...prev, starting_kms: lastJourney.ending_kms || "" }));
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,8 +99,14 @@ const NewJourneyEntry = () => {
       });
       addMessage({ type: "success", text: "Journey created successfully!" });
       navigate("/journey/all-journey-entries");
-    } catch {
-      addMessage({ type: "error", text: "Failed to create journey. Please try again." });
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        addMessage({ type: "error", text: "Please fix the errors below." });
+      } else {
+        addMessage({ type: "error", text: "Failed to create journey. Please try again." });
+      }
     }
   };
 
@@ -115,6 +145,7 @@ const NewJourneyEntry = () => {
                   value={form.truck}
                   onChange={(val) => handleChange("truck", val)}
                   options={truckOptions}
+                  error={errors.truck}
                 />
                 <FormInput
                   type="select"
@@ -123,6 +154,7 @@ const NewJourneyEntry = () => {
                   value={form.driver}
                   onChange={(val) => handleChange("driver", val)}
                   options={driverOptions}
+                  error={errors.driver}
                 />
               </div>
             </FormSection>
@@ -137,6 +169,7 @@ const NewJourneyEntry = () => {
                   placeholder="e.g. Mumbai"
                   value={form.from}
                   onChange={(val) => handleChange("from", val)}
+                  error={errors.from}
                 />
                 <FormInput
                   type="input"
@@ -146,25 +179,26 @@ const NewJourneyEntry = () => {
                   placeholder="e.g. Delhi"
                   value={form.to}
                   onChange={(val) => handleChange("to", val)}
+                  error={errors.to}
                 />
               </div>
             </FormSection>
 
             <FormSection title="Timelines & Funds" icon={<Calendar size={18} />}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormInput type="date" label="Start Date" name="journey_start_date" value={form.journey_start_date} onChange={(val) => handleChange("journey_start_date", val)} />
-                <FormInput type="date" label="Estimated Arrival" name="journey_end_date" value={form.journey_end_date} onChange={(val) => handleChange("journey_end_date", val)} />
-                <FormInput type="number" label="Starting Cash (₹)" name="journey_starting_cash" value={form.journey_starting_cash} onChange={(val) => handleChange("journey_starting_cash", val)} />
-                <FormInput type="number" label="Planned Days" name="journey_days" value={form.journey_days} onChange={(val) => handleChange("journey_days", val)} />
+                <FormInput type="date" label="Start Date" name="journey_start_date" value={form.journey_start_date} onChange={(val) => handleChange("journey_start_date", val)} error={errors.journey_start_date} />
+                <FormInput type="date" label="Estimated Arrival" name="journey_end_date" value={form.journey_end_date} onChange={(val) => handleChange("journey_end_date", val)} error={errors.journey_end_date} />
+                <FormInput type="number" label="Starting Cash (₹)" name="journey_starting_cash" value={form.journey_starting_cash} onChange={(val) => handleChange("journey_starting_cash", val)} error={errors.journey_starting_cash} />
+                <FormInput type="number" label="Planned Days" name="journey_days" value={form.journey_days} onChange={(val) => handleChange("journey_days", val)} error={errors.journey_days} />
               </div>
             </FormSection>
 
             <FormSection title="Odometer & Payload" icon={<Zap size={18} />}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormInput type="number" label="Starting KMs" name="starting_kms" value={form.starting_kms} onChange={(val) => handleChange("starting_kms", val)} />
-                <FormInput type="number" label="Target Distance (km)" name="distance_km" value={form.distance_km} onChange={(val) => handleChange("distance_km", val)} />
-                <FormInput type="number" label="Loaded Weight (kg)" name="loaded_weight" value={form.loaded_weight} onChange={(val) => handleChange("loaded_weight", val)} />
-                <FormInput type="number" label="Expected Mileage" name="average_mileage" value={form.average_mileage} onChange={(val) => handleChange("average_mileage", val)} />
+                <FormInput type="number" label="Starting KMs" name="starting_kms" value={form.starting_kms} onChange={(val) => handleChange("starting_kms", val)} error={errors.starting_kms} />
+                <FormInput type="number" label="Target Distance (km)" name="distance_km" value={form.distance_km} onChange={(val) => handleChange("distance_km", val)} error={errors.distance_km} />
+                <FormInput type="number" label="Loaded Weight (kg)" name="loaded_weight" value={form.loaded_weight} onChange={(val) => handleChange("loaded_weight", val)} error={errors.loaded_weight} />
+                <FormInput type="number" label="Expected Mileage" name="average_mileage" value={form.average_mileage} onChange={(val) => handleChange("average_mileage", val)} error={errors.average_mileage} />
               </div>
             </FormSection>
 
@@ -176,6 +210,7 @@ const NewJourneyEntry = () => {
                 placeholder="Details about the trip, priority, or cargo..."
                 value={form.journey_summary}
                 onChange={(val) => handleChange("journey_summary", val)}
+                error={errors.journey_summary}
               />
             </FormSection>
           </div>

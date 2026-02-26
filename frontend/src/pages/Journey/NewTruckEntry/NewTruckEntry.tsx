@@ -27,6 +27,8 @@ const NewTruckEntry = () => {
     pollution_doc_expiry: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [docs, setDocs] = useState<Record<string, File | null>>({
     fitness_doc: null,
     insurance_doc: null,
@@ -36,7 +38,16 @@ const NewTruckEntry = () => {
     pollution_doc: null,
   });
 
-  const handleChange = (value: string, name: string) => setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (value: string, name: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
 
   const handleFileSelect = (file: File | null, name: string) => {
     setDocs(prev => ({ ...prev, [name]: file }));
@@ -57,8 +68,14 @@ const NewTruckEntry = () => {
       await addTruck.mutateAsync(fd);
       addMessage({ type: "success", text: "Truck registered successfully!" });
       navigate("/journey/all-truck-entries");
-    } catch {
-      addMessage({ type: "error", text: "Failed to register truck. Please try again." });
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        addMessage({ type: "error", text: "Please fix the errors below." });
+      } else {
+        addMessage({ type: "error", text: "Failed to register truck. Please try again." });
+      }
     }
   };
 
@@ -94,6 +111,7 @@ const NewTruckEntry = () => {
                   placeholder="e.g. UP 80 AX 1234"
                   value={form.truck_no}
                   onChange={handleChange}
+                  error={errors.truck_no}
                 />
                 <FormInput
                   type="input"
@@ -103,6 +121,7 @@ const NewTruckEntry = () => {
                   placeholder="e.g. Tata Prima"
                   value={form.model}
                   onChange={handleChange}
+                  error={errors.model}
                 />
                 <FormInput
                   type="input"
@@ -112,6 +131,7 @@ const NewTruckEntry = () => {
                   placeholder="e.g. 2023"
                   value={form.year}
                   onChange={handleChange}
+                  error={errors.year}
                 />
               </div>
               <div className="mt-4">
@@ -122,18 +142,19 @@ const NewTruckEntry = () => {
                   placeholder="Engine details, maintenance history, etc."
                   value={form.notes}
                   onChange={handleChange}
+                  error={errors.notes}
                 />
               </div>
             </FormSection>
 
             <FormSection title="Compliance Expiry Dates" icon={<ShieldCheck size={18} />}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormInput type="date" label="Fitness Expiry" name="fitness_doc_expiry" value={form.fitness_doc_expiry} onChange={handleChange} />
-                <FormInput type="date" label="Insurance Expiry" name="insurance_doc_expiry" value={form.insurance_doc_expiry} onChange={handleChange} />
-                <FormInput type="date" label="National Permit" name="national_permit_doc_expiry" value={form.national_permit_doc_expiry} onChange={handleChange} />
-                <FormInput type="date" label="State Permit" name="state_permit_doc_expiry" value={form.state_permit_doc_expiry} onChange={handleChange} />
-                <FormInput type="date" label="Tax Expiry" name="tax_doc_expiry" value={form.tax_doc_expiry} onChange={handleChange} />
-                <FormInput type="date" label="Pollution Expiry" name="pollution_doc_expiry" value={form.pollution_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="Fitness Expiry" name="fitness_doc_expiry" value={form.fitness_doc_expiry} onChange={handleChange} error={errors.fitness_doc_expiry} />
+                <FormInput type="date" label="Insurance Expiry" name="insurance_doc_expiry" value={form.insurance_doc_expiry} onChange={handleChange} error={errors.insurance_doc_expiry} />
+                <FormInput type="date" label="National Permit" name="national_permit_doc_expiry" value={form.national_permit_doc_expiry} onChange={handleChange} error={errors.national_permit_doc_expiry} />
+                <FormInput type="date" label="State Permit" name="state_permit_doc_expiry" value={form.state_permit_doc_expiry} onChange={handleChange} error={errors.state_permit_doc_expiry} />
+                <FormInput type="date" label="Tax Expiry" name="tax_doc_expiry" value={form.tax_doc_expiry} onChange={handleChange} error={errors.tax_doc_expiry} />
+                <FormInput type="date" label="Pollution Expiry" name="pollution_doc_expiry" value={form.pollution_doc_expiry} onChange={handleChange} error={errors.pollution_doc_expiry} />
               </div>
             </FormSection>
 

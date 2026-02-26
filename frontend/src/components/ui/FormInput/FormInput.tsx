@@ -32,6 +32,8 @@ interface FormInputProps {
   ) => void;
   fetchOptions?: (val: string, field: string) => Option[];
   className?: string;
+  readOnly?: boolean;
+  noResultsMessage?: string;
 }
 
 const FormInput: React.FC<FormInputProps> = ({
@@ -51,6 +53,8 @@ const FormInput: React.FC<FormInputProps> = ({
   onSelectChange,
   fetchOptions,
   className,
+  readOnly,
+  noResultsMessage,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -115,6 +119,8 @@ const FormInput: React.FC<FormInputProps> = ({
           fetchOptions={
             fetchOptions ? (val, field) => fetchOptions(val, field) : () => []
           }
+          noResultsMessage={noResultsMessage}
+          error={error}
         />
       ) : (
         <div className="relative group/field">
@@ -136,8 +142,9 @@ const FormInput: React.FC<FormInputProps> = ({
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
+              readOnly={readOnly}
               className={`input-field min-h-[120px] resize-none ${hasIcon ? "pl-12" : ""
-                } ${error ? "border-rose-200 focus:border-rose-500 focus:ring-rose-50" : ""}`}
+                } ${error ? "border-rose-200 focus:border-rose-50" : ""} ${readOnly ? "bg-slate-100 cursor-not-allowed opacity-70" : ""}`}
             />
           ) : (
             <input
@@ -149,8 +156,9 @@ const FormInput: React.FC<FormInputProps> = ({
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
+              readOnly={readOnly}
               className={`input-field ${hasIcon ? "pl-12" : ""} ${isPassword ? "pr-12" : ""
-                } ${error ? "border-rose-200 focus:border-rose-500 focus:ring-rose-50" : ""}`}
+                } ${error ? "border-rose-200 focus:border-rose-500" : ""} ${readOnly ? "bg-slate-100 cursor-not-allowed opacity-70" : ""}`}
               onWheel={(e) => (e.target as HTMLInputElement).blur()}
             />
           )}

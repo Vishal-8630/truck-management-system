@@ -15,6 +15,8 @@ interface Props {
   inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | undefined;
   fetchOptions?: (query: string, field: string) => Option[];
   onChange: (val: string, name: string, mode: "select" | "search") => void;
+  error?: string;
+  noResultsMessage?: string;
 }
 
 const SmartDropdown = ({
@@ -28,6 +30,8 @@ const SmartDropdown = ({
   inputRef,
   fetchOptions,
   onChange,
+  error,
+  noResultsMessage = "No results found",
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -109,7 +113,7 @@ const SmartDropdown = ({
 
       {mode === "select" ? (
         <div
-          className={`input-field cursor-pointer flex items-center justify-between gap-2 ${open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
+          className={`input-field cursor-pointer flex items-center justify-between gap-2 ${error ? "border-red-500 bg-red-50/10" : open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
           onClick={(e) => {
             e.stopPropagation();
             setOpen((prev) => !prev);
@@ -131,7 +135,7 @@ const SmartDropdown = ({
             id={id}
             name={name}
             type="text"
-            className={`input-field pr-10 ${open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
+            className={`input-field pr-10 ${error ? "border-red-500 bg-red-50/10" : open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
             value={search}
             onChange={(e) => {
               const val = e.target.value;
@@ -159,7 +163,7 @@ const SmartDropdown = ({
             className="absolute z-[9999] w-full mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl max-h-[320px] overflow-y-auto p-2"
           >
             {displayData.length === 0 ? (
-              <li className="p-4 text-center text-slate-400 text-sm font-medium">No results found</li>
+              <li className="p-4 text-center text-slate-400 text-sm font-medium">{noResultsMessage}</li>
             ) : (
               displayData.map((opt) => (
                 <li
@@ -184,6 +188,7 @@ const SmartDropdown = ({
           </motion.ul>
         )}
       </AnimatePresence>
+      {/* Error message removed since FormInput handles it */}
     </div>
   );
 };

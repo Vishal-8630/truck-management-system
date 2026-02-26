@@ -18,6 +18,7 @@ interface DetailBlockProps {
   isEditMode?: boolean;
   emptyValue?: string;
   childs?: React.ReactNode;
+  errors?: Record<string, string>;
 }
 
 const DetailBlock = ({
@@ -28,6 +29,7 @@ const DetailBlock = ({
   isEditMode = false,
   emptyValue = "----------",
   childs,
+  errors = {},
 }: DetailBlockProps) => {
   const handleChange = (key: string | undefined, value: string) => {
     if (key && onChange) onChange(key, value);
@@ -65,23 +67,33 @@ const DetailBlock = ({
                     />
                   </div>
                 ) : (
-                  <input
-                    type={isDateField(f.label || "") ? "date" : "text"}
-                    className="w-full px-4 py-2 bg-white border border-indigo-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all placeholder:text-slate-300"
-                    placeholder={`Enter ${f.label.toLowerCase()}...`}
-                    value={
-                      isDateField(f.label || "")
-                        ? (() => {
-                          if (!f.value) return "";
-                          const date = new Date(f.value);
-                          return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
-                        })()
-                        : f.value === null
-                          ? ""
-                          : f.value ?? ""
-                    }
-                    onChange={(e) => handleChange(f.key, e.target.value)}
-                  />
+                  <>
+                    <input
+                      type={isDateField(f.label || "") ? "date" : "text"}
+                      className={`w-full px-4 py-2 bg-white border rounded-xl text-sm font-bold transition-all placeholder:text-slate-300 focus:outline-none focus:ring-4 
+                        ${f.key && errors[f.key]
+                          ? "border-red-500 text-red-600 focus:ring-red-50"
+                          : "border-indigo-100 text-slate-700 focus:ring-indigo-50"}`}
+                      placeholder={`Enter ${f.label.toLowerCase()}...`}
+                      value={
+                        isDateField(f.label || "")
+                          ? (() => {
+                            if (!f.value) return "";
+                            const date = new Date(f.value);
+                            return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+                          })()
+                          : f.value === null
+                            ? ""
+                            : f.value ?? ""
+                      }
+                      onChange={(e) => handleChange(f.key, e.target.value)}
+                    />
+                    {f.key && errors[f.key] && (
+                      <span className="text-[10px] font-bold text-red-500 mt-1 ml-1 animate-in fade-in slide-in-from-top-1">
+                        {errors[f.key]}
+                      </span>
+                    )}
+                  </>
                 )
               ) : (
                 <div className="text-sm font-bold text-slate-700 min-h-[1.25rem] py-1 border-b border-slate-100/50">
@@ -99,4 +111,3 @@ const DetailBlock = ({
 };
 
 export default DetailBlock;
-

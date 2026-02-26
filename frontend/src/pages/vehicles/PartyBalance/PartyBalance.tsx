@@ -97,7 +97,7 @@ const PartyBalance = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full left-0 w-full mt-4 bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-indigo-100/50 z-50 overflow-hidden"
+                className="absolute top-full left-0 w-full mt-4 bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-indigo-100/50 z-50 overflow-y-auto max-h-[400px] custom-scrollbar"
               >
                 {filteredParties.map((party) => (
                   <button

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import type { BalancePartyType } from "@/types/vehicleEntry";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useParties } from "@/hooks/useParties";
 import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useItemActions } from "@/hooks/useItemActions";
 import { BALANCE_PARTY_LABELS } from "@/types/balanceParty";
 
@@ -47,6 +48,17 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
   const updateBalancePartyMutation = useUpdateBalancePartyMutation();
   const deleteBalancePartyMutation = useDeleteBalancePartyMutation();
   const { addMessage } = useMessageStore();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      await deleteBalancePartyMutation.mutateAsync(balanceParty._id);
+      addMessage({ type: "success", text: "Balance party deleted successfully" });
+      setShowDeleteModal(false);
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete balance party" });
+    }
+  };
 
   const loading = updateBalancePartyMutation.isPending;
 
@@ -79,13 +91,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this balance party?")) return;
-    try {
-      await deleteBalancePartyMutation.mutateAsync(balanceParty._id);
-      addMessage({ type: "success", text: "Balance party deleted successfully" });
-    } catch {
-      addMessage({ type: "error", text: "Failed to delete balance party" });
-    }
+    setShowDeleteModal(true);
   };
 
   const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(balanceParty);
@@ -237,6 +243,15 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Balance Party?"
+        message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
+        confirmText="Confirm Delete"
+        isLoading={deleteBalancePartyMutation.isPending}
+      />
     </div>
   );
 };

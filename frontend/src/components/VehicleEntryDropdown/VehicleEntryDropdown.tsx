@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   VEHICLE_ENTRY_LABELS,
   type VehicleEntryType,
@@ -8,6 +8,7 @@ import { useVehicleEntries } from "@/hooks/useLedgers";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2 } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface VehicleEntryDropdownProps {
   vehicleEntry: VehicleEntryType;
@@ -51,6 +52,17 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   const updateVehicleEntryMutation = useUpdateVehicleEntryMutation();
   const deleteVehicleEntryMutation = useDeleteVehicleEntryMutation();
   const { addMessage } = useMessageStore();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      await deleteVehicleEntryMutation.mutateAsync(vehicleEntry._id);
+      addMessage({ type: "success", text: "Vehicle entry deleted successfully" });
+      setShowDeleteModal(false);
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete vehicle entry" });
+    }
+  };
 
   const isKeyDate = (key: keyof VehicleEntryType) =>
     key.toLowerCase().includes("date");
@@ -103,14 +115,35 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this vehicle entry?")) return;
-    try {
-      await deleteVehicleEntryMutation.mutateAsync(vehicleEntry._id);
-      addMessage({ type: "success", text: "Vehicle entry deleted successfully" });
-    } catch {
-      addMessage({ type: "error", text: "Failed to delete vehicle entry" });
+  // --- Calculation Logic ---
+  React.useEffect(() => {
+    const freight = Number(itemState.localItem.freight) || 0;
+    const driver_cash = Number(itemState.localItem.driver_cash) || 0;
+    const dala = Number(itemState.localItem.dala) || 0;
+    const kamisan = Number(itemState.localItem.kamisan) || 0;
+    const in_ac = Number(itemState.localItem.in_ac) || 0;
+    const halting = Number(itemState.localItem.halting) || 0;
+    const balance = freight - (driver_cash + dala + kamisan + in_ac) + halting;
+
+    if (String(balance) !== itemState.localItem.balance) {
+      updateItem(vehicleEntry._id, {
+        localItem: { ...itemState.localItem, balance: String(balance) },
+      });
     }
+  }, [
+    itemState.localItem.freight,
+    itemState.localItem.driver_cash,
+    itemState.localItem.dala,
+    itemState.localItem.kamisan,
+    itemState.localItem.in_ac,
+    itemState.localItem.halting,
+    vehicleEntry._id,
+    updateItem,
+    itemState.localItem.balance
+  ]);
+
+  const handleDelete = async () => {
+    setShowDeleteModal(true);
   };
 
   const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
@@ -248,6 +281,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                       {isEditing ? (
                         <div className="flex items-center gap-2 mt-1">
                           <input
+                            type={isKeyDate(key) ? "date" : "text"}
                             className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50"
                             value={value as string}
                             onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
@@ -284,6 +318,15 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Vehicle Entry?"
+        message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
+        confirmText="Confirm Delete"
+        isLoading={deleteVehicleEntryMutation.isPending}
+      />
     </div>
   );
 };

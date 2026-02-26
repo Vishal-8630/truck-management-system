@@ -43,10 +43,21 @@ export const useLedgers = () => {
             },
         });
 
+    const useDeleteLedgerMutation = () =>
+        useMutation({
+            mutationFn: async (id: string) => {
+                await api.delete(`/ledger/delete/${id}`);
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: LEDGER_KEYS.all });
+            },
+        });
+
     return {
         useLedgersQuery,
         useAddLedgerMutation,
         useUpdateLedgerMutation,
+        useDeleteLedgerMutation,
     };
 };
 

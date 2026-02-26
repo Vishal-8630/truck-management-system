@@ -7,8 +7,16 @@ const addNewBillingEntry = async (req, res, next) => {
     const { extra_charges, billing_party, _id, ...rest } = req.body;
     const charges = [];
 
-    if (!billing_party || !billing_party._id) {
-        return next(new AppError("billing_party is required with a valid _id", 400));
+    const { lr_no, date, consignor, consignee } = rest;
+    const errors = {};
+    if (!billing_party || !billing_party._id) errors.billing_party = "Billing party is required";
+    if (!lr_no) errors.lr_no = "LR Number is required";
+    if (!date) errors.date = "Date is required";
+    if (!consignor) errors.consignor = "Consignor is required";
+    if (!consignee) errors.consignee = "Consignee is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
     }
 
     if (Array.isArray(extra_charges)) {
@@ -48,6 +56,18 @@ const updateBillingEntry = async (req, res, next) => {
 
     const { extra_charges, ...rest } = updatedEntry;
     const charges = [];
+
+    const { lr_no, date, consignor, consignee, billing_party } = rest;
+    const errors = {};
+    if (!billing_party || !billing_party._id) errors.billing_party = "Billing party is required";
+    if (!lr_no) errors.lr_no = "LR Number is required";
+    if (!date) errors.date = "Date is required";
+    if (!consignor) errors.consignor = "Consignor is required";
+    if (!consignee) errors.consignee = "Consignee is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
+    }
 
     if (Array.isArray(extra_charges)) {
         extra_charges.forEach((charge) => {

@@ -16,8 +16,15 @@ export const previewSettlement = async (req, res, next) => {
         const { driverId, from, to } = req.query;
         console.log(from, to);
 
-        if (!driverId || !from || !to) {
-            return next(new AppError("Driver ID, From and To are required", 400));
+        const errors = {};
+        if (!driverId) errors.driverId = "Driver ID is required";
+        if (!from) errors.from = "From Date is required";
+        if (!to) errors.to = "To Date is required";
+        if (!req.query.ratePerKm) errors.ratePerKm = "Rate Per Km is required";
+        if (!req.query.dieselRate) errors.dieselRate = "Diesel Rate is required";
+
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const includeSettled = String(req.query.includeSettled || "false") === "true";

@@ -6,7 +6,7 @@ import FormInput from "@/components/FormInput";
 import FormSection from "@/components/FormSection";
 import FormInputImage from "@/components/ui/FormInputImage";
 import Button from "@/components/Button";
-import { User, Save, ArrowLeft, Phone, ShieldCheck, FileText, Activity, Image as ImageIcon } from "lucide-react";
+import { User, Save, ArrowLeft, ShieldCheck, FileText, Activity, Image as ImageIcon } from "lucide-react";
 
 const NewDriverEntry = () => {
   const navigate = useNavigate();
@@ -23,9 +23,19 @@ const NewDriverEntry = () => {
     adhaar_no: "",
     notes: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [image, setImage] = useState<File | null>(null);
 
-  const handleChange = (value: string, name: string) => setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (value: string, name: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +50,14 @@ const NewDriverEntry = () => {
       await addDriver.mutateAsync(fd);
       addMessage({ type: "success", text: "Driver registered successfully!" });
       navigate("/journey/all-driver-entries");
-    } catch {
-      addMessage({ type: "error", text: "Failed to register driver. Please try again." });
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        addMessage({ type: "error", text: "Please fix the errors below." });
+      } else {
+        addMessage({ type: "error", text: "Failed to register driver. Please try again." });
+      }
     }
   };
 
@@ -77,6 +93,7 @@ const NewDriverEntry = () => {
                   placeholder="e.g. Rajesh Kumar"
                   value={form.name}
                   onChange={handleChange}
+                  error={errors.name}
                 />
                 <FormInput
                   type="input"
@@ -86,6 +103,7 @@ const NewDriverEntry = () => {
                   placeholder="e.g. +91 98XXX XXXXX"
                   value={form.phone}
                   onChange={handleChange}
+                  error={errors.phone}
                 />
                 <FormInput
                   type="input"
@@ -95,6 +113,7 @@ const NewDriverEntry = () => {
                   placeholder="XXXX-XXXX-XXXX"
                   value={form.adhaar_no}
                   onChange={handleChange}
+                  error={errors.adhaar_no}
                 />
               </div>
               <div className="mt-4">
@@ -105,6 +124,7 @@ const NewDriverEntry = () => {
                   placeholder="House no, street, city..."
                   value={form.address}
                   onChange={handleChange}
+                  error={errors.address}
                 />
               </div>
             </FormSection>
@@ -119,6 +139,7 @@ const NewDriverEntry = () => {
                   placeholder="e.g. DL-XXXXXXXXXXXXX"
                   value={form.dl}
                   onChange={handleChange}
+                  error={errors.dl}
                 />
                 <FormInput
                   type="date"
@@ -126,6 +147,7 @@ const NewDriverEntry = () => {
                   name="licence_expiry"
                   value={form.licence_expiry}
                   onChange={handleChange}
+                  error={errors.licence_expiry}
                 />
               </div>
             </FormSection>
@@ -138,6 +160,7 @@ const NewDriverEntry = () => {
                 placeholder="Years of experience, previous routes, etc..."
                 value={form.notes}
                 onChange={handleChange}
+                error={errors.notes}
               />
             </FormSection>
           </div>

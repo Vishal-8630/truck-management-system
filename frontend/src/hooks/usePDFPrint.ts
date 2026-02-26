@@ -26,40 +26,36 @@ export const usePDFPrint = <T>({
 
   const printNow = useReactToPrint({
     contentRef: ref,
-    documentTitle: "Invoice",
+    documentTitle: "Document",
     pageStyle: `
       @page {
         size: A4 ${isLandscape ? "landscape" : "portrait"};
-        margin: 5mm;
+        margin: 0;
       }
       @media print {
         html, body {
           margin: 0;
           padding: 0;
+          width: 100%;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          font-family: Arial, sans-serif;
         }
-
-        /* ---- Force Landscape Transform ---- */
-        ${isLandscape
-        ? `
-          body {
-            transform: rotate(-90deg) translate(-100%);
-            transform-origin: top left;
-            width: 100vh;
-            height: 100vw;
-            overflow: visible;
-          }
-        `
-        : ""
-      }
+        body {
+          zoom: 0.85; /* Ensures content fits on one page */
+        }
+        .card-premium {
+          border: none !important;
+          box-shadow: none !important;
+        }
+        * {
+          page-break-inside: avoid !important;
+        }
       }
     `,
   });
 
   const handlePrint = async (): Promise<void> => {
-    if (!data || !Object.keys(data).length) {
+    if (!data || !Object.keys(data as object).length) {
       addMessage({ type: "error", text: emptyMessage });
       return;
     }

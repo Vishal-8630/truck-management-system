@@ -24,6 +24,7 @@ const JourneyDetail = () => {
   const [localJourney, setLocalJourney] = useState<JourneyType | null>(null);
   const [backupJourney, setBackupJourney] = useState<JourneyType | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const currentDisplay = localJourney ?? journey;
 
@@ -76,8 +77,15 @@ const JourneyDetail = () => {
       await updateJourney.mutateAsync(localJourney);
       addMessage({ type: "success", text: "Journey updated successfully" });
       setLocalJourney(null);
-    } catch {
-      addMessage({ type: "error", text: "Failed to update journey" });
+      setErrors({});
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        addMessage({ type: "error", text: "Please fix the errors below." });
+      } else {
+        addMessage({ type: "error", text: "Failed to update journey" });
+      }
     }
   };
 
@@ -135,7 +143,11 @@ const JourneyDetail = () => {
               title="Operational Detail"
               icon={<Truck size={18} />}
               isEditMode={isEditMode}
-              onChange={(key, value) => setLocalJourney((prev) => prev ? { ...prev, [key]: value } : prev)}
+              onChange={(key, value) => {
+                setLocalJourney((prev) => prev ? { ...prev, [key]: value } : prev);
+                if (errors[key]) setErrors(p => { const n = { ...p }; delete n[key]; return n; });
+              }}
+              errors={errors}
               fields={[
                 { label: "Truck Registration", value: currentDisplay.truck?.truck_no },
                 { label: "Assigned Driver", value: (currentDisplay.driver as any)?.name },
@@ -157,7 +169,9 @@ const JourneyDetail = () => {
                   if (key === "route") return { ...prev, route: value.split(",").map((r) => r.trim()) } as JourneyType;
                   return { ...prev, [key]: value } as JourneyType;
                 });
+                if (errors[key]) setErrors(p => { const n = { ...p }; delete n[key]; return n; });
               }}
+              errors={errors}
               fields={[
                 { label: "Planned Days", value: currentDisplay.journey_days, key: "journey_days", isEditable: true },
                 { label: "Odometer Initial", value: currentDisplay.starting_kms, key: "starting_kms", isEditable: true },

@@ -23,6 +23,7 @@ import {
 } from "../ledgerConstants";
 import MetaFields from "@/components/MetaFields";
 import { ArrowLeft } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type LedgerRelationKey = "journey" | "truck" | "driver" | "party" | "settlement" | "vehicle_entry";
 
@@ -37,7 +38,7 @@ const LedgerDetail = () => {
   const { useBillingPartiesQuery } = useParties();
   const { useSettlementsQuery } = useSettlements();
   const { useVehicleEntriesQuery } = useVehicleEntries();
-  const { useLedgersQuery, useUpdateLedgerMutation } = useLedgers();
+  const { useLedgersQuery, useUpdateLedgerMutation, useDeleteLedgerMutation } = useLedgers();
 
   const { data: journies = [] } = useJourneysQuery();
   const { data: trucks = [] } = useTrucksQuery();
@@ -47,10 +48,12 @@ const LedgerDetail = () => {
   const { data: vehicleEntries = [] } = useVehicleEntriesQuery();
   const { data: ledgers = [], isLoading } = useLedgersQuery();
   const updateLedger = useUpdateLedgerMutation();
+  const deleteLedger = useDeleteLedgerMutation();
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [localLedger, setLocalLedger] = useState<LedgerType | null>(null);
   const [backupLedger, setBackupLedger] = useState<LedgerType | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
 
@@ -116,12 +119,23 @@ const LedgerDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      if (!ledger) return;
+      await deleteLedger.mutateAsync(ledger._id);
+      addMessage({ type: "success", text: "Ledger entry deleted successfully" });
+      navigate("/ledger/all-ledgers");
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete ledger entry" });
+    }
+  };
+
   const fieldKeys: LedgerRelationKey[] = ["journey", "truck", "driver", "party", "settlement", "vehicle_entry"];
   const fields = fieldKeys.map((key) => ({
     label: key.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase()),
     key,
     options: optionConfig[key](),
-    value: displayConfig[key](),
+    value: isEditMode && (currentDisplay as any)[key]?._id ? (currentDisplay as any)[key]._id : displayConfig[key](),
     isEditable: isEditMode,
   }));
 
@@ -136,7 +150,7 @@ const LedgerDetail = () => {
         isDirty={isDirty}
         onEditClick={() => { setIsEditMode(true); setBackupLedger(currentDisplay); setLocalLedger({ ...currentDisplay }); }}
         onCancelClick={() => { setIsEditMode(false); setLocalLedger(backupLedger); }}
-        onDeleteClick={() => addMessage({ type: "info", text: "Delete action not yet implemented." })}
+        onDeleteClick={() => setShowDeleteModal(true)}
         onDiscardClick={() => { setIsEditMode(false); setLocalLedger(backupLedger); }}
         onSaveClick={() => { setIsEditMode(false); handleSave(); }}
       />
@@ -193,6 +207,16 @@ const LedgerDetail = () => {
           }
         />
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Ledger Entry?"
+        message="This action is permanent and cannot be undone. Are you sure you want to remove this transaction from the records?"
+        confirmText="Confirm Delete"
+        isLoading={deleteLedger.isPending}
+      />
     </div>
   );
 };

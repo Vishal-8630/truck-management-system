@@ -17,14 +17,18 @@ const newTruck = async (req, res, next) => {
             pollution_doc_expiry
         } = req.body;
 
-        if (!truck_no) {
-            if (req.files) await deleteFromS3(req.files);
-            return next(new AppError("Truck No is required", 400));
-        }
+        const errors = {};
+        if (!truck_no) errors.truck_no = "Truck No is required";
+        if (!fitness_doc_expiry) errors.fitness_doc_expiry = "Fitness Expiry is required";
+        if (!insurance_doc_expiry) errors.insurance_doc_expiry = "Insurance Expiry is required";
+        if (!national_permit_doc_expiry) errors.national_permit_doc_expiry = "National Permit is required";
+        if (!state_permit_doc_expiry) errors.state_permit_doc_expiry = "State Permit is required";
+        if (!tax_doc_expiry) errors.tax_doc_expiry = "Tax Expiry is required";
+        if (!pollution_doc_expiry) errors.pollution_doc_expiry = "Pollution Expiry is required";
 
-        if (!fitness_doc_expiry || !insurance_doc_expiry || !national_permit_doc_expiry || !state_permit_doc_expiry || !tax_doc_expiry || !pollution_doc_expiry) {
+        if (Object.keys(errors).length > 0) {
             if (req.files) await deleteFromS3(req.files);
-            return next(new AppError("All Dates are required", 400));
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const getFile = (key) => req.files?.[key]?.[0]?.location || null;
@@ -50,10 +54,13 @@ const newTruck = async (req, res, next) => {
             pollution_doc: getFile("pollution_doc"),
         };
 
-        const existingTruck = await Truck.findOne({ truck_no });
+        const existingTruck = await Truck.findOne({ truck_no: { $regex: new RegExp(`^${truck_no}$`, 'i') } });
         if (existingTruck) {
             if (req.files) await deleteFromS3(req.files);
-            return next(new AppError("Truck No already exist in database", 400));
+            return res.status(400).json({
+                status: "fail",
+                errors: { truck_no: "Truck No already exists in database" }
+            });
         }
 
         const truck = new Truck(truckData);

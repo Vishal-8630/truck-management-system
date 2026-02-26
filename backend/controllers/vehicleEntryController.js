@@ -13,8 +13,16 @@ const calculatePartyBalance = (entry) => {
 
 const addNewVehicleEntry = async (req, res, next) => {
     let { _id, balance_party, ...rest } = req.body;
-    if (!balance_party.party_name) {
-        return next(new AppError("Party Name is required", 400));
+    const { vehicle_no, date, from, to } = rest;
+    const errors = {};
+    if (!balance_party.party_name) errors.party_name = "Party Name is required";
+    if (!vehicle_no) errors.vehicle_no = "Vehicle Registration is required";
+    if (!date) errors.date = "Log Date is required";
+    if (!from) errors.from = "Origin City is required";
+    if (!to) errors.to = "Destination City is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
     }
 
     rest = calculatePartyBalance(rest);
@@ -52,11 +60,11 @@ const updateVehicleEntry = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(entryId)) {
         return next(new AppError("Invalid Entry ID", 400));
     }
-    
+
     rest = calculatePartyBalance(rest);
     console.log(rest);
     console.log(entryId);
-    const entry = await VehicleEntry.findByIdAndUpdate(entryId, { balance_party, ...rest}, { new: true }).populate("balance_party");
+    const entry = await VehicleEntry.findByIdAndUpdate(entryId, { balance_party, ...rest }, { new: true }).populate("balance_party");
     console.log(entry);
     if (!entry) {
         return next(new AppError("Entry not found", 404));

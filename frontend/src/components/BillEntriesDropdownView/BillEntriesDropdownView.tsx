@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ENTRY_LABELS,
   EXTRA_CHARGE_LABELS,
@@ -11,6 +11,7 @@ import { useBillEntries } from "@/hooks/useLedgers";
 import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
 import { formatDate } from "@/utils/formatDate";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 // --- Props ---
 interface DropdownViewProps {
@@ -40,6 +41,7 @@ interface FieldRowProps {
   onSave: () => void;
   onCancel: () => void;
   onChange?: (val: string) => void;
+  type?: string;
 }
 
 // --- Reusable Field Row Component ---
@@ -52,6 +54,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
   onSave,
   onCancel,
   onChange,
+  type,
 }) => (
   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-slate-50 last:border-0 group">
     <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 sm:mb-0 sm:w-1/3">{label}</div>
@@ -59,6 +62,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
       {editing ? (
         <div className="flex-1 flex items-center gap-2">
           <input
+            type={type || "text"}
             className="flex-1 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50"
             value={draftValue ?? ""}
             onChange={(e) => onChange?.(e.target.value)}
@@ -147,7 +151,15 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
                   <button onClick={() => cancelEdit(charge._id, subKey as keyof ExtraCharge)} className="p-1 text-slate-400"><X size={14} /></button>
                 </div>
               ) : (
-                <span className="text-sm font-bold text-slate-700">{subValue || "—"}</span>
+                <div className="flex items-center justify-between group/field">
+                  <span className="text-sm font-bold text-slate-700">{subValue || "—"}</span>
+                  <button
+                    onClick={() => startEdit(charge._id, subKey as keyof ExtraCharge)}
+                    className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-all opacity-0 group-hover/field:opacity-100"
+                  >
+                    <Edit3 size={12} />
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -184,12 +196,26 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
     extra_charges: {},
   });
 
+  const [hasInteracted, setHasInteracted] = useState(false);
   const { useUpdateBillEntryMutation, useDeleteBillEntryMutation } = useBillEntries();
   const updateBillEntryMutation = useUpdateBillEntryMutation();
   const deleteBillEntryMutation = useDeleteBillEntryMutation();
   const { addMessage } = useMessageStore();
 
+  const hasChanges = useMemo(() => hasInteracted && JSON.stringify(localEntry) !== JSON.stringify(entry), [localEntry, entry, hasInteracted]);
+
   const loading = updateBillEntryMutation.isPending;
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = async () => {
+    try {
+      await deleteBillEntryMutation.mutateAsync(entry._id);
+      addMessage({ type: "success", text: "Bill entry deleted successfully" });
+      setShowDeleteModal(false);
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete bill entry" });
+    }
+  };
 
   const isKeyDate = useCallback(
     (key: keyof BillEntryType) => key.toLowerCase().includes("date"),
@@ -201,6 +227,40 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
     setDrafts({ fields: {}, extra_charges: {} });
     setEditing({ fields: new Set(), extra_charges: new Set() });
   }, [entry]);
+
+  // --- Calculation Logic ---
+  useEffect(() => {
+    const isUP = localEntry.gst_up === "UP";
+    const gstRate = isUP ? 0.09 : 0.18;
+    const rate = Number(localEntry.rate) || 0;
+    const advance = Number(localEntry.advance) || 0;
+    const extraTotal = (localEntry.extra_charges || []).reduce(
+      (sum, ec) => sum + Number(ec.amount || 0),
+      0
+    );
+    const gst = Math.round((rate + extraTotal) * gstRate * 100) / 100;
+    const subTotal = rate + extraTotal;
+    const grandTotal = (isUP ? subTotal + 2 * gst : subTotal + gst) - advance;
+
+    const updated = {
+      cgst: isUP ? String(gst) : "",
+      sgst: isUP ? String(gst) : "",
+      igst: !isUP ? String(gst) : "",
+      sub_total: String(subTotal),
+      grand_total: String(grandTotal),
+    };
+
+    // Only update if changed to avoid loop
+    if (
+      updated.cgst !== localEntry.cgst ||
+      updated.sgst !== localEntry.sgst ||
+      updated.igst !== localEntry.igst ||
+      updated.sub_total !== localEntry.sub_total ||
+      updated.grand_total !== localEntry.grand_total
+    ) {
+      setLocalEntry(prev => ({ ...prev, ...updated }));
+    }
+  }, [localEntry.rate, localEntry.extra_charges, localEntry.gst_up, localEntry.advance]);
 
   // --- Field Handlers ---
   const startEditField = (key: keyof BillEntryType) => {
@@ -218,6 +278,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
   };
   const saveField = (key: keyof BillEntryType) => {
     setLocalEntry((prev) => ({ ...prev, [key]: drafts.fields[key] }));
+    setHasInteracted(true);
     setEditing((prev) => ({
       ...prev,
       fields: new Set([...prev.fields].filter((k) => k !== key)),
@@ -261,6 +322,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
           : c
       ),
     }));
+    setHasInteracted(true);
     setEditing((prev) => ({
       ...prev,
       extra_charges: new Set(
@@ -308,6 +370,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       ...prev,
       extra_charges: prev.extra_charges.filter((c) => c._id !== _id),
     }));
+    setHasInteracted(true);
     setDrafts((prev) => {
       const updated = { ...prev.extra_charges };
       delete updated[_id];
@@ -333,9 +396,23 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       ...prev,
       extra_charges: [...(prev.extra_charges ?? []), newCharge],
     }));
+    setHasInteracted(true);
     setEditing((prev) => ({
       ...prev,
-      extra_charges: new Set([...prev.extra_charges, `${newId}.type`]),
+      extra_charges: new Set([
+        ...prev.extra_charges,
+        `${newId}.type`,
+        `${newId}.rate`,
+        `${newId}.per_amount`,
+        `${newId}.amount`,
+      ]),
+    }));
+    setDrafts((prev) => ({
+      ...prev,
+      extra_charges: {
+        ...prev.extra_charges,
+        [newId]: { type: "", rate: "", per_amount: "", amount: "" },
+      },
     }));
   };
 
@@ -361,16 +438,8 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
     }
   };
 
-  const hasChanges = JSON.stringify(localEntry) !== JSON.stringify(entry);
-
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this bill entry?")) return;
-    try {
-      await deleteBillEntryMutation.mutateAsync(localEntry._id);
-      addMessage({ type: "success", text: "Bill entry deleted successfully" });
-    } catch {
-      addMessage({ type: "error", text: "Failed to delete bill entry" });
-    }
+    setShowDeleteModal(true);
   };
 
   return (
@@ -493,6 +562,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                           onSave={() => saveField(key as keyof BillEntryType)}
                           onCancel={() => cancelField(key as keyof BillEntryType)}
                           onChange={(val) => setDrafts(p => ({ ...p, fields: { ...p.fields, [key]: val } }))}
+                          type="number"
                         />
                       ))}
                     </div>
@@ -545,6 +615,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                             onSave={() => saveField(key)}
                             onCancel={() => cancelField(key)}
                             onChange={(val) => setDrafts(p => ({ ...p, fields: { ...p.fields, [key]: val } }))}
+                            type={isKeyDate(key) ? "date" : (["rate", "advance", "sub_total", "grand_total"].includes(key) ? "number" : "text")}
                           />
                         ))
                       }
@@ -569,6 +640,15 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Bill Entry?"
+        message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
+        confirmText="Confirm Delete"
+        isLoading={deleteBillEntryMutation.isPending}
+      />
     </div>
   );
 };

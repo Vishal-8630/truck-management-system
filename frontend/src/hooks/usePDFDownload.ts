@@ -149,26 +149,40 @@ export const usePDFDownload = <T>({
 
     // 🖼️ Render to canvas
     const canvas = await html2canvas(clone, {
-      scale: 2,
+      scale: 3, // Higher scale for better quality
       useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      logging: false,
       scrollY: -window.scrollY,
       windowWidth: clone.scrollWidth,
       windowHeight: clone.scrollHeight,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/png", 1.0);
     const pdf = new jsPDF(orientation, "mm", "a4");
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     const margin = 5;
 
-    const renderWidth = pdfWidth - margin * 2;
-    const renderHeight = (canvas.height * renderWidth) / canvas.width;
+    const maxRenderWidth = pdfWidth - margin * 2;
+    const maxRenderHeight = pdfHeight - margin * 2;
 
-    const x = margin;
+    let finalWidth = maxRenderWidth;
+    let finalHeight = (canvas.height * finalWidth) / canvas.width;
+
+    // If height exceeds page, scale down to fit height
+    if (finalHeight > maxRenderHeight) {
+      finalHeight = maxRenderHeight;
+      finalWidth = (canvas.width * finalHeight) / canvas.height;
+    }
+
+    // Center horizontally if scaled down by height
+    const x = margin + (maxRenderWidth - finalWidth) / 2;
     const y = margin;
 
-    pdf.addImage(imgData, "PNG", x, y, renderWidth, renderHeight);
+    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight, undefined, "FAST");
     pdf.save(filename);
 
     document.body.removeChild(clone);

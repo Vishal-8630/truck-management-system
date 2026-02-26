@@ -22,15 +22,13 @@ const DriverSettlement = () => {
   const [ratePerKm, setRatePerKm] = useState("");
   const [dieselRate, setDieselRate] = useState("");
   const [extraExpense, setExtraExpense] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!id) return <Loading />;
   const driver = drivers.find((d) => d._id === id);
 
   const handleClick = async () => {
-    if (!from || !to || !ratePerKm || !dieselRate) {
-      addMessage({ type: "error", text: "Please fill all required fields." });
-      return;
-    }
+    setErrors({});
     try {
       const result = await previewMutation.mutateAsync({ driverId: id, from, to, ratePerKm, dieselRate, extraExpense });
       const data = result?.data;
@@ -41,8 +39,14 @@ const DriverSettlement = () => {
       } else {
         addMessage({ type: "error", text: result?.message || "No journeys found for this period." });
       }
-    } catch {
-      addMessage({ type: "error", text: "Failed to fetch settlement preview." });
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        setErrors(serverErrors);
+        addMessage({ type: "error", text: "Please fix the errors." });
+      } else {
+        addMessage({ type: "error", text: "Failed to fetch settlement preview." });
+      }
     }
   };
 
@@ -64,15 +68,15 @@ const DriverSettlement = () => {
       <div className="card-premium p-8 lg:p-10 flex flex-col gap-10">
         <FormSection title="Settlement Period" icon={<Calendar size={18} />}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormInput type="date" id="from" name="from" label="Start Date" value={from} onChange={(val) => setFrom(val)} />
-            <FormInput type="date" id="to" name="to" label="End Date" value={to} onChange={(val) => setTo(val)} />
+            <FormInput type="date" id="from" name="from" label="Start Date" value={from} onChange={(val) => { setFrom(val); setErrors(p => ({ ...p, from: "" })) }} error={errors.from} />
+            <FormInput type="date" id="to" name="to" label="End Date" value={to} onChange={(val) => { setTo(val); setErrors(p => ({ ...p, to: "" })) }} error={errors.to} />
           </div>
         </FormSection>
 
         <FormSection title="Settlement Rates" icon={<Wallet size={18} />}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormInput type="number" id="ratePerKm" name="ratePerKm" label="Rate Per Km" value={ratePerKm} placeholder="e.g. 5.50" onChange={(val) => setRatePerKm(val)} />
-            <FormInput type="number" id="dieselRate" name="dieselRate" label="Diesel Rate (₹/L)" value={dieselRate} placeholder="e.g. 90.00" onChange={(val) => setDieselRate(val)} />
+            <FormInput type="number" id="ratePerKm" name="ratePerKm" label="Rate Per Km" value={ratePerKm} placeholder="e.g. 5.50" onChange={(val) => { setRatePerKm(val); setErrors(p => ({ ...p, ratePerKm: "" })) }} error={errors.ratePerKm} />
+            <FormInput type="number" id="dieselRate" name="dieselRate" label="Diesel Rate (₹/L)" value={dieselRate} placeholder="e.g. 90.00" onChange={(val) => { setDieselRate(val); setErrors(p => ({ ...p, dieselRate: "" })) }} error={errors.dieselRate} />
             <FormInput type="number" id="extraExpense" name="extraExpense" label="Extra Deductions" value={extraExpense} placeholder="0.00" onChange={(val) => setExtraExpense(val)} />
           </div>
         </FormSection>

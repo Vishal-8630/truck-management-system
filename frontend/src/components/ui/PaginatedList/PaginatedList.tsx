@@ -24,7 +24,9 @@ const PaginatedList = <T,>({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4">{currentItems.map(renderItem)}</div>
+      <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
+        <div className="grid gap-4 min-w-[320px]">{currentItems.map(renderItem)}</div>
+      </div>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 mt-4 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit mx-auto">

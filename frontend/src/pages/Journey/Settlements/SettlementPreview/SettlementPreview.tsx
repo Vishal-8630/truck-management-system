@@ -117,22 +117,45 @@ const SettlementPreview = () => {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-white/10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-white/10 print:hidden">
             <div className="flex items-center gap-3 text-slate-400">
               <Info size={16} />
               <p className="text-xs font-bold italic">Confirming will mark all included journeys as settled in the system.</p>
             </div>
-            <button
-              onClick={handleConfirmSettlementClick}
-              disabled={confirmMutation.isPending}
-              className="w-full md:w-fit px-12 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-50 hover:-translate-y-1 transition-all active:translate-y-0 disabled:opacity-60"
-            >
-              {confirmMutation.isPending ? <span className="animate-spin w-6 h-6 rounded-full border-2 border-slate-300 border-t-slate-900" /> : <CheckCircle2 size={24} className="text-indigo-600" />}
-              Confirm Settlement
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => window.print()}
+                className="px-8 py-5 bg-slate-800 text-white rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-700 transition-all active:translate-y-0"
+              >
+                Print Report
+              </button>
+              <button
+                onClick={handleConfirmSettlementClick}
+                disabled={confirmMutation.isPending}
+                className="w-full md:w-fit px-12 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-50 hover:-translate-y-1 transition-all active:translate-y-0 disabled:opacity-60"
+              >
+                {confirmMutation.isPending ? <span className="animate-spin w-6 h-6 rounded-full border-2 border-slate-300 border-t-slate-900" /> : <CheckCircle2 size={24} className="text-indigo-600" />}
+                Confirm Settlement
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media print {
+          @page { size: auto; margin: 10mm; }
+          body { background: white !important; font-size: 10pt; }
+          .print\\:hidden, button, .ArrowLeft { display: none !important; }
+          .card-premium { border: 1px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; }
+          .bg-slate-900 { background: white !important; color: black !important; border: 1px solid #000 !important; padding: 20px !important; }
+          .text-white { color: black !important; }
+          .text-indigo-400, .text-indigo-300 { color: #4338ca !important; }
+          .bg-white\\/5 { background: transparent !important; border: 1px solid #e2e8f0 !important; }
+          .bg-indigo-600 { background: #eef2ff !important; color: black !important; border: 2px solid #4338ca !important; }
+          .max-w-5xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+        }
+      `}</style>
     </div>
   );
 };
