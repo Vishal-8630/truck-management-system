@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ItemState } from "./useItemStates";
+import type { ItemState } from "@/hooks/useItemStates";
 
 type ItemActions<T extends { _id: string }> = {
   handleEdit: (key: keyof T) => void;

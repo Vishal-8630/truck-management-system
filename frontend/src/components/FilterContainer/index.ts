@@ -1,3 +1,1 @@
-import FilterContainer from "./FilterContainer";
-
-export default FilterContainer;
+export { default } from '@/components/ui/FilterContainer';

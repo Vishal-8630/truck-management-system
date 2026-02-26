@@ -1,3 +1,3 @@
-import HeaderWithChild from "./HeaderWithChild";
+import HeaderWithChild from "@/components/HeaderWithChild/HeaderWithChild";
 
 export default HeaderWithChild;

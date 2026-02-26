@@ -14,6 +14,8 @@ const toNum = v => {
 export const previewSettlement = async (req, res, next) => {
     try {
         const { driverId, from, to } = req.query;
+        console.log(from, to);
+
         if (!driverId || !from || !to) {
             return next(new AppError("Driver ID, From and To are required", 400));
         }
@@ -85,7 +87,7 @@ export const previewSettlement = async (req, res, next) => {
         const avgMileage = mileageCount ? (totalAvgMileageSum / mileageCount) : (toNum(req.query.defaultMileage) || 1);
         const totalDieselUsed = avgMileage ? Math.floor((totalDistance / avgMileage)) : 0;
         const dieselDiff = totalDieselUsed - totalDieselQty;
-        const dieselValue = dieselDiff * DIESEL_RATE;
+        let dieselValue = dieselDiff * DIESEL_RATE;
 
         const fuelMoneyAdjustment = dieselDiff * avgMileage;
         totalRatePerKm = (totalDistance * RATE_PER_KM);

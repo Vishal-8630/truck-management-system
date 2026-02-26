@@ -1,20 +1,19 @@
 import type { ReactNode } from "react"
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { selectUser } from "../../features/auth/authSelectors";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ProtectedRouteProps {
     children: ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const user = useSelector(selectUser);
-    
+    const { user } = useAuthStore();
+
     if (!user) {
         return <Navigate to="/login" replace />;
     }
 
-  return (<>{children}</>);
+    return (<>{children}</>);
 }
 
 export default ProtectedRoute

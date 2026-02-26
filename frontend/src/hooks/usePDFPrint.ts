@@ -1,7 +1,5 @@
-import { useDispatch } from "react-redux";
-import { addMessage } from "../features/message";
-import type { AppDispatch } from "../app/store";
-import api from "../api/axios";
+import { useMessageStore } from "@/store/useMessageStore";
+import api from "@/api/axios";
 import { useReactToPrint } from "react-to-print";
 
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -23,7 +21,7 @@ export const usePDFPrint = <T>({
   endpoint = "/invoice/generate-pdf",
   serverMode = true,
 }: UsePDFPrintOptions<T>) => {
-  const dispatch: AppDispatch = useDispatch();
+  const { addMessage } = useMessageStore();
   const isLandscape = orientation === "l";
 
   const printNow = useReactToPrint({
@@ -44,9 +42,8 @@ export const usePDFPrint = <T>({
         }
 
         /* ---- Force Landscape Transform ---- */
-        ${
-          isLandscape
-            ? `
+        ${isLandscape
+        ? `
           body {
             transform: rotate(-90deg) translate(-100%);
             transform-origin: top left;
@@ -55,15 +52,15 @@ export const usePDFPrint = <T>({
             overflow: visible;
           }
         `
-            : ""
-        }
+        : ""
+      }
       }
     `,
   });
 
   const handlePrint = async (): Promise<void> => {
     if (!data || !Object.keys(data).length) {
-      dispatch(addMessage({ type: "error", text: emptyMessage }));
+      addMessage({ type: "error", text: emptyMessage });
       return;
     }
 
@@ -115,20 +112,16 @@ export const usePDFPrint = <T>({
 
         const blobUrl = URL.createObjectURL(res.data);
         window.open(blobUrl, "_blank");
-        dispatch(
-          addMessage({
-            type: "success",
-            text: "Opening styled PDF for print...",
-          })
-        );
+        addMessage({
+          type: "success",
+          text: "Opening styled PDF for print...",
+        });
       } catch (error) {
         console.error("PDF print error:", error);
-        dispatch(
-          addMessage({
-            type: "error",
-            text: "Failed to generate printable PDF",
-          })
-        );
+        addMessage({
+          type: "error",
+          text: "Failed to generate printable PDF",
+        });
       }
 
       return;
@@ -138,9 +131,7 @@ export const usePDFPrint = <T>({
     if (printNow) {
       printNow();
     } else {
-      dispatch(
-        addMessage({ type: "error", text: "Print function not ready." })
-      );
+      addMessage({ type: "error", text: "Print function not ready." });
     }
   };
 

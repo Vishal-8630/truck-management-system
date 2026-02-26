@@ -1,233 +1,180 @@
-import { useRef, useState } from "react";
-import FormInput from "../../../components/FormInput";
-import FormSection from "../../../components/FormSection";
-import { EmptyTruckType, type TruckType } from "../../../types/truck";
-import type { AppDispatch } from "../../../app/store";
-import { useDispatch } from "react-redux";
-import { addMessage } from "../../../features/message";
-import { addTruckEntryAsync } from "../../../features/truck";
-import FormInputImage from "../../../components/FormInputImage";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Plus,
-  Truck,
-  Calendar,
-  ShieldCheck,
-  ArrowLeft,
-  Activity,
-  Zap,
-  Globe,
-  Map,
-  CreditCard,
-  Droplets
-} from "lucide-react";
-
-const DOCUMENTS = [
-  {
-    label: "Fitness Certificate",
-    field: "fitness_doc",
-    expiry_label: "Fitness Expiry",
-    expiry_field: "fitness_doc_expiry",
-    icon: <Activity size={18} />
-  },
-  {
-    label: "Insurance Policy",
-    field: "insurance_doc",
-    expiry_label: "Insurance Expiry",
-    expiry_field: "insurance_doc_expiry",
-    icon: <ShieldCheck size={18} />
-  },
-  {
-    label: "National Permit",
-    field: "national_permit_doc",
-    expiry_label: "Permit Expiry",
-    expiry_field: "national_permit_doc_expiry",
-    icon: <Globe size={18} />
-  },
-  {
-    label: "State Permit",
-    field: "state_permit_doc",
-    expiry_label: "Permit Expiry",
-    expiry_field: "state_permit_doc_expiry",
-    icon: <Map size={18} />
-  },
-  {
-    label: "Road Tax",
-    field: "tax_doc",
-    expiry_label: "Tax Expiry",
-    expiry_field: "tax_doc_expiry",
-    icon: <CreditCard size={18} />
-  },
-  {
-    label: "Pollution (PUC)",
-    field: "pollution_doc",
-    expiry_label: "PUC Expiry",
-    expiry_field: "pollution_doc_expiry",
-    icon: <Droplets size={18} />
-  },
-];
+import { useTrucks } from "@/hooks/useTrucks";
+import { useMessageStore } from "@/store/useMessageStore";
+import FormInput from "@/components/FormInput";
+import FormSection from "@/components/FormSection";
+import FormInputImage from "@/components/ui/FormInputImage";
+import Button from "@/components/Button";
+import { Truck, Save, ArrowLeft, FileText, ShieldCheck, Image as ImageIcon, Activity } from "lucide-react";
 
 const NewTruckEntry = () => {
-  const [truck, setTruck] = useState<TruckType>(EmptyTruckType);
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { useAddTruckMutation } = useTrucks();
+  const addTruck = useAddTruckMutation();
 
-  const errorsRef = useRef<Record<string, string>>({});
-  const [, forceRender] = useState({});
+  const [form, setForm] = useState({
+    truck_no: "",
+    model: "",
+    year: "",
+    notes: "",
+    fitness_doc_expiry: "",
+    insurance_doc_expiry: "",
+    national_permit_doc_expiry: "",
+    state_permit_doc_expiry: "",
+    tax_doc_expiry: "",
+    pollution_doc_expiry: "",
+  });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    if (errorsRef.current[name]) {
-      errorsRef.current[name] = "";
-      forceRender({});
-    }
-    setTruck((prevTruck) => ({
-      ...prevTruck,
-      [name]: value,
-    }));
-  };
+  const [docs, setDocs] = useState<Record<string, File | null>>({
+    fitness_doc: null,
+    insurance_doc: null,
+    national_permit_doc: null,
+    state_permit_doc: null,
+    tax_doc: null,
+    pollution_doc: null,
+  });
 
-  const handleFileSelect = (file: File | null, field: keyof TruckType) => {
-    setTruck((prev) => ({
-      ...prev,
-      [field]: file,
-    }));
+  const handleChange = (value: string, name: string) => setForm((prev) => ({ ...prev, [name]: value }));
+
+  const handleFileSelect = (file: File | null, name: string) => {
+    setDocs(prev => ({ ...prev, [name]: file }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.truck_no.trim()) {
+      addMessage({ type: "error", text: "Truck registration number is required." });
+      return;
+    }
     try {
-      const formData = new FormData();
-
-      Object.entries(truck).forEach(([key, value]) => {
-        if (!value) return;
-
-        if (value instanceof File) {
-          formData.append(key, value);
-        } else if (typeof value === "string") {
-          formData.append(key, value);
-        } else if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
-        } else if (typeof value === "object") {
-          formData.append(key, JSON.stringify(value));
-        }
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      Object.entries(docs).forEach(([k, v]) => {
+        if (v) fd.append(k, v);
       });
-
-      const resultAction = await dispatch(addTruckEntryAsync(formData));
-      if (addTruckEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({ type: "success", text: "Truck added successfully" })
-        );
-        navigate("/journey/all-truck-entries");
-      } else if (addTruckEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors && !errors?.length && Object.keys(errors)?.length > 0) {
-          errorsRef.current = errors;
-          forceRender({});
-        }
-        dispatch(
-          addMessage({
-            type: "error",
-            text: errors?.general || "Failed to add new truck"
-          })
-        )
-      }
-    } catch (error: any) {
-      dispatch(
-        addMessage({
-          type: "error",
-          text: "Something went wrong",
-        })
-      );
+      await addTruck.mutateAsync(fd);
+      addMessage({ type: "success", text: "Truck registered successfully!" });
+      navigate("/journey/all-truck-entries");
+    } catch {
+      addMessage({ type: "error", text: "Failed to register truck. Please try again." });
     }
   };
 
   return (
-    <div className="flex flex-col gap-10 pb-20 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-10 pb-24">
       <div className="flex flex-col gap-4">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+          className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-all text-sm font-semibold mb-2 w-fit"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={16} />
           Back
         </button>
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
-            <Plus className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
-            Add New <span className="text-indigo-600">Truck</span>
+            <Truck className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" />
+            Register New <span className="text-blue-600">Truck</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg">Register a new vehicle with registration and compliance documents.</p>
+          <p className="text-slate-500 font-medium text-lg">Add a new truck to the fleet registry with compliance tracking.</p>
         </div>
       </div>
 
-      <form className="flex flex-col gap-10" onSubmit={handleSubmit}>
-        <div className="card-premium p-8 lg:p-10 bg-white">
-          <FormSection title="Vehicle Registration" icon={<Truck size={18} />}>
-            <div className="max-w-md">
-              <FormInput
-                type="text"
-                id="truck_no"
-                value={truck.truck_no}
-                name="truck_no"
-                label="Truck Registration Number"
-                error={errorsRef.current['truck_no'] || ""}
-                placeholder="e.g. HR-55-AL-1234"
-                onChange={handleInputChange}
-                icon={<Zap size={18} />}
-              />
-            </div>
-          </FormSection>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {DOCUMENTS.map((document) => {
-            const imgValue = truck[document.field as keyof TruckType];
-            const expiryValue = truck[document.expiry_field as keyof TruckType];
-
-            return (
-              <div key={document.field} className="card-premium p-6 flex flex-col gap-6 bg-slate-50/30">
-                <FormSection title={document.label} icon={document.icon}>
-                  <div className="flex flex-col gap-6">
-                    <FormInputImage
-                      id={document.field}
-                      value={typeof imgValue === "string" ? imgValue : ""}
-                      name={document.field}
-                      label="Document Scan"
-                      isEditMode={true}
-                      onFileSelect={(file) =>
-                        handleFileSelect(file, document.field as keyof TruckType)
-                      }
-                    />
-                    <FormInput
-                      type="date"
-                      id={document.expiry_field}
-                      value={(expiryValue as string) ?? ""}
-                      name={document.expiry_field}
-                      label={document.expiry_label}
-                      inputType="date"
-                      onChange={handleInputChange}
-                      icon={<Calendar size={16} />}
-                    />
-                  </div>
-                </FormSection>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            <FormSection title="Truck Specifications" icon={<Activity size={18} />}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Registration No."
+                  name="truck_no"
+                  placeholder="e.g. UP 80 AX 1234"
+                  value={form.truck_no}
+                  onChange={handleChange}
+                />
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Model"
+                  name="model"
+                  placeholder="e.g. Tata Prima"
+                  value={form.model}
+                  onChange={handleChange}
+                />
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Year"
+                  name="year"
+                  placeholder="e.g. 2023"
+                  value={form.year}
+                  onChange={handleChange}
+                />
               </div>
-            );
-          })}
-        </div>
+              <div className="mt-4">
+                <FormInput
+                  type="textarea"
+                  label="Additional Notes"
+                  name="notes"
+                  placeholder="Engine details, maintenance history, etc."
+                  value={form.notes}
+                  onChange={handleChange}
+                />
+              </div>
+            </FormSection>
 
-        <div className="flex justify-end pt-10 border-t border-slate-100">
-          <button
-            type="submit"
-            className="w-full lg:w-fit px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:translate-y-0"
-          >
-            <Plus size={20} strokeWidth={3} />
-            Register Vehicle
-          </button>
+            <FormSection title="Compliance Expiry Dates" icon={<ShieldCheck size={18} />}>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FormInput type="date" label="Fitness Expiry" name="fitness_doc_expiry" value={form.fitness_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="Insurance Expiry" name="insurance_doc_expiry" value={form.insurance_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="National Permit" name="national_permit_doc_expiry" value={form.national_permit_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="State Permit" name="state_permit_doc_expiry" value={form.state_permit_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="Tax Expiry" name="tax_doc_expiry" value={form.tax_doc_expiry} onChange={handleChange} />
+                <FormInput type="date" label="Pollution Expiry" name="pollution_doc_expiry" value={form.pollution_doc_expiry} onChange={handleChange} />
+              </div>
+            </FormSection>
+
+            <FormSection title="Document Uploads" icon={<ImageIcon size={18} />}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(["fitness_doc", "insurance_doc", "national_permit_doc", "state_permit_doc", "tax_doc", "pollution_doc"] as const).map((doc) => (
+                  <FormInputImage
+                    key={doc}
+                    id={doc}
+                    name={doc}
+                    label={doc.replace(/_/g, " ")}
+                    isEditMode={true}
+                    onFileSelect={(file) => handleFileSelect(file, doc)}
+                  />
+                ))}
+              </div>
+            </FormSection>
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-8 sticky top-24">
+            <FormSection title="Registry Actions" icon={<FileText size={18} />}>
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-slate-500 font-medium">Please ensure all compliance dates are accurate for automated alerts.</p>
+                <Button
+                  type="submit"
+                  isLoading={addTruck.isPending}
+                  icon={<Save size={20} />}
+                  className="py-5 shadow-blue-500/30 w-full"
+                >
+                  Register Truck
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/journey/all-truck-entries')}
+                  className="py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  Cancel Registration
+                </button>
+              </div>
+            </FormSection>
+          </div>
         </div>
       </form>
     </div>

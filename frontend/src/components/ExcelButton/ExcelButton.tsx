@@ -1,4 +1,4 @@
-import handleExportToExcel from "../../utils/exportToExcel";
+import handleExportToExcel from "@/utils/exportToExcel";
 import { Download } from "lucide-react";
 
 interface ExcelButtonProps {

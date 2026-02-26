@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import Overlay from "../Overlay";
+import Overlay from "@/components/Overlay";
 
 interface ServiceCardProps {
   icon: React.ReactNode;

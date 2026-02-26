@@ -1,80 +1,52 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 
-import type { AppDispatch } from "../../../app/store";
+import { useJourneys } from "@/hooks/useJourneys";
+import { useTrucks } from "@/hooks/useTrucks";
+import { useDrivers } from "@/hooks/useDrivers";
+import { useParties } from "@/hooks/useParties";
+import { useSettlements } from "@/hooks/useSettlements";
+import { useVehicleEntries, useLedgers } from "@/hooks/useLedgers";
+import { useMessageStore } from "@/store/useMessageStore";
 
-import {
-  fetchJourneyEntriesAsync,
-  journeySelectors,
-} from "../../../features/journey";
-import {
-  fetchTrucksEntriesAsync,
-  truckSelectors,
-} from "../../../features/truck";
-import {
-  fetchDriverEntriesAsync,
-  driverSelectors,
-} from "../../../features/driver";
-import {
-  fetchBillingPartiesAsync,
-  billingPartySelectors,
-} from "../../../features/billingParty";
-import {
-  fetchSettlementsAsync,
-  settlementSelectors,
-} from "../../../features/settlement";
-import {
-  fetchVehicleEntriesAsync,
-  vehicleEntrySelectors,
-} from "../../../features/vehicleEntry";
-import {
-  fetchLedgerEntriesAsync,
-  ledgerSelectors,
-  selectLedgerLoading,
-  updateLedgerEntryAsync,
-} from "../../../features/ledger";
+import type { LedgerType } from "@/types/ledger";
+import type { Option } from "@/types/form";
 
-import type { LedgerType } from "../../../types/ledger";
-import type { Option } from "../../NewBillingEntry/constants";
+import Loading from "@/components/Loading";
+import EditHeader from "@/components/EditHeader";
+import DetailBlock from "@/pages/Journey/JourneyDetail/components/DetailBlock";
 
-import Loading from "../../../components/Loading";
-import EditHeader from "../../../components/EditHeader";
-import DetailBlock from "../../Journey/JourneyDetail/components/DetailBlock";
-
-import { formatDate } from "../../../utils/formatDate";
+import { formatDate } from "@/utils/formatDate";
 import {
-  LEDGER_CATEGORIES,
-  LEDGER_PAYMENT_MODES,
-  LEDGER_REFERENCE_TYPES,
-  LEDGER_TRANSACTION_TYPES,
+  LEDGER_CATEGORIES, LEDGER_PAYMENT_MODES,
+  LEDGER_REFERENCE_TYPES, LEDGER_TRANSACTION_TYPES,
 } from "../ledgerConstants";
-import MetaFields from "../../../components/MetaFields";
-import { addMessage } from "../../../features/message";
+import MetaFields from "@/components/MetaFields";
 import { ArrowLeft } from "lucide-react";
 
-type LedgerRelationKey =
-  | "journey"
-  | "truck"
-  | "driver"
-  | "party"
-  | "settlement"
-  | "vehicle_entry";
+type LedgerRelationKey = "journey" | "truck" | "driver" | "party" | "settlement" | "vehicle_entry";
 
 const LedgerDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dispatch: AppDispatch = useDispatch();
+  const addMessage = useMessageStore((s) => s.addMessage);
 
-  const journies = useSelector(journeySelectors.selectAll);
-  const trucks = useSelector(truckSelectors.selectAll);
-  const drivers = useSelector(driverSelectors.selectAll);
-  const parties = useSelector(billingPartySelectors.selectAll);
-  const settlements = useSelector(settlementSelectors.selectAll);
-  const vehicleEntries = useSelector(vehicleEntrySelectors.selectAll);
-  const ledgers = useSelector(ledgerSelectors.selectAll);
+  const { useJourneysQuery } = useJourneys();
+  const { useTrucksQuery } = useTrucks();
+  const { useDriversQuery } = useDrivers();
+  const { useBillingPartiesQuery } = useParties();
+  const { useSettlementsQuery } = useSettlements();
+  const { useVehicleEntriesQuery } = useVehicleEntries();
+  const { useLedgersQuery, useUpdateLedgerMutation } = useLedgers();
 
-  const loading = useSelector(selectLedgerLoading);
+  const { data: journies = [] } = useJourneysQuery();
+  const { data: trucks = [] } = useTrucksQuery();
+  const { data: drivers = [] } = useDriversQuery();
+  const { data: parties = [] } = useBillingPartiesQuery();
+  const { data: settlements = [] } = useSettlementsQuery();
+  const { data: vehicleEntries = [] } = useVehicleEntriesQuery();
+  const { data: ledgers = [], isLoading } = useLedgersQuery();
+  const updateLedger = useUpdateLedgerMutation();
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [localLedger, setLocalLedger] = useState<LedgerType | null>(null);
@@ -82,209 +54,69 @@ const LedgerDetail = () => {
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
 
-  // Fetch all required data
-  useEffect(() => {
-    dispatch(fetchLedgerEntriesAsync());
-    dispatch(fetchJourneyEntriesAsync());
-    dispatch(fetchTrucksEntriesAsync());
-    dispatch(fetchDriverEntriesAsync());
-    dispatch(fetchBillingPartiesAsync());
-    dispatch(fetchSettlementsAsync());
-    dispatch(fetchVehicleEntriesAsync());
-  }, [dispatch]);
+  const ledger = useMemo(() => ledgers.find((l: LedgerType) => l._id === id), [ledgers, id]);
+  const currentDisplay = localLedger ?? ledger;
 
-  // Pick ledger by ID
-  const ledger = useMemo(
-    () => ledgers.find((l) => l._id === id),
-    [ledgers, id]
-  );
-
-  useEffect(() => {
-    if (ledger && !loading) setLocalLedger(ledger);
-  }, [ledger, loading]);
-
-  if (loading || !localLedger) return <Loading />;
+  if (isLoading || !currentDisplay) return <Loading />;
 
   const isDirty = JSON.stringify(localLedger) !== JSON.stringify(ledger);
 
-  /* ------------------------------------------
-       OPTION CREATORS
-  ------------------------------------------ */
-  const optionConfig: Record<LedgerRelationKey, () => Option[]> = {
-    journey: () =>
-      journies.map((j) => ({
-        label: `${j.truck.truck_no} | ${j.driver.name} | ${j.from} | ${j.to
-          } | ${formatDate(new Date(j.journey_start_date))}`,
-        value: j._id,
-      })),
-
-    truck: () =>
-      trucks.map((t) => ({
-        label: t.truck_no,
-        value: t._id,
-      })),
-
-    driver: () =>
-      drivers.map((d) => ({
-        label: d.name,
-        value: d._id,
-      })),
-
-    party: () =>
-      parties.map((p) => ({
-        label: p.name,
-        value: p._id,
-      })),
-
-    settlement: () =>
-      settlements.map((s) => ({
-        label: `${s.driver.name} | ${formatDate(
-          new Date(s.period.from)
-        )} | ${formatDate(new Date(s.period.to))}`,
-        value: s._id,
-      })),
-
-    vehicle_entry: () =>
-      vehicleEntries.map((v) => ({
-        label: `${v.vehicle_no} | ${v.from} | ${v.to}`,
-        value: v._id,
-      })),
-  };
-
-  /* ------------------------------------------
-       DISPLAY VALUE FORMATTER
-  ------------------------------------------ */
-  const displayConfig: Record<LedgerRelationKey, () => string> = {
-    journey: () =>
-      localLedger.journey?._id
-        ? `${localLedger.journey.truck.truck_no} | ${localLedger.journey.driver.name} | ${localLedger.journey.from} | ${localLedger.journey.to}`
-        : "----------",
-
-    truck: () => localLedger.truck?.truck_no || "----------",
-
-    driver: () => localLedger.driver?.name || "----------",
-
-    party: () => localLedger.party?.name || "----------",
-
-    settlement: () =>
-      localLedger.settlement?._id
-        ? `${localLedger.settlement.driver.name} | ${formatDate(
-          new Date(localLedger.settlement.period.from)
-        )} | ${formatDate(new Date(localLedger.settlement.period.to))}`
-        : "----------",
-
-    vehicle_entry: () =>
-      localLedger.vehicle_entry?._id
-        ? `${localLedger.vehicle_entry.vehicle_no} | ${localLedger.vehicle_entry.from} | ${localLedger.vehicle_entry.to}`
-        : "----------",
-  };
-
-  /* ------------------------------------------
-       DATA MAP FOR SELECTION LOOKUP
-  ------------------------------------------ */
-  const dataMap: Record<LedgerRelationKey, any[]> = {
-    journey: journies,
-    truck: trucks,
-    driver: drivers,
-    party: parties,
-    settlement: settlements,
-    vehicle_entry: vehicleEntries,
-  };
-
   const getOptions = (key: string): Option[] => {
-    let options: Option[];
     switch (key) {
-      case "category": {
-        options = LEDGER_CATEGORIES.map((c) => ({ label: c, value: c }));
-        break;
-      }
-      case "transaction_type": {
-        options = LEDGER_TRANSACTION_TYPES.map((t) => ({
-          label: t,
-          value: t,
-        }));
-        break;
-      }
-      case "payment_mode": {
-        options = LEDGER_PAYMENT_MODES.map((p) => ({ label: p, value: p }));
-        break;
-      }
-      case "reference_type": {
-        options = LEDGER_REFERENCE_TYPES.map((r) => ({ label: r, value: r }));
-        break;
-      }
-      default:
-        options = [];
+      case "category": return LEDGER_CATEGORIES.map((c) => ({ label: c, value: c }));
+      case "transaction_type": return LEDGER_TRANSACTION_TYPES.map((t) => ({ label: t, value: t }));
+      case "payment_mode": return LEDGER_PAYMENT_MODES.map((p) => ({ label: p, value: p }));
+      case "reference_type": return LEDGER_REFERENCE_TYPES.map((r) => ({ label: r, value: r }));
+      default: return [];
     }
-    return options;
   };
 
-  /* ------------------------------------------
-       HANDLE CHANGE (FIXED TYPESCRIPT ERROR)
-  ------------------------------------------ */
+  const dataMap: Record<LedgerRelationKey, any[]> = {
+    journey: journies, truck: trucks, driver: drivers,
+    party: parties, settlement: settlements, vehicle_entry: vehicleEntries,
+  };
+
+  const optionConfig: Record<LedgerRelationKey, () => Option[]> = {
+    journey: () => journies.map((j: any) => ({ label: `${j.truck?.truck_no} | ${j.driver?.name} | ${j.from} | ${j.to} | ${formatDate(new Date(j.journey_start_date))}`, value: j._id })),
+    truck: () => trucks.map((t: any) => ({ label: t.truck_no, value: t._id })),
+    driver: () => drivers.map((d: any) => ({ label: d.name, value: d._id })),
+    party: () => parties.map((p: any) => ({ label: p.name, value: p._id })),
+    settlement: () => settlements.map((s: any) => ({ label: `${s.driver?.name} | ${formatDate(new Date(s.period.from))} | ${formatDate(new Date(s.period.to))}`, value: s._id })),
+    vehicle_entry: () => vehicleEntries.map((v: any) => ({ label: `${v.vehicle_no} | ${v.from} | ${v.to}`, value: v._id })),
+  };
+
+  const displayConfig: Record<LedgerRelationKey, () => string> = {
+    journey: () => currentDisplay.journey?._id ? `${currentDisplay.journey.truck?.truck_no} | ${currentDisplay.journey.driver?.name} | ${currentDisplay.journey.from} | ${currentDisplay.journey.to}` : "—",
+    truck: () => currentDisplay.truck?.truck_no || "—",
+    driver: () => (currentDisplay.driver as any)?.name || "—",
+    party: () => (currentDisplay.party as any)?.name || "—",
+    settlement: () => currentDisplay.settlement?._id ? `${(currentDisplay.settlement.driver as any)?.name} | ${formatDate(new Date(currentDisplay.settlement.period.from))} | ${formatDate(new Date(currentDisplay.settlement.period.to))}` : "—",
+    vehicle_entry: () => currentDisplay.vehicle_entry?._id ? `${currentDisplay.vehicle_entry.vehicle_no} | ${currentDisplay.vehicle_entry.from} | ${currentDisplay.vehicle_entry.to}` : "—",
+  };
+
   const handleChange = (key: string, value: string) => {
     const typedKey = key as LedgerRelationKey;
-
     if (typedKey in dataMap) {
-      const selected = dataMap[typedKey].find((item) => item._id === value);
+      const selected = dataMap[typedKey].find((item: any) => item._id === value);
       if (!selected) return;
-
-      setLocalLedger((prev) =>
-        prev ? { ...prev, [typedKey]: selected } : prev
-      );
+      setLocalLedger((prev) => prev ? { ...prev, [typedKey]: selected } : prev);
       return;
     }
-
-    // fallback simple string update
-    setLocalLedger((prev) => (prev ? { ...prev, [key]: value } : prev));
-  };
-
-  /* ------------------------------------------
-       DELETE + SAVE (PLACEHOLDER)
-  ------------------------------------------ */
-  const handleDelete = (id: string) => {
-    // Implement delete logic if needed
-    dispatch(addMessage({ type: "info", text: `Delete action triggered for ${id}` }));
+    setLocalLedger((prev) => prev ? { ...prev, [key]: value } : prev);
   };
 
   const handleSave = async () => {
     try {
-      const resultAction = await dispatch(updateLedgerEntryAsync(localLedger));
-
-      if (updateLedgerEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({ type: "success", text: "Ledger updated successfully" })
-        );
-      } else if (updateLedgerEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload as Record<string, string>;
-        if (errors && Object.keys(errors).length > 0) {
-          errorsRef.current = errors;
-          forceRender({});
-        }
-        dispatch(
-          addMessage({
-            type: "error",
-            text: errors?.general || "Failed to save ledger entry",
-          })
-        );
-      }
+      await updateLedger.mutateAsync(currentDisplay);
+      addMessage({ type: "success", text: "Ledger updated successfully" });
     } catch (error: any) {
-      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
+      const errors = error?.response?.data;
+      if (errors && typeof errors === "object") { errorsRef.current = errors; forceRender({}); }
+      addMessage({ type: "error", text: errors?.general || "Failed to save ledger entry" });
     }
   };
 
-  /* ------------------------------------------
-       BUILD FIELD ARRAY
-  ------------------------------------------ */
-  const fieldKeys: LedgerRelationKey[] = [
-    "journey",
-    "truck",
-    "driver",
-    "party",
-    "settlement",
-    "vehicle_entry",
-  ];
-
+  const fieldKeys: LedgerRelationKey[] = ["journey", "truck", "driver", "party", "settlement", "vehicle_entry"];
   const fields = fieldKeys.map((key) => ({
     label: key.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase()),
     key,
@@ -293,80 +125,35 @@ const LedgerDetail = () => {
     isEditable: isEditMode,
   }));
 
-  /* ------------------------------------------
-       RENDER
-  ------------------------------------------ */
   return (
     <div className="flex flex-col gap-8 pb-20">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
-      >
-        <ArrowLeft size={14} />
-        Back to list
+      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit">
+        <ArrowLeft size={14} /> Back to list
       </button>
 
       <EditHeader
         heading="Ledger Details"
         isDirty={isDirty}
-        onEditClick={() => {
-          setIsEditMode(true);
-          setBackupLedger(localLedger);
-        }}
-        onCancelClick={() => {
-          setIsEditMode(false);
-          setLocalLedger(backupLedger);
-        }}
-        onDeleteClick={() => handleDelete(localLedger?._id || "")}
-        onDiscardClick={() => {
-          setIsEditMode(false);
-          setLocalLedger(backupLedger);
-        }}
-        onSaveClick={() => {
-          setIsEditMode(false);
-          handleSave();
-        }}
+        onEditClick={() => { setIsEditMode(true); setBackupLedger(currentDisplay); setLocalLedger({ ...currentDisplay }); }}
+        onCancelClick={() => { setIsEditMode(false); setLocalLedger(backupLedger); }}
+        onDeleteClick={() => addMessage({ type: "info", text: "Delete action not yet implemented." })}
+        onDiscardClick={() => { setIsEditMode(false); setLocalLedger(backupLedger); }}
+        onSaveClick={() => { setIsEditMode(false); handleSave(); }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <DetailBlock
-          title="Relation Mapping"
-          isEditMode={isEditMode}
-          onChange={handleChange}
-          fields={fields}
-        />
+        <DetailBlock title="Relation Mapping" isEditMode={isEditMode} onChange={handleChange} fields={fields} />
+
         <div className="flex flex-col gap-8">
           <DetailBlock
             title="Core Transaction"
             isEditMode={isEditMode}
             onChange={(key, value) => handleChange(key, value)}
             fields={[
-              {
-                label: "Transaction Date",
-                key: "date",
-                value: formatDate(new Date(localLedger.date)),
-                isEditable: isEditMode,
-              },
-              {
-                label: "Category",
-                key: "category",
-                value: localLedger.category,
-                isEditable: isEditMode,
-                options: getOptions("category"),
-              },
-              {
-                label: "Transaction Type",
-                key: "transaction_type",
-                value: localLedger.transaction_type,
-                isEditable: isEditMode,
-                options: getOptions("transaction_type"),
-              },
-              {
-                label: "Description",
-                key: "description",
-                value: localLedger.description || "----------",
-                isEditable: isEditMode,
-              },
+              { label: "Transaction Date", key: "date", value: formatDate(new Date(currentDisplay.date)), isEditable: isEditMode },
+              { label: "Category", key: "category", value: currentDisplay.category, isEditable: isEditMode, options: getOptions("category") },
+              { label: "Transaction Type", key: "transaction_type", value: currentDisplay.transaction_type, isEditable: isEditMode, options: getOptions("transaction_type") },
+              { label: "Description", key: "description", value: currentDisplay.description || "—", isEditable: isEditMode },
             ]}
           />
           <DetailBlock
@@ -374,25 +161,9 @@ const LedgerDetail = () => {
             isEditMode={isEditMode}
             onChange={(key, value) => handleChange(key, value)}
             fields={[
-              {
-                label: "Debit (Outgoing)",
-                key: "debit",
-                value: localLedger.debit ? `₹${localLedger.debit}` : "0",
-                isEditable: isEditMode,
-              },
-              {
-                label: "Credit (Incoming)",
-                key: "credit",
-                value: localLedger.credit ? `₹${localLedger.credit}` : "0",
-                isEditable: isEditMode,
-              },
-              {
-                label: "Payment Mode",
-                key: "payment_mode",
-                value: localLedger.payment_mode,
-                isEditable: isEditMode,
-                options: getOptions("payment_mode"),
-              },
+              { label: "Debit (Outgoing)", key: "debit", value: currentDisplay.debit ? `₹${currentDisplay.debit}` : "0", isEditable: isEditMode },
+              { label: "Credit (Incoming)", key: "credit", value: currentDisplay.credit ? `₹${currentDisplay.credit}` : "0", isEditable: isEditMode },
+              { label: "Payment Mode", key: "payment_mode", value: currentDisplay.payment_mode, isEditable: isEditMode, options: getOptions("payment_mode") },
             ]}
           />
         </div>
@@ -402,25 +173,9 @@ const LedgerDetail = () => {
           isEditMode={isEditMode}
           onChange={(key, value) => handleChange(key, value)}
           fields={[
-            {
-              label: "Reference Type",
-              key: "reference_type",
-              value: localLedger.reference_type,
-              isEditable: isEditMode,
-              options: getOptions("reference_type"),
-            },
-            {
-              label: "Reference Number",
-              key: "reference_no",
-              value: localLedger.reference_no,
-              isEditable: isEditMode,
-            },
-            {
-              label: "Notes",
-              key: "notes",
-              value: localLedger.notes || "----------",
-              isEditable: isEditMode,
-            },
+            { label: "Reference Type", key: "reference_type", value: currentDisplay.reference_type, isEditable: isEditMode, options: getOptions("reference_type") },
+            { label: "Reference Number", key: "reference_no", value: currentDisplay.reference_no, isEditable: isEditMode },
+            { label: "Notes", key: "notes", value: currentDisplay.notes || "—", isEditable: isEditMode },
           ]}
         />
 
@@ -430,17 +185,9 @@ const LedgerDetail = () => {
           childs={
             <div className="bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-100">
               <MetaFields
-                value={localLedger.meta}
+                value={currentDisplay.meta}
                 isEditMode={isEditMode}
-                onChange={(meta) =>
-                  setLocalLedger((prev) => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      meta,
-                    };
-                  })
-                }
+                onChange={(meta) => setLocalLedger((prev) => prev ? { ...prev, meta } : prev)}
               />
             </div>
           }
@@ -451,4 +198,3 @@ const LedgerDetail = () => {
 };
 
 export default LedgerDetail;
-

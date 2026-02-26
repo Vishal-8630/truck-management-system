@@ -1,25 +1,14 @@
-import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch } from "../../../app/store";
-import {
-  fetchTrucksEntriesAsync,
-  truckSelectors,
-} from "../../../features/truck";
-import { useEffect } from "react";
+import { useTrucks } from "@/hooks/useTrucks";
+import Loading from "@/components/Loading";
 import { useNavigate } from "react-router-dom";
 import { Truck, Plus, ChevronRight, Gauge } from "lucide-react";
 
 const AllTruckEntries = () => {
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
-  const trucks = useSelector(truckSelectors.selectAll);
+  const { useTrucksQuery } = useTrucks();
+  const { data: trucks = [], isLoading } = useTrucksQuery();
 
-  useEffect(() => {
-    dispatch(fetchTrucksEntriesAsync());
-  }, [dispatch]);
-
-  const handleTruckClick = (truckId: string) => {
-    navigate(`/journey/truck/${truckId}`);
-  };
+  if (isLoading) return <Loading />;
 
   return (
     <div className="flex flex-col gap-10 pb-20">
@@ -27,14 +16,14 @@ const AllTruckEntries = () => {
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
             <Truck className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
-            Vechicle <span className="text-indigo-600">Fleet</span>
+            Vehicle <span className="text-indigo-600">Fleet</span>
           </h1>
           <p className="text-slate-500 font-medium text-lg">Manage and monitor all company trucks and carriers.</p>
         </div>
 
         <button
-          onClick={() => navigate('/journey/add-truck')}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold font-heading shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+          onClick={() => navigate("/journey/add-truck")}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
         >
           <Plus size={18} />
           Register New Truck
@@ -51,7 +40,7 @@ const AllTruckEntries = () => {
           trucks.map((truck) => (
             <div
               key={truck._id}
-              onClick={() => handleTruckClick(truck._id)}
+              onClick={() => navigate(`/journey/truck/${truck._id}`)}
               className="card-premium p-6 group cursor-pointer hover:border-indigo-200 hover:ring-4 hover:ring-indigo-50 transition-all duration-300 flex flex-col gap-4"
             >
               <div className="flex items-center justify-between">
@@ -88,4 +77,3 @@ const AllTruckEntries = () => {
 };
 
 export default AllTruckEntries;
-

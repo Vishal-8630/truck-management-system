@@ -1,285 +1,206 @@
-import React, { useEffect, useRef, useState } from "react";
-import { EmptyJourneyType, type JourneyType } from "../../../types/journey";
-import type { InputType, Option } from "../../NewBillingEntry/constants";
-import FormSection from "../../../components/FormSection";
-import FormInput from "../../../components/FormInput";
-import type { AppDispatch } from "../../../app/store";
-import { useDispatch, useSelector } from "react-redux";
-import { addJourneyEntryAsync } from "../../../features/journey";
-import {
-  fetchTrucksEntriesAsync,
-  truckSelectors,
-} from "../../../features/truck";
-import {
-  driverSelectors,
-  fetchDriverEntriesAsync,
-} from "../../../features/driver";
-import { EmptyTruckType, type TruckType } from "../../../types/truck";
-import { EmptyDriverType, type DriverType } from "../../../types/driver";
-import { addMessage } from "../../../features/message";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Plus,
-  Truck,
-  User,
-  MapPin,
-  Navigation,
-  Calendar,
-  Wallet,
-  TrendingUp,
-  ArrowLeft
-} from "lucide-react";
-
-const JOURNEY_FIELD_INPUTS: InputType[] = [
-  { type: "select", label: "Truck", name: "truck", icon: <Truck size={18} /> },
-  { type: "select", label: "Driver", name: "driver", icon: <User size={18} /> },
-  { type: "input", label: "From", name: "from", inputType: "text", icon: <MapPin size={18} /> },
-  { type: "input", label: "To", name: "to", inputType: "text", icon: <Navigation size={18} /> },
-  {
-    type: "input",
-    label: "Starting Kms",
-    name: "starting_kms",
-    inputType: "number",
-    icon: <TrendingUp size={18} />
-  },
-  {
-    type: "number",
-    label: "Journey Days",
-    name: "journey_days",
-    inputType: "number",
-    icon: <Calendar size={18} />
-  },
-  {
-    type: "number",
-    label: "Starting Cash",
-    name: "journey_starting_cash",
-    inputType: "number",
-    icon: <Wallet size={18} />
-  },
-  {
-    type: "number",
-    label: "Truck Mileage",
-    name: "average_mileage",
-    inputType: "number",
-    icon: <Truck size={18} />
-  },
-];
+import { useJourneys } from "@/hooks/useJourneys";
+import { useTrucks } from "@/hooks/useTrucks";
+import { useDrivers } from "@/hooks/useDrivers";
+import { useMessageStore } from "@/store/useMessageStore";
+import FormInput from "@/components/FormInput";
+import FormSection from "@/components/FormSection";
+import Button from "@/components/Button";
+import { Milestone, Save, ArrowLeft, Truck, User, MapPin, Calendar, Zap, FileText, Calculator } from "lucide-react";
 
 const NewJourneyEntry = () => {
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { useAddJourneyMutation } = useJourneys();
+  const { useTrucksQuery } = useTrucks();
+  const { useDriversQuery } = useDrivers();
+  const addJourney = useAddJourneyMutation();
+  const { data: trucks = [] } = useTrucksQuery();
+  const { data: drivers = [] } = useDriversQuery();
 
-  const [journey, setJourney] =
-    useState<Omit<JourneyType, "_id">>(EmptyJourneyType);
+  const [form, setForm] = useState({
+    truck: "",
+    driver: "",
+    from: "",
+    to: "",
+    journey_start_date: "",
+    journey_end_date: "",
+    journey_starting_cash: "",
+    distance_km: "",
+    loaded_weight: "",
+    average_mileage: "",
+    starting_kms: "",
+    ending_kms: "",
+    journey_days: "5",
+    journey_summary: "",
+    status: "Active" as const,
+  });
 
-  const errorsRef = useRef<Record<string, string>>({});
-  const [, forceRender] = useState({});
-
-  const trucks = useSelector(truckSelectors.selectAll);
-  const drivers = useSelector(driverSelectors.selectAll);
-
-  const [selectedTruck, setSelectedTruck] = useState<TruckType>(EmptyTruckType);
-  const [selectedDriver, setSelectDriver] =
-    useState<DriverType>(EmptyDriverType);
-
-  const truckRef = useRef<
-    HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement
-  >(null);
-  const driverRef = useRef<
-    HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement
-  >(null);
-
-  useEffect(() => {
-    dispatch(fetchTrucksEntriesAsync());
-    dispatch(fetchDriverEntriesAsync());
-  }, [dispatch]);
-
-  useEffect(() => {
-    setJourney((prev) => ({ ...prev, truck: selectedTruck }));
-  }, [selectedTruck]);
-
-  useEffect(() => {
-    setJourney((prev) => ({ ...prev, driver: selectedDriver }));
-  }, [selectedDriver]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-
-    if (errorsRef.current[name]) {
-      errorsRef.current[name] = "";
-      forceRender({});
-    }
-
-    setJourney((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (
-    val: string,
-    name: string,
-    mode: "select" | "search"
-  ) => {
-    if (mode === "search") {
-      if (val === "") {
-        name === "truck"
-          ? setSelectedTruck(EmptyTruckType)
-          : setSelectDriver(EmptyDriverType);
-      } else {
-        if (name === "truck") {
-          setSelectedTruck(
-            trucks.find((t) => t.truck_no === val) || selectedTruck
-          );
-          errorsRef.current.truck = "";
-        } else {
-          setSelectDriver(
-            drivers.find((d) => d.name === val) || selectedDriver
-          );
-          errorsRef.current.driver = "";
-        }
-      }
-    }
-  };
-
-  const fetchOptions = (search: string, field: string): Option[] => {
-    if (field === "truck") {
-      const filteredTrucks = trucks.filter((t) =>
-        t.truck_no.toLowerCase().includes(search.toLowerCase())
-      );
-      if (filteredTrucks.length > 0) {
-        const options: Option[] = filteredTrucks.map((t: TruckType) => ({
-          label: t.truck_no,
-          value: t.truck_no,
-        }));
-        return options;
-      }
-    } else if (field === "driver") {
-      const filteredDrivers = drivers.filter((d) =>
-        d.name.toLowerCase().includes(search.toLowerCase())
-      );
-      if (filteredDrivers.length > 0) {
-        const options: Option[] = filteredDrivers.map((d: DriverType) => ({
-          label: d.name,
-          value: d.name,
-        }));
-        return options;
-      }
-    }
-    return [];
-  };
+  const handleChange = (name: string, value: string) => setForm((prev) => ({ ...prev, [name]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.truck || !form.driver) {
+      addMessage({ type: "error", text: "Please select a truck and driver." });
+      return;
+    }
     try {
-      const resultAction = await dispatch(addJourneyEntryAsync(journey));
-      if (addJourneyEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({ type: "success", text: "Journey added successfully" })
-        );
-        navigate("/journey/all-journey-entries");
-      } else if (addJourneyEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors && !errors?.general && Object.keys(errors)?.length > 0) {
-          errorsRef.current = errors;
-          forceRender({});
-        }
-        dispatch(
-          addMessage({
-            type: "error",
-            text: errors?.general || "Failed to add new journey",
-          })
-        );
+      const selectedTruck = trucks.find(t => t._id === form.truck);
+      const selectedDriver = drivers.find(d => d._id === form.driver);
+
+      if (!selectedTruck || !selectedDriver) {
+        addMessage({ type: "error", text: "Selected truck or driver not found." });
+        return;
       }
-    } catch (error: any) {
-      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
+
+      await addJourney.mutateAsync({
+        ...form,
+        truck: selectedTruck,
+        driver: selectedDriver,
+        route: [],
+        driver_expenses: [],
+        diesel_expenses: [],
+        delays: [],
+        daily_progress: [],
+        issues: [],
+        status_updates: [],
+        delivery_details: { delivered_to: "", entry_date: "", empty_date: "", remarks: "" },
+        settlement: { amount_paid: "", date_paid: "", mode: "", remarks: "" },
+        total_driver_expense: "0",
+        total_diesel_expense: "0",
+        total_expense: "0",
+        settled: false,
+        settlement_ref: undefined as any,
+      });
+      addMessage({ type: "success", text: "Journey created successfully!" });
+      navigate("/journey/all-journey-entries");
+    } catch {
+      addMessage({ type: "error", text: "Failed to create journey. Please try again." });
     }
   };
 
-  const renderInputs = (inputs: InputType[]) => {
-    return inputs.map((input) => {
-      let error: string = errorsRef.current[input.name] || "";
-      let value: string = String(
-        journey[input.name as keyof Omit<JourneyType, "_id">] || ""
-      );
-      let placeholder: string = input.label;
-      let inputRef:
-        | React.RefObject<
-          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-        >
-        | undefined = undefined;
-
-      if (input.name === "truck") {
-        placeholder = "Search truck registration...";
-        value = selectedTruck.truck_no;
-        inputRef = truckRef as React.RefObject<HTMLInputElement>;
-      }
-
-      if (input.name === "driver") {
-        placeholder = "Search driver by name...";
-        value = selectedDriver.name;
-        inputRef = driverRef as React.RefObject<HTMLInputElement>;
-      }
-
-      return (
-        <FormInput
-          key={input.name}
-          type={input.type}
-          id={input.name}
-          label={input.label}
-          name={input.name}
-          value={value}
-          placeholder={placeholder}
-          options={[]}
-          error={error}
-          selectMode="search"
-          inputType={input.inputType}
-          inputRef={inputRef}
-          onChange={handleInputChange}
-          onSelectChange={handleSelectChange}
-          fetchOptions={fetchOptions}
-          icon={input.icon}
-        />
-      );
-    });
-  };
+  const truckOptions = trucks.map((t) => ({ label: t.truck_no, value: t._id }));
+  const driverOptions = drivers.map((d) => ({ label: d.name, value: d._id }));
 
   return (
-    <div className="flex flex-col gap-10 pb-20 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-10 pb-24">
+      {/* Header */}
       <div className="flex flex-col gap-4">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
+          className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-all text-sm font-semibold mb-2 w-fit"
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={16} />
           Back
         </button>
         <div className="flex flex-col gap-2">
           <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
-            <Plus className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
-            New <span className="text-indigo-600">Journey</span>
+            <Milestone className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" />
+            Plan New <span className="text-blue-600">Journey</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg">Initialize a new trip with truck and driver details.</p>
+          <p className="text-slate-500 font-medium text-lg">Register a new truck journey with route and assignment details.</p>
         </div>
       </div>
 
-      <form className="grid grid-cols-1 gap-8" onSubmit={handleSubmit}>
-        <div className="card-premium p-8 lg:p-10 flex flex-col gap-10">
-          <FormSection title="Journey Information" icon={<Navigation size={18} />}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              {renderInputs(JOURNEY_FIELD_INPUTS)}
-            </div>
-          </FormSection>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            <FormSection title="Assignment" icon={<Truck size={18} />}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <FormInput
+                  type="select"
+                  label="Select Truck"
+                  name="truck"
+                  value={form.truck}
+                  onChange={(val) => handleChange("truck", val)}
+                  options={truckOptions}
+                />
+                <FormInput
+                  type="select"
+                  label="Assigned Driver"
+                  name="driver"
+                  value={form.driver}
+                  onChange={(val) => handleChange("driver", val)}
+                  options={driverOptions}
+                />
+              </div>
+            </FormSection>
 
-          <div className="flex justify-end pt-6 border-t border-slate-100">
-            <button
-              type="submit"
-              className="w-full lg:w-fit px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all active:translate-y-0"
-            >
-              <Plus size={20} strokeWidth={3} />
-              Start Journey
-            </button>
+            <FormSection title="Route Details" icon={<MapPin size={18} />}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Starting Location"
+                  name="from"
+                  placeholder="e.g. Mumbai"
+                  value={form.from}
+                  onChange={(val) => handleChange("from", val)}
+                />
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Destination"
+                  name="to"
+                  placeholder="e.g. Delhi"
+                  value={form.to}
+                  onChange={(val) => handleChange("to", val)}
+                />
+              </div>
+            </FormSection>
+
+            <FormSection title="Timelines & Funds" icon={<Calendar size={18} />}>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FormInput type="date" label="Start Date" name="journey_start_date" value={form.journey_start_date} onChange={(val) => handleChange("journey_start_date", val)} />
+                <FormInput type="date" label="Estimated Arrival" name="journey_end_date" value={form.journey_end_date} onChange={(val) => handleChange("journey_end_date", val)} />
+                <FormInput type="number" label="Starting Cash (₹)" name="journey_starting_cash" value={form.journey_starting_cash} onChange={(val) => handleChange("journey_starting_cash", val)} />
+                <FormInput type="number" label="Planned Days" name="journey_days" value={form.journey_days} onChange={(val) => handleChange("journey_days", val)} />
+              </div>
+            </FormSection>
+
+            <FormSection title="Odometer & Payload" icon={<Zap size={18} />}>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FormInput type="number" label="Starting KMs" name="starting_kms" value={form.starting_kms} onChange={(val) => handleChange("starting_kms", val)} />
+                <FormInput type="number" label="Target Distance (km)" name="distance_km" value={form.distance_km} onChange={(val) => handleChange("distance_km", val)} />
+                <FormInput type="number" label="Loaded Weight (kg)" name="loaded_weight" value={form.loaded_weight} onChange={(val) => handleChange("loaded_weight", val)} />
+                <FormInput type="number" label="Expected Mileage" name="average_mileage" value={form.average_mileage} onChange={(val) => handleChange("average_mileage", val)} />
+              </div>
+            </FormSection>
+
+            <FormSection title="Journey Summary" icon={<FileText size={18} />}>
+              <FormInput
+                type="textarea"
+                label="Brief Description"
+                name="journey_summary"
+                placeholder="Details about the trip, priority, or cargo..."
+                value={form.journey_summary}
+                onChange={(val) => handleChange("journey_summary", val)}
+              />
+            </FormSection>
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-8 sticky top-24">
+            <FormSection title="Plan Actions" icon={<Calculator size={18} />}>
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-slate-500 font-medium">Verify truck compliance and driver availability before planning.</p>
+                <Button
+                  type="submit"
+                  isLoading={addJourney.isPending}
+                  icon={<Save size={20} />}
+                  className="py-5 shadow-blue-500/30 w-full"
+                >
+                  Create Journey
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/journey/all-journey-entries')}
+                  className="py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  Discard Plan
+                </button>
+              </div>
+            </FormSection>
           </div>
         </div>
       </form>

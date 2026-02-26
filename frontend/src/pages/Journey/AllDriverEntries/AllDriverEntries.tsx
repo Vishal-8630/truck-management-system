@@ -1,31 +1,15 @@
-import { useSelector, useDispatch } from "react-redux";
-import {
-  driverSelectors,
-  fetchDriverEntriesAsync,
-  selectDriverLoading,
-} from "../../../features/driver";
-import { useEffect } from "react";
-import Loading from "../../../components/Loading";
-import type { AppDispatch } from "../../../app/store";
-import DriverCard from "../../../components/DriverCard";
+import { useDrivers } from "@/hooks/useDrivers";
+import Loading from "@/components/Loading";
+import DriverCard from "@/components/DriverCard";
 import { useNavigate } from "react-router-dom";
 import { Contact, Plus } from "lucide-react";
 
 const AllDriverEntries = () => {
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
-  const loading = useSelector(selectDriverLoading);
-  const drivers = useSelector(driverSelectors.selectAll);
+  const { useDriversQuery } = useDrivers();
+  const { data: drivers = [], isLoading } = useDriversQuery();
 
-  useEffect(() => {
-    dispatch(fetchDriverEntriesAsync());
-  }, [dispatch]);
-
-  const handleDriverClick = (id: string) => {
-    navigate(`/journey/driver-detail/${id}`);
-  };
-
-  if (loading) return <Loading />;
+  if (isLoading) return <Loading />;
 
   return (
     <div className="flex flex-col gap-10 pb-20">
@@ -39,8 +23,8 @@ const AllDriverEntries = () => {
         </div>
 
         <button
-          onClick={() => navigate('/journey/add-driver')}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold font-heading shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+          onClick={() => navigate("/journey/add-driver")}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
         >
           <Plus size={18} />
           Register New Driver
@@ -58,7 +42,7 @@ const AllDriverEntries = () => {
             <DriverCard
               key={driver._id}
               driver={driver}
-              handleClick={handleDriverClick}
+              handleClick={(id) => navigate(`/journey/driver-detail/${id}`)}
             />
           ))
         )}
@@ -68,4 +52,3 @@ const AllDriverEntries = () => {
 };
 
 export default AllDriverEntries;
-

@@ -1,40 +1,30 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { formatDate } from "../../../../utils/formatDate";
+import { formatDate } from "@/utils/formatDate";
 import JourneySettlement from "./JourneySettlement";
-import type { JourneyType } from "../../../../types/journey";
-import type { AppDispatch } from "../../../../app/store";
-import { useDispatch } from "react-redux";
-import { confirmSettlementAsync } from "../../../../features/settlement";
-import { addMessage } from "../../../../features/message";
+import type { JourneyType } from "@/types/journey";
+import { useSettlements } from "@/hooks/useSettlements";
+import { useMessageStore } from "@/store/useMessageStore";
 import { FileText, User, Truck, Calendar, Clock, CheckCircle2, ArrowLeft, TrendingUp, Info } from "lucide-react";
 
 const SettlementPreview = () => {
   const location = useLocation();
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { useConfirmSettlementMutation } = useSettlements();
+  const confirmMutation = useConfirmSettlementMutation();
   const { data, period, driver } = location.state || {};
   const emptyFieldValue = "—";
-
-  const safeDate = (date?: string) =>
-    date ? formatDate(new Date(date)) : emptyFieldValue;
+  const safeDate = (date?: string) => date ? formatDate(new Date(date)) : emptyFieldValue;
 
   const handleConfirmSettlementClick = async () => {
     try {
-      const resultAction = await dispatch(confirmSettlementAsync({ data, period, driver }));
-
-      if (confirmSettlementAsync.fulfilled.match(resultAction)) {
-        navigate(`/journey/driver-detail/${driver._id}`);
-        dispatch(addMessage({ type: "success", text: "Settlement confirmed" }));
-      } else if (confirmSettlementAsync.rejected.match(resultAction)) {
-        const error = resultAction.payload;
-        if (error) {
-          dispatch(addMessage({ type: "error", text: "Failed to confirm settlement" }));
-        }
-      }
-    } catch (error: any) {
-      console.log("Error while confirming settlement: ", error);
+      await confirmMutation.mutateAsync({ data, period, driver });
+      addMessage({ type: "success", text: "Settlement confirmed successfully!" });
+      navigate(`/journey/driver-detail/${driver._id}`);
+    } catch {
+      addMessage({ type: "error", text: "Failed to confirm settlement." });
     }
-  }
+  };
 
   if (!data || !period || !driver) {
     return <div className="p-20 text-center"><p className="text-slate-500 font-bold">No preview data available.</p></div>;
@@ -43,52 +33,34 @@ const SettlementPreview = () => {
   return (
     <div className="flex flex-col gap-10 pb-20 max-w-5xl mx-auto">
       <div className="flex flex-col gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit"
-        >
-          <ArrowLeft size={14} />
-          Back to Settlement
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit">
+          <ArrowLeft size={14} /> Back to Settlement
         </button>
-        <div className="flex flex-col gap-2">
+        <div>
           <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
-            <FileText className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" />
-            Settlement <span className="text-indigo-600">Report</span>
+            <FileText className="text-indigo-600 w-10 h-10 lg:w-12 lg:h-12" /> Settlement <span className="text-indigo-600">Report</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg italic uppercase tracking-widest text-xs">Internal Driver Settlement Document</p>
+          <p className="text-slate-500 font-medium italic uppercase tracking-widest text-xs mt-2">Internal Driver Settlement Document</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card-premium p-6 flex flex-col gap-1 bg-white border-l-4 border-l-indigo-500">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-            <User size={10} /> Driver
-          </span>
-          <span className="text-lg font-black text-slate-900 truncate">{driver.name}</span>
-        </div>
-        <div className="card-premium p-6 flex flex-col gap-1 bg-white border-l-4 border-l-slate-800">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-            <Truck size={10} /> Truck
-          </span>
-          <span className="text-lg font-black text-slate-900">{data?.journeys?.[0]?.truck?.truck_no || "—"}</span>
-        </div>
-        <div className="card-premium p-6 flex flex-col gap-1 bg-white border-l-4 border-l-indigo-600">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-            <Calendar size={10} /> Period
-          </span>
-          <span className="text-sm font-black text-slate-700">{safeDate(period.from)} <span className="text-slate-300">→</span> {safeDate(period.to)}</span>
-        </div>
-        <div className="card-premium p-6 flex flex-col gap-1 bg-white border-l-4 border-l-indigo-200">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-            <Clock size={10} /> Generated
-          </span>
-          <span className="text-sm font-black text-slate-700">{safeDate(String(new Date()))}</span>
-        </div>
+        {[
+          { icon: <User size={10} />, label: "Driver", value: driver.name, border: "border-l-indigo-500" },
+          { icon: <Truck size={10} />, label: "Truck", value: data?.journeys?.[0]?.truck?.truck_no || "—", border: "border-l-slate-800" },
+          { icon: <Calendar size={10} />, label: "Period", value: `${safeDate(period.from)} → ${safeDate(period.to)}`, border: "border-l-indigo-600" },
+          { icon: <Clock size={10} />, label: "Generated", value: safeDate(String(new Date())), border: "border-l-indigo-200" },
+        ].map((card, i) => (
+          <div key={i} className={`card-premium p-6 flex flex-col gap-1 bg-white border-l-4 ${card.border}`}>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">{card.icon} {card.label}</span>
+            <span className="text-base font-black text-slate-900 truncate">{card.value}</span>
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col gap-8">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
           <h2 className="text-xl font-black text-slate-900 italic">Trip History Recap</h2>
         </div>
         <div className="flex flex-col">
@@ -99,57 +71,35 @@ const SettlementPreview = () => {
       </div>
 
       <div className="bg-slate-900 p-8 lg:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
         <div className="relative z-10 flex flex-col gap-12">
-          <div className="flex flex-col gap-2">
+          <div>
             <h2 className="text-2xl font-black text-white italic flex items-center gap-3">
-              <TrendingUp className="text-indigo-400" />
-              Consolidated Summary
+              <TrendingUp className="text-indigo-400" /> Consolidated Summary
             </h2>
-            <div className="w-20 h-1 bg-indigo-500/30 rounded-full"></div>
+            <div className="w-20 h-1 bg-indigo-500/30 rounded-full mt-2" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Starting Cash</span>
-              <span className="text-xl font-black text-white italic">₹{data?.totals?.total_journey_starting_cash}</span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Driver Expense</span>
-              <span className="text-xl font-black text-white italic">₹{data?.totals?.total_driver_expense}</span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Diesel Expense</span>
-              <span className="text-xl font-black text-white italic">₹{data?.totals?.total_diesel_expense}</span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Distance Covered</span>
-              <span className="text-xl font-black text-indigo-400 italic">{data?.totals?.total_distance} <span className="text-xs uppercase">km</span></span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Overall Earnings (Km)</span>
-              <span className="text-xl font-black text-white italic">₹{data?.totals?.total_rate_per_km}</span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Average Mileage</span>
-              <span className="text-xl font-black text-indigo-400 italic">{data?.totals?.avg_mileage} <span className="text-xs uppercase">km/l</span></span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Diesel Used</span>
-              <span className="text-xl font-black text-white italic">{data?.totals?.total_diesel_used} <span className="text-xs uppercase">L</span></span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Total Diesel Given</span>
-              <span className="text-xl font-black text-white italic">{data?.totals?.total_diesel_quantity} <span className="text-xs uppercase">L</span></span>
-            </div>
-            <div className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Diesel Variance</span>
-              <span className={`text-xl font-black italic ${Number(data?.totals?.diesel_diff) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {data?.totals?.diesel_diff} <span className="text-xs uppercase">L</span>
-              </span>
-            </div>
+            {[
+              { label: "Total Starting Cash", value: `₹${data?.totals?.total_journey_starting_cash}` },
+              { label: "Total Driver Expense", value: `₹${data?.totals?.total_driver_expense}` },
+              { label: "Total Diesel Expense", value: `₹${data?.totals?.total_diesel_expense}` },
+              { label: "Total Distance", value: `${data?.totals?.total_distance} km`, accent: true },
+              { label: "Km Earnings", value: `₹${data?.totals?.total_rate_per_km}` },
+              { label: "Average Mileage", value: `${data?.totals?.avg_mileage} km/l`, accent: true },
+              { label: "Diesel Used", value: `${data?.totals?.total_diesel_used} L` },
+              { label: "Diesel Given", value: `${data?.totals?.total_diesel_quantity} L` },
+              { label: "Diesel Variance", value: `${data?.totals?.diesel_diff} L`, variance: true, diffVal: data?.totals?.diesel_diff },
+            ].map((item: any, i) => (
+              <div key={i} className="flex flex-col gap-1.5 px-4 border-l border-white/10 hover:border-indigo-500 transition-colors">
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">{item.label}</span>
+                <span className={`text-xl font-black italic ${item.variance ? (Number(item.diffVal) < 0 ? "text-red-400" : "text-emerald-400") : item.accent ? "text-indigo-400" : "text-white"}`}>
+                  {item.value}
+                </span>
+              </div>
+            ))}
 
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-white/10">
               <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 flex flex-col gap-1">
@@ -174,9 +124,10 @@ const SettlementPreview = () => {
             </div>
             <button
               onClick={handleConfirmSettlementClick}
-              className="w-full md:w-fit px-12 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-50 hover:-translate-y-1 transition-all active:translate-y-0"
+              disabled={confirmMutation.isPending}
+              className="w-full md:w-fit px-12 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-50 hover:-translate-y-1 transition-all active:translate-y-0 disabled:opacity-60"
             >
-              <CheckCircle2 size={24} className="text-indigo-600" />
+              {confirmMutation.isPending ? <span className="animate-spin w-6 h-6 rounded-full border-2 border-slate-300 border-t-slate-900" /> : <CheckCircle2 size={24} className="text-indigo-600" />}
               Confirm Settlement
             </button>
           </div>

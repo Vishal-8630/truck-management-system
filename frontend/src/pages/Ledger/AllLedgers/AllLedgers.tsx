@@ -1,28 +1,15 @@
-import { useSelector, useDispatch } from "react-redux";
-import {
-  fetchLedgerEntriesAsync,
-  ledgerSelectors,
-  selectLedgerLoading,
-} from "../../../features/ledger";
-import type { AppDispatch } from "../../../app/store";
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Loading from "../../../components/Loading";
-import type { LedgerType } from "../../../types/ledger";
+import { useLedgers } from "@/hooks/useLedgers";
+import { useNavigate, Link } from "react-router-dom";
+import Loading from "@/components/Loading";
+import type { LedgerType } from "@/types/ledger";
 import { BookOpen, Eye, ExternalLink, ArrowDownLeft, ArrowUpRight, Plus, Calendar } from "lucide-react";
 
 const AllLedgers = () => {
-  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const { useLedgersQuery } = useLedgers();
+  const { data: ledgers = [], isLoading } = useLedgersQuery();
 
-  const ledgers = useSelector(ledgerSelectors.selectAll);
-  const loading = useSelector(selectLedgerLoading);
-
-  useEffect(() => {
-    dispatch(fetchLedgerEntriesAsync());
-  }, [dispatch]);
-
-  if (loading) return <Loading />;
+  if (isLoading) return <Loading />;
 
   return (
     <div className="flex flex-col gap-10 pb-20">
@@ -34,13 +21,11 @@ const AllLedgers = () => {
           </h1>
           <p className="text-slate-500 font-medium text-lg">Comprehensive financial tracking and history.</p>
         </div>
-
         <button
-          onClick={() => navigate('/ledger/new-ledger')}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold font-heading shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+          onClick={() => navigate("/ledger/new-ledger")}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
         >
-          <Plus size={18} />
-          New Transaction
+          <Plus size={18} /> New Transaction
         </button>
       </div>
 
@@ -49,14 +34,11 @@ const AllLedgers = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap">Date</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap">Category</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap text-center">Type</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap text-right">Debit</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap text-right">Credit</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap text-right">Amount</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap">Refs</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Action</th>
+                {["Date", "Category", "Type", "Debit", "Credit", "Amount", "Refs", "Action"].map((h, i) => (
+                  <th key={i} className="px-6 py-4 text-[10px] font-bold text-slate-400 border-r border-slate-100 uppercase tracking-widest whitespace-nowrap last:border-r-0">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -93,13 +75,13 @@ const AllLedgers = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`text-sm font-bold ${entry.debit ? 'text-red-500 font-mono' : 'text-slate-300'}`}>
-                        {entry.debit ? `₹${entry.debit}` : '—'}
+                      <span className={`text-sm font-bold ${entry.debit ? "text-red-500 font-mono" : "text-slate-300"}`}>
+                        {entry.debit ? `₹${entry.debit}` : "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`text-sm font-bold ${entry.credit ? 'text-emerald-500 font-mono' : 'text-slate-300'}`}>
-                        {entry.credit ? `₹${entry.credit}` : '—'}
+                      <span className={`text-sm font-bold ${entry.credit ? "text-emerald-500 font-mono" : "text-slate-300"}`}>
+                        {entry.credit ? `₹${entry.credit}` : "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -108,29 +90,12 @@ const AllLedgers = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {entry.truck && (
-                          <Link
-                            title="View Truck"
-                            to={`/journey/truck/${entry.truck._id}`}
-                            className="w-7 h-7 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                          >
+                          <Link title="View Truck" to={`/journey/truck/${entry.truck._id}`} className="w-7 h-7 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
                             <ExternalLink size={12} />
                           </Link>
                         )}
                         {entry.driver && (
-                          <Link
-                            title="View Driver"
-                            to={`/journey/driver-detail/${entry.driver._id}`}
-                            className="w-7 h-7 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                          >
-                            <ExternalLink size={12} />
-                          </Link>
-                        )}
-                        {entry.party && (
-                          <Link
-                            title="View Party"
-                            to={`/party/${entry.party}`}
-                            className="w-7 h-7 flex items-center justify-center bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all shadow-sm"
-                          >
+                          <Link title="View Driver" to={`/journey/driver-detail/${entry.driver._id}`} className="w-7 h-7 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm">
                             <ExternalLink size={12} />
                           </Link>
                         )}
@@ -139,10 +104,9 @@ const AllLedgers = () => {
                     <td className="px-6 py-4 text-right">
                       <Link
                         to={`/ledger/ledger-detail/${entry._id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all opacity-0 group-hover:opacity-100 active:scale-95 shadow-lg shadow-slate-100"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all opacity-0 group-hover:opacity-100 shadow-lg shadow-slate-100"
                       >
-                        <Eye size={12} />
-                        Details
+                        <Eye size={12} /> Details
                       </Link>
                     </td>
                   </tr>
@@ -157,4 +121,3 @@ const AllLedgers = () => {
 };
 
 export default AllLedgers;
-

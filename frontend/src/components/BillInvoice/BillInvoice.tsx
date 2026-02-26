@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Receipt } from "lucide-react";
-import type { BillEntryType, ExtraCharge } from "../../types/billEntry";
-import { formatDate } from "../../utils/formatDate";
-import { formatNumber } from "../../utils/formatNumber";
+import type { BillEntryType, ExtraCharge } from "@/types/billEntry";
+import { formatDate } from "@/utils/formatDate";
+import { formatNumber } from "@/utils/formatNumber";
 
 interface BillInvoiceProps {
   entry: Partial<BillEntryType>;

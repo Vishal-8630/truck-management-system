@@ -1,4 +1,4 @@
-import type { BillingPartyType } from "./billingParty";
+import type { BillingPartyType } from "@/types/billingParty";
 
 export interface ExtraCharge {
   _id: string;

@@ -1,16 +1,11 @@
 import React from "react";
-import type { BalancePartyType } from "../../types/vehicleEntry";
+import type { BalancePartyType } from "@/types/vehicleEntry";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { useDispatch, useSelector } from "react-redux";
-import { addMessage } from "../../features/message";
-import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save } from "lucide-react";
-import {
-  selectBalancePartyLoading,
-  updateBalancePartyAsync,
-} from "../../features/balanceParty";
-import type { AppDispatch } from "../../app/store";
-import { useItemActions } from "../../hooks/useItemActions";
-import { BALANCE_PARTY_LABELS } from "../../types/balanceParty";
+import { useMessageStore } from "@/store/useMessageStore";
+import { useParties } from "@/hooks/useParties";
+import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2 } from "lucide-react";
+import { useItemActions } from "@/hooks/useItemActions";
+import { BALANCE_PARTY_LABELS } from "@/types/balanceParty";
 
 interface BalancePartyDropDownProps {
   balanceParty: BalancePartyType;
@@ -48,8 +43,12 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
   toggleEditing,
   toggleOpen,
 }) => {
-  const dispatch: AppDispatch = useDispatch();
-  const loading = useSelector(selectBalancePartyLoading);
+  const { useUpdateBalancePartyMutation, useDeleteBalancePartyMutation } = useParties();
+  const updateBalancePartyMutation = useUpdateBalancePartyMutation();
+  const deleteBalancePartyMutation = useDeleteBalancePartyMutation();
+  const { addMessage } = useMessageStore();
+
+  const loading = updateBalancePartyMutation.isPending;
 
   // Use the generic hook for all editing actions
   const { handleEdit, handleCancel, handleSave, handleAbortChanges } =
@@ -64,19 +63,28 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
 
   const handleSaveChanges = async () => {
     try {
-      const resultAction = await dispatch(
-        updateBalancePartyAsync(itemState.localItem)
-      );
-      if (updateBalancePartyAsync.fulfilled.match(resultAction)) {
-        dispatch(addMessage({ type: "success", text: "Balance Party updated successfully" }));
-      } else if (updateBalancePartyAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors && Object.keys(errors as object).length > 0) {
-          dispatch(addMessage({ type: "error", text: Object.entries(errors as object)[0][1] as string }));
-        }
+      await updateBalancePartyMutation.mutateAsync({
+        id: balanceParty._id,
+        updatedParty: itemState.localItem,
+      });
+      addMessage({ type: "success", text: "Balance Party updated successfully" });
+    } catch (err: any) {
+      const errors = err.response?.data?.errors;
+      if (errors && Object.keys(errors as object).length > 0) {
+        addMessage({ type: "error", text: Object.entries(errors as object)[0][1] as string });
+      } else {
+        addMessage({ type: "error", text: "Failed to update balance party" });
       }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this balance party?")) return;
+    try {
+      await deleteBalancePartyMutation.mutateAsync(balanceParty._id);
+      addMessage({ type: "success", text: "Balance party deleted successfully" });
     } catch {
-      dispatch(addMessage({ type: "error", text: "Failed to update balance party" }));
+      addMessage({ type: "error", text: "Failed to delete balance party" });
     }
   };
 
@@ -85,12 +93,12 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
   return (
     <div className={`
       card-premium overflow-hidden transition-all duration-300
-      ${itemState.isOpen ? 'ring-2 ring-indigo-100 ring-offset-2' : ''}
+      ${itemState.isOpen ? 'ring-2 ring-blue-100 ring-offset-2' : ''}
     `}>
       <div
         className={`
           flex items-center justify-between p-6 cursor-pointer select-none
-          ${itemState.isOpen ? 'bg-indigo-50/50' : 'bg-white hover:bg-slate-50/80'}
+          ${itemState.isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
         onClick={() => toggleOpen(balanceParty._id)}
@@ -98,7 +106,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
         <div className="flex items-center gap-6">
           <div className={`
               w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
-              ${itemState.isOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}
+              ${itemState.isOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
            `}>
             <UserSquare size={22} />
           </div>
@@ -116,15 +124,15 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
         <div className="flex items-center gap-4">
           {hasChanges && (
             <div className="hidden sm:flex items-center gap-2 mr-2">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
-              <span className="text-[10px] font-bold text-indigo-500 uppercase">Changes Pending</span>
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-blue-500 uppercase">Changes Pending</span>
             </div>
           )}
           <motion.div
             animate={{ rotate: itemState.isOpen ? 180 : 0 }}
             className={`
               w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${itemState.isOpen ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-300'}
+              ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
             `}
           >
             <ChevronDown size={20} />
@@ -143,7 +151,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
           >
             <div className="p-6 lg:p-10 flex flex-col gap-10">
               {hasChanges && (
-                <div className="flex items-center justify-between bg-indigo-600 p-4 rounded-2xl shadow-indigo-100 shadow-lg">
+                <div className="flex items-center justify-between bg-blue-600 p-4 rounded-2xl shadow-blue-100 shadow-lg">
                   <div className="flex items-center gap-3 text-white">
                     <Save size={20} className="opacity-80" />
                     <span className="text-sm font-bold tracking-tight">You have unsaved changes</span>
@@ -158,7 +166,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
-                      className="px-6 py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
+                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70"
                     >
                       {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
                       Update Account
@@ -183,7 +191,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                         {!isEditing && (
                           <button
                             onClick={() => handleEdit(key)}
-                            className="p-1 text-slate-300 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                           >
                             <Edit3 size={12} />
                           </button>
@@ -193,7 +201,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                       {isEditing ? (
                         <div className="flex items-center gap-2 mt-1">
                           <input
-                            className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50"
+                            className="flex-1 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-50"
                             value={value as string}
                             onChange={(e) => updateDraft(balanceParty._id, key, e.target.value)}
                             autoFocus
@@ -212,6 +220,19 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                   );
                 })}
               </div>
+
+              {!hasChanges && (
+                <div className="flex items-center justify-end pt-4 border-t border-slate-50">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteBalancePartyMutation.isPending}
+                    className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                    Delete Party
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -221,4 +242,3 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
 };
 
 export default BalancePartyDropDown;
-

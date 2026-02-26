@@ -1,12 +1,9 @@
-import { UserSquare, ChevronDown, ChevronUp, Edit3, Check, X, RotateCcw, Save } from "lucide-react";
-import { PARTY_LABELS, type BillingPartyType } from "../../types/billingParty";
-import { useDispatch, useSelector } from "react-redux";
-import { selectAuthLoading } from "../../features/auth/authSelectors";
-import { addMessage } from "../../features/message";
-import { useRef } from "react";
+import React, { useRef } from "react";
+import { UserSquare, ChevronDown, ChevronUp, Edit3, Check, X, RotateCcw, Save, Trash2 } from "lucide-react";
+import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
+import { useMessageStore } from "@/store/useMessageStore";
+import { useParties } from "@/hooks/useParties";
 import { AnimatePresence, motion } from "framer-motion";
-import { updateBillingPartyAsync } from "../../features/billingParty";
-import type { AppDispatch } from "../../app/store";
 
 interface PartyProps {
   billingParty: BillingPartyType;
@@ -34,9 +31,13 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   toggleEditing,
   toggleOpen,
 }) => {
-  const dispatch: AppDispatch = useDispatch();
-  const loading = useSelector(selectAuthLoading);
+  const { useUpdateBillingPartyMutation, useDeleteBillingPartyMutation } = useParties();
+  const updateBillingPartyMutation = useUpdateBillingPartyMutation();
+  const deleteBillingPartyMutation = useDeleteBillingPartyMutation();
+  const { addMessage } = useMessageStore();
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const loading = updateBillingPartyMutation.isPending;
 
   const handleEdit = (key: keyof BillingPartyType) => {
     toggleEditing(billingParty._id, key);
@@ -71,26 +72,26 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
 
   const handleSaveChanges = async () => {
     try {
-      const resultAction = await dispatch(
-        updateBillingPartyAsync(itemState.localItem)
-      );
-      if (updateBillingPartyAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({
-            type: "success",
-            text: "Billing party updated successfully",
-          })
-        );
-      } else if (updateBillingPartyAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload as Record<string, string>;
-        if (errors) {
-          dispatch(
-            addMessage({ type: "error", text: Object.entries(errors)[0][1] })
-          );
-        }
-      }
+      await updateBillingPartyMutation.mutateAsync({
+        id: billingParty._id,
+        updatedParty: itemState.localItem,
+      });
+      addMessage({
+        type: "success",
+        text: "Billing party updated successfully",
+      });
     } catch {
-      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
+      addMessage({ type: "error", text: "Something went wrong" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this billing party?")) return;
+    try {
+      await deleteBillingPartyMutation.mutateAsync(billingParty._id);
+      addMessage({ type: "success", text: "Billing party deleted successfully" });
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete billing party" });
     }
   };
 
@@ -103,19 +104,19 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
         onClick={() => toggleOpen(billingParty._id)}
         className={`
           w-full text-left bg-white border border-slate-100 rounded-3xl p-5 flex items-center justify-between
-          transition-all duration-300 hover:shadow-xl hover:shadow-indigo-50/50 hover:border-indigo-100
-          ${itemState.isOpen ? 'shadow-2xl shadow-indigo-100/40 border-indigo-200 ring-4 ring-indigo-50' : 'shadow-lg shadow-slate-100/50'}
+          transition-all duration-300 hover:shadow-xl hover:shadow-blue-50/50 hover:border-blue-100
+          ${itemState.isOpen ? 'shadow-2xl shadow-blue-100/40 border-blue-200 ring-4 ring-blue-50' : 'shadow-lg shadow-slate-100/50'}
         `}
       >
         <div className="flex items-center gap-6">
           <div className={`
             w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300
-            ${itemState.isOpen ? 'bg-indigo-600 text-white rotate-6' : 'bg-indigo-50 text-indigo-600'}
+            ${itemState.isOpen ? 'bg-blue-600 text-white rotate-6' : 'bg-blue-50 text-blue-600'}
           `}>
             <UserSquare size={24} />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 group-hover:text-indigo-400">Billing Party</span>
+            <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 group-hover:text-blue-400">Billing Party</span>
             <span className="text-xl font-black text-slate-900 italic tracking-tight">{itemState.localItem.name || "Unnamed Party"}</span>
           </div>
         </div>
@@ -159,7 +160,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
                         {!isEditing && (
                           <button
                             onClick={() => handleEdit(key)}
-                            className="opacity-0 group-hover/row:opacity-100 transition-all p-1 hover:bg-indigo-50 rounded-lg text-indigo-400 hover:text-indigo-600"
+                            className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
                           >
                             <Edit3 size={14} />
                           </button>
@@ -170,7 +171,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
                         <div className="flex items-center gap-2">
                           <input
                             autoFocus
-                            className="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
+                            className="flex-1 bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all"
                             value={value as string}
                             onChange={(e) => updateDraft(billingParty._id, key, e.target.value)}
                           />
@@ -188,8 +189,8 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <div className="text-sm font-bold text-slate-700 bg-white/50 px-4 py-3 rounded-2xl border border-slate-50 group-hover:bg-white group-hover:border-indigo-50 transition-colors">
-                          {value}
+                        <div className="text-sm font-bold text-slate-700 bg-white/50 px-4 py-3 rounded-2xl border border-slate-50 group-hover:bg-white group-hover:border-blue-50 transition-colors">
+                          {value as string}
                         </div>
                       )}
                     </div>
@@ -214,12 +215,24 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
-                      className="px-8 py-3 bg-indigo-600 text-white text-sm font-bold rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                      className="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-70"
                     >
                       <Save size={16} />
                       {loading ? "Saving..." : "Apply Changes"}
                     </button>
                   </div>
+                </div>
+              )}
+              {!hasChanges && (
+                <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteBillingPartyMutation.isPending}
+                    className="flex items-center gap-2 px-6 py-3 text-red-500 hover:bg-red-50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95"
+                  >
+                    <Trash2 size={16} />
+                    Delete Registration
+                  </button>
                 </div>
               )}
             </div>
@@ -231,4 +244,3 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
 };
 
 export default BillingPartyDropdown;
-

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { LedgerMeta } from "../../types/ledger";
+import type { LedgerMeta } from "@/types/ledger";
 import { Plus, Trash2, Tag, Hash } from "lucide-react";
 
 interface MetaField {
@@ -36,14 +36,23 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
   /* ------------------------------------------
         SYNC FIELDS → PARENT
      ------------------------------------------ */
+  const fieldsRef = useRef<MetaField[]>(fields);
+  useEffect(() => {
+    fieldsRef.current = fields;
+  }, [fields]);
+
   useEffect(() => {
     const metaObj: LedgerMeta = {};
     fields.forEach((f) => {
       if (f.key.trim()) metaObj[f.key] = f.value;
     });
 
-    onChange(metaObj); // always push to parent
-  }, [fields, onChange]);
+    // ONLY call onChange if the data has actually changed
+    // We compare with the prop 'value' to check if parent is already correct
+    if (JSON.stringify(metaObj) !== JSON.stringify(value || {})) {
+      onChange(metaObj);
+    }
+  }, [fields, onChange, value]);
 
   /* ------------------------------------------
         FIELD ACTIONS

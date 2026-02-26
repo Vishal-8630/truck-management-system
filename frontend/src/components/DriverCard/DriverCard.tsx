@@ -1,6 +1,6 @@
 import type { FC } from "react";
-import type { DriverType } from "../../types/driver";
-import NoImg from "../../assets/no-img.jpg";
+import type { DriverType } from "@/types/driver";
+import NoImg from "@/assets/no-img.jpg";
 import { ChevronRight, Phone, ShieldCheck } from "lucide-react";
 
 interface driverCardProps {

@@ -1,5 +1,5 @@
-import { EmptyDriverType, type DriverType } from "./driver";
-import type { JourneyType } from "./journey";
+import { EmptyDriverType, type DriverType } from "@/types/driver";
+import type { JourneyType } from "@/types/journey";
 
 export interface SettlementType {
     _id: string;

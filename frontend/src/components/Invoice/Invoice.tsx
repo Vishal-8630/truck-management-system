@@ -1,7 +1,7 @@
 import React from "react";
-import Logo from "../../assets/logo.png";
-import type { BillEntryType } from "../../types/billEntry";
-import { formatDate } from "../../utils/formatDate";
+import Logo from "@/assets/logo.png";
+import type { BillEntryType } from "@/types/billEntry";
+import { formatDate } from "@/utils/formatDate";
 
 interface InvoiceProps {
   entry: BillEntryType

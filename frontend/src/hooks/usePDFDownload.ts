@@ -1,9 +1,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useDispatch } from "react-redux";
-import { addMessage } from "../features/message";
-import type { AppDispatch } from "../app/store";
-import api from "../api/axios";
+import { useMessageStore } from "@/store/useMessageStore";
+import api from "@/api/axios";
 
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
@@ -26,11 +24,11 @@ export const usePDFDownload = <T>({
   endpoint = "/invoice/generate-pdf",
   serverMode = true,
 }: UsePDFDownloadOptions<T>) => {
-  const dispatch: AppDispatch = useDispatch();
+  const { addMessage } = useMessageStore();
 
   const handleDownload = async (): Promise<void> => {
     if (!data || !Object.keys(data).length) {
-      dispatch(addMessage({ type: "error", text: emptyMessage }));
+      addMessage({ type: "error", text: emptyMessage });
       return;
     }
 
@@ -85,10 +83,10 @@ export const usePDFDownload = <T>({
         link.remove();
         setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
 
-        dispatch(addMessage({ type: "success", text: "PDF downloaded!" }));
+        addMessage({ type: "success", text: "PDF downloaded!" });
       } catch (error) {
         console.error("PDF generation error:", error);
-        dispatch(addMessage({ type: "error", text: "Failed to generate PDF" }));
+        addMessage({ type: "error", text: "Failed to generate PDF" });
       }
 
       return;

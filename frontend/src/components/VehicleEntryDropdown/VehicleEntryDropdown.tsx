@@ -2,17 +2,12 @@ import React from "react";
 import {
   VEHICLE_ENTRY_LABELS,
   type VehicleEntryType,
-} from "../../types/vehicleEntry";
-import { useDispatch, useSelector } from "react-redux";
-import { addMessage } from "../../features/message";
+} from "@/types/vehicleEntry";
+import { useMessageStore } from "@/store/useMessageStore";
+import { useVehicleEntries } from "@/hooks/useLedgers";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save } from "lucide-react";
-import { formatDate } from "../../utils/formatDate";
-import {
-  selectVehicleEntryLoading,
-  updateVehicleEntryAsync,
-} from "../../features/vehicleEntry";
-import type { AppDispatch } from "../../app/store";
+import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2 } from "lucide-react";
+import { formatDate } from "@/utils/formatDate";
 
 interface VehicleEntryDropdownProps {
   vehicleEntry: VehicleEntryType;
@@ -52,8 +47,10 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   toggleOpen,
   onVehicleEntryUpdate,
 }) => {
-  const dispatch: AppDispatch = useDispatch();
-  const loading = useSelector(selectVehicleEntryLoading);
+  const { useUpdateVehicleEntryMutation, useDeleteVehicleEntryMutation } = useVehicleEntries();
+  const updateVehicleEntryMutation = useUpdateVehicleEntryMutation();
+  const deleteVehicleEntryMutation = useDeleteVehicleEntryMutation();
+  const { addMessage } = useMessageStore();
 
   const isKeyDate = (key: keyof VehicleEntryType) =>
     key.toLowerCase().includes("date");
@@ -98,34 +95,36 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 
   const handleSaveChanges = async () => {
     try {
-      const resultAction = await dispatch(
-        updateVehicleEntryAsync(itemState.localItem)
-      );
-      if (updateVehicleEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(addMessage({ type: "success", text: "Vehicle entry updated successfully" }));
-        onVehicleEntryUpdate(itemState.localItem);
-      } else if (updateVehicleEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors) {
-          dispatch(addMessage({ type: "error", text: Object.entries(errors)[0][1] as string }));
-        }
-      }
+      await updateVehicleEntryMutation.mutateAsync(itemState.localItem);
+      addMessage({ type: "success", text: "Vehicle entry updated successfully" });
+      onVehicleEntryUpdate(itemState.localItem);
     } catch {
-      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
+      addMessage({ type: "error", text: "Something went wrong" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this vehicle entry?")) return;
+    try {
+      await deleteVehicleEntryMutation.mutateAsync(vehicleEntry._id);
+      addMessage({ type: "success", text: "Vehicle entry deleted successfully" });
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete vehicle entry" });
     }
   };
 
   const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
+  const loading = updateVehicleEntryMutation.isPending;
 
   return (
     <div className={`
       card-premium overflow-hidden transition-all duration-300
-      ${itemState.isOpen ? 'ring-2 ring-indigo-100 ring-offset-2' : ''}
+      ${itemState.isOpen ? 'ring-2 ring-blue-100 ring-offset-2' : ''}
     `}>
       <div
         className={`
           flex items-center justify-between p-6 cursor-pointer select-none
-          ${itemState.isOpen ? 'bg-indigo-50/50' : 'bg-white hover:bg-slate-50/80'}
+          ${itemState.isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
         onClick={() => toggleOpen(vehicleEntry._id)}
@@ -133,7 +132,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <div className={`
               w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
-              ${itemState.isOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}
+              ${itemState.isOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
            `}>
             <Truck size={22} />
           </div>
@@ -167,15 +166,15 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
         <div className="flex items-center gap-4">
           {hasChanges && (
             <div className="hidden sm:flex items-center gap-2 mr-2">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
-              <span className="text-[10px] font-bold text-indigo-500 uppercase">Unsaved</span>
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-blue-500 uppercase">Unsaved</span>
             </div>
           )}
           <motion.div
             animate={{ rotate: itemState.isOpen ? 180 : 0 }}
             className={`
               w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${itemState.isOpen ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-300'}
+              ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
             `}
           >
             <ChevronDown size={20} />
@@ -194,7 +193,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
           >
             <div className="p-6 lg:p-10 flex flex-col gap-10">
               {hasChanges && (
-                <div className="flex items-center justify-between bg-indigo-600 p-4 rounded-2xl shadow-indigo-100 shadow-lg">
+                <div className="flex items-center justify-between bg-blue-600 p-4 rounded-2xl shadow-blue-100 shadow-lg">
                   <div className="flex items-center gap-3 text-white">
                     <Save size={20} className="opacity-80" />
                     <span className="text-sm font-bold tracking-tight">You have unsaved changes</span>
@@ -209,7 +208,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
-                      className="px-6 py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
+                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
                     >
                       {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
                       Update Records
@@ -239,7 +238,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                         {!isEditing && !isBalanceParty && (
                           <button
                             onClick={() => handleEdit(key)}
-                            className="p-1 text-slate-300 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                           >
                             <Edit3 size={12} />
                           </button>
@@ -268,6 +267,19 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                   );
                 })}
               </div>
+
+              {!hasChanges && (
+                <div className="flex items-center justify-end pt-4 border-t border-slate-50">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteVehicleEntryMutation.isPending}
+                    className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                    Delete Record
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -277,4 +289,3 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 };
 
 export default VehicleEntryDropdown;
-

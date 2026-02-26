@@ -99,7 +99,11 @@ const ExpenseSection = ({
                         <input
                           type={isDateField(f.key) ? "date" : "text"}
                           className="w-full px-3 py-1.5 bg-white border border-indigo-50 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
-                          value={isDateField(f.key) ? (item[f.key] ? new Date(item[f.key]).toISOString().split("T")[0] : "") : item[f.key] || ""}
+                          value={isDateField(f.key) ? (() => {
+                            if (!item[f.key]) return "";
+                            const date = new Date(item[f.key]);
+                            return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+                          })() : item[f.key] || ""}
                           onChange={(e) =>
                             handleFieldChange(index, f.key, e.target.value)
                           }

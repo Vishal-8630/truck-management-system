@@ -1,12 +1,12 @@
 import { MotionConfig } from "framer-motion";
-import BottomBar from "./components/BottomBar";
-import MessageBar from "./components/MessageBar";
-import Navbar from "./components/Navbar";
-import AppRoutes from "./routes/AppRoutes";
+import BottomBar from "@/components/layout/BottomBar";
+import MessageBar from "@/components/layout/MessageBar";
+import Navbar from "@/components/layout/Navbar";
+import AppRoutes from "@/routes/AppRoutes";
 
-import useAuthCheck from "./hooks/useAuthCheck";
-import Loading from "./components/Loading";
-import MoveToTopButton from "./components/MoveToTopButton";
+import useAuthCheck from "@/hooks/useAuthCheck";
+import Loading from "@/components/ui/Loading";
+import MoveToTopButton from "@/components/layout/MoveToTopButton";
 
 import "@syncfusion/ej2-base/styles/material.css";
 import "@syncfusion/ej2-react-calendars/styles/material.css";
@@ -45,6 +45,5 @@ function App() {
     </MotionConfig>
   );
 }
-
 
 export default App;

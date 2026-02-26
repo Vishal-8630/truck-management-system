@@ -1,3 +1,3 @@
-import BalancePartyDropDown from "./BalancePartyDropDown";
+import BalancePartyDropDown from "@/components/BalancePartyDropDown/BalancePartyDropDown";
 
 export default BalancePartyDropDown;

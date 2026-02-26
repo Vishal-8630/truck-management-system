@@ -1,6 +1,6 @@
 import React from "react";
 import SmartDropdown from "../../../../components/SmartDropdown";
-import type { Option } from "../../../NewBillingEntry/constants";
+import type { Option } from "../../../bills/NewBillingEntry/constants";
 
 interface DetailField {
   label: string;
@@ -71,9 +71,11 @@ const DetailBlock = ({
                     placeholder={`Enter ${f.label.toLowerCase()}...`}
                     value={
                       isDateField(f.label || "")
-                        ? f.value
-                          ? new Date(f.value).toISOString().split("T")[0]
-                          : ""
+                        ? (() => {
+                          if (!f.value) return "";
+                          const date = new Date(f.value);
+                          return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+                        })()
                         : f.value === null
                           ? ""
                           : f.value ?? ""

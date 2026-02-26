@@ -1,3 +1,1 @@
-import FormSection from "./FormSection";
-
-export default FormSection;
+export { default } from '@/components/ui/FormSection';

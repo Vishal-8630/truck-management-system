@@ -1,3 +1,3 @@
-import ServiceCard from "./ServiceCard";
+import ServiceCard from "@/components/ServiceCard/ServiceCard";
 
 export default ServiceCard;

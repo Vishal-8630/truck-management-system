@@ -1,3 +1,3 @@
-import MetaFields from "./MetaFields";
+import MetaFields from "@/components/MetaFields/MetaFields";
 
 export default MetaFields;

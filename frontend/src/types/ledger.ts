@@ -1,9 +1,9 @@
-import { EmptyBillingParty, type BillingPartyType } from "./billingParty";
-import { EmptyDriverType, type DriverType } from "./driver";
-import { EmptyJourneyType, type JourneyType } from "./journey";
-import { EmptySettlementType, type SettlementType } from "./settlement";
-import { EmptyTruckType, type TruckType } from "./truck";
-import { EmptyVehicleEntry, type VehicleEntryType } from "./vehicleEntry";
+import { EmptyBillingParty, type BillingPartyType } from "@/types/billingParty";
+import { EmptyDriverType, type DriverType } from "@/types/driver";
+import { EmptyJourneyType, type JourneyType } from "@/types/journey";
+import { EmptySettlementType, type SettlementType } from "@/types/settlement";
+import { EmptyTruckType, type TruckType } from "@/types/truck";
+import { EmptyVehicleEntry, type VehicleEntryType } from "@/types/vehicleEntry";
 
 export interface LedgerGSTDetails {
   rate: number;

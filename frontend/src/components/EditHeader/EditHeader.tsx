@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import Overlay from "../Overlay";
+import Overlay from "@/components/Overlay";
 import { Edit3, Save, X, Trash2, AlertCircle } from "lucide-react";
 
 interface EditHeaderProps {

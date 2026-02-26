@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-    --color-primary-50: #f5f3ff;
-    --color-primary-100: #ede9fe;
-    --color-primary-200: #ddd6fe;
-    --color-primary-300: #c4b5fd;
-    --color-primary-400: #a78bfa;
-    --color-primary-500: #8b5cf6;
-    --color-primary-600: #7c3aed;
-    --color-primary-700: #6d28d9;
-    --color-primary-800: #5b21b6;
-    --color-primary-900: #4c1d95;
-    --color-primary: #6366f1;
+    --color-primary-50: #eff6ff;
+    --color-primary-100: #dbeafe;
+    --color-primary-200: #bfdbfe;
+    --color-primary-300: #93c5fd;
+    --color-primary-400: #60a5fa;
+    --color-primary-500: #3b82f6;
+    --color-primary-600: #2563eb;
+    --color-primary-700: #1d4ed8;
+    --color-primary-800: #1e40af;
+    --color-primary-900: #1e3a8a;
+    --color-primary: #2563eb;
 
-    --color-brand-dark: #0f172a;
+    /* Keeping Indigo for compatibility but mapping it to Blue */
+    --color-indigo-50: #eff6ff;
+    --color-indigo-100: #dbeafe;
+    --color-indigo-200: #bfdbfe;
+    --color-indigo-300: #93c5fd;
+    --color-indigo-400: #60a5fa;
+    --color-indigo-500: #3b82f6;
+    --color-indigo-600: #2563eb;
+    --color-indigo-700: #1d4ed8;
+    --color-indigo-800: #1e40af;
+    --color-indigo-900: #1e3a8a;
+
+    --color-accent-50: #fff1f2;
+    --color-accent-100: #ffe4e6;
+    --color-accent-200: #fecdd3;
+    --color-accent-300: #fda4af;
+    --color-accent-400: #fb7185;
+    --color-accent-500: #f43f5e;
+    --color-accent-600: #e11d48;
+    --color-accent-700: #be123c;
+    --color-accent-800: #9f1239;
+    --color-accent-900: #881337;
+    --color-accent: #f43f5e;
+
+    --color-brand-dark: #020617;
     --color-brand-light: #f8fafc;
 
     --font-heading: "Outfit", sans-serif;
     --font-body: "Inter", sans-serif;
 
-    --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-premium-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    --shadow-premium-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 @layer base {
@@ -29,7 +53,7 @@
     }
 
     body {
-        @apply font-body bg-slate-50 text-slate-900 antialiased;
+        @apply font-body bg-[#F8FAFC] text-slate-900 antialiased;
     }
 
     h1,
@@ -38,58 +62,75 @@
     h4,
     h5,
     h6 {
-        @apply font-heading font-bold;
+        @apply font-heading font-bold tracking-tight;
     }
 }
 
 @layer components {
     .btn-primary {
-        @apply px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-100/50 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 disabled:opacity-50 disabled:translate-y-0;
+        @apply relative px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-bold overflow-hidden shadow-lg shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-1 transition-all duration-300 active:translate-y-0 disabled:opacity-50 disabled:translate-y-0;
     }
 
     .btn-secondary {
-        @apply px-6 py-2.5 bg-white text-slate-800 border border-slate-200 rounded-xl font-semibold shadow-sm hover:bg-slate-50 hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0;
+        @apply px-8 py-3.5 bg-white text-slate-700 border-2 border-slate-100 rounded-2xl font-bold shadow-sm hover:bg-slate-50 hover:border-blue-200 hover:text-blue-600 hover:-translate-y-1 transition-all duration-300 active:translate-y-0;
     }
 
     .card-premium {
-        @apply bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-100/30 transition-all duration-500;
+        @apply bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-blue-200/30 transition-all duration-500;
     }
 
     .input-field {
-        @apply w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent rounded-2xl focus:outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-500 transition-all duration-300 placeholder:text-slate-400 font-medium text-slate-900;
+        @apply w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-[1.25rem] outline-none hover:border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 transition-all duration-300 placeholder:text-slate-400 font-medium text-slate-800;
+    }
+
+    .form-group-label {
+        @apply block text-sm font-bold text-slate-600 mb-2 px-1 tracking-wide;
     }
 
     .glass-morphism {
         @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
     }
+}
 
-    .animate-pulse-slow {
-        animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-slate-50;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full border-4 border-slate-50 hover:bg-slate-300 transition-colors;
+}
+
+@keyframes pulse-slow {
+
+    0%,
+    100% {
+        opacity: 1;
     }
 
-    .animate-spin-slow {
-        animation: spin 8s linear infinite;
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
     }
 
-    @keyframes pulse {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: .7;
-        }
+    50% {
+        transform: translateY(-10px);
     }
+}
 
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
-        }
+@keyframes shine {
+    100% {
+        transform: translateX(100%);
     }
 }

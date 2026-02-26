@@ -19,8 +19,8 @@ export interface TruckType {
         assignedAt: string,
         unassignedAt?: string
     }[],
-    createdAt: string,
-    updatedAt: string
+    createdAt?: string,
+    updatedAt?: string
 }
 
 export const EmptyTruckType: TruckType = {

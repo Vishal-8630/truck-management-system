@@ -4,18 +4,13 @@ import {
   EXTRA_CHARGE_LABELS,
   type BillEntryType,
   type ExtraCharge,
-} from "../../types/billEntry";
+} from "@/types/billEntry";
 import { ChevronDown, Edit3, Check, X, Trash2, Plus, Save, RotateCcw, Building2, User } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch } from "../../app/store";
-import { addMessage } from "../../features/message";
-import { PARTY_LABELS, type BillingPartyType } from "../../types/billingParty";
-import { formatDate } from "../../utils/formatDate";
+import { useMessageStore } from "@/store/useMessageStore";
+import { useBillEntries } from "@/hooks/useLedgers";
+import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
+import { formatDate } from "@/utils/formatDate";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import {
-  selectBillEntryLoading,
-  updateBillEntryAsync,
-} from "../../features/billEntry";
 
 // --- Props ---
 interface DropdownViewProps {
@@ -64,7 +59,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
       {editing ? (
         <div className="flex-1 flex items-center gap-2">
           <input
-            className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-50"
+            className="flex-1 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-blue-50"
             value={draftValue ?? ""}
             onChange={(e) => onChange?.(e.target.value)}
             autoFocus
@@ -93,7 +88,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
       {!editing && (
         <button
           onClick={onEdit}
-          className="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+          className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
           title="Edit field"
         >
           <Edit3 size={16} />
@@ -138,20 +133,12 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
                   {EXTRA_CHARGE_LABELS[subKey]}
                 </span>
-                {!isEditing && (
-                  <button
-                    onClick={() => startEdit(charge._id, subKey as keyof ExtraCharge)}
-                    className="p-0.5 text-slate-300 hover:text-indigo-600 opacity-0 group-hover/field:opacity-100 transition-opacity"
-                  >
-                    <Edit3 size={10} />
-                  </button>
-                )}
               </div>
 
               {isEditing ? (
                 <div className="flex items-center gap-1">
                   <input
-                    className="flex-1 px-2 py-1 bg-white border border-indigo-200 rounded-md text-xs font-bold focus:outline-none"
+                    className="flex-1 px-2 py-1 bg-white border border-blue-200 rounded-md text-xs font-bold focus:outline-none"
                     value={drafts?.[charge._id]?.[subKey as keyof ExtraCharge] ?? subValue ?? ""}
                     onChange={(e) => setDraft(charge._id, subKey as keyof ExtraCharge, e.target.value)}
                     autoFocus
@@ -175,7 +162,7 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
         Remove Charge
       </button>
     </div>
-  </div>
+  </div >
 );
 
 // --- Main DropdownView ---
@@ -197,8 +184,13 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
     extra_charges: {},
   });
 
-  const dispatch: AppDispatch = useDispatch();
-  const loading = useSelector(selectBillEntryLoading);
+  const { useUpdateBillEntryMutation, useDeleteBillEntryMutation } = useBillEntries();
+  const updateBillEntryMutation = useUpdateBillEntryMutation();
+  const deleteBillEntryMutation = useDeleteBillEntryMutation();
+  const { addMessage } = useMessageStore();
+
+  const loading = updateBillEntryMutation.isPending;
+
   const isKeyDate = useCallback(
     (key: keyof BillEntryType) => key.toLowerCase().includes("date"),
     []
@@ -355,33 +347,41 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
 
   const saveChanges = async () => {
     try {
-      const resultAction = await dispatch(updateBillEntryAsync(localEntry));
-      if (updateBillEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(addMessage({ type: "success", text: "Entry updated successfully" }));
-      } else if (updateBillEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors && Object.keys(errors).length > 0) {
-          Object.keys(errors).forEach((key) => {
-            dispatch(addMessage({ type: "error", text: errors[key] || "Failed to update entry" }));
-          });
-        }
+      await updateBillEntryMutation.mutateAsync(localEntry);
+      addMessage({ type: "success", text: "Entry updated successfully" });
+    } catch (err: any) {
+      const errors = err.response?.data?.errors;
+      if (errors && Object.keys(errors).length > 0) {
+        Object.keys(errors).forEach((key) => {
+          addMessage({ type: "error", text: errors[key] || "Failed to update entry" });
+        });
+      } else {
+        addMessage({ type: "error", text: "Failed to update entry" });
       }
-    } catch {
-      dispatch(addMessage({ type: "error", text: "Failed to update entry" }));
     }
   };
 
   const hasChanges = JSON.stringify(localEntry) !== JSON.stringify(entry);
 
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this bill entry?")) return;
+    try {
+      await deleteBillEntryMutation.mutateAsync(localEntry._id);
+      addMessage({ type: "success", text: "Bill entry deleted successfully" });
+    } catch {
+      addMessage({ type: "error", text: "Failed to delete bill entry" });
+    }
+  };
+
   return (
     <div className={`
       card-premium overflow-hidden border-slate-100 transition-all duration-300
-      ${isOpen ? 'ring-2 ring-indigo-100 ring-offset-2' : ''}
+      ${isOpen ? 'ring-2 ring-blue-100 ring-offset-2' : ''}
     `}>
       <div
         className={`
           flex items-center justify-between p-6 cursor-pointer select-none
-          ${isOpen ? 'bg-indigo-50/50' : 'bg-white hover:bg-slate-50/80'}
+          ${isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
         onClick={() => setIsOpen((s) => !s)}
@@ -389,7 +389,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
         <div className="flex items-center gap-6">
           <div className={`
               w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
-              ${isOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}
+              ${isOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
            `}>
             <Building2 size={22} />
           </div>
@@ -408,15 +408,15 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
         <div className="flex items-center gap-4">
           {hasChanges && (
             <div className="hidden sm:flex items-center gap-2 mr-2">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
-              <span className="text-[10px] font-bold text-indigo-500 uppercase">Pending Changes</span>
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-blue-500 uppercase">Pending Changes</span>
             </div>
           )}
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             className={`
               w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${isOpen ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-300'}
+              ${isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
             `}
           >
             <ChevronDown size={20} />
@@ -435,7 +435,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
           >
             <div className="p-6 lg:p-10 flex flex-col gap-10">
               {hasChanges && (
-                <div className="flex items-center justify-between bg-indigo-600 p-4 rounded-2xl shadow-indigo-100 shadow-lg">
+                <div className="flex items-center justify-between bg-blue-600 p-4 rounded-2xl shadow-blue-100 shadow-lg">
                   <div className="flex items-center gap-3 text-white">
                     <Save size={20} className="opacity-80" />
                     <span className="text-sm font-bold tracking-tight">You have unsaved changes</span>
@@ -450,7 +450,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                     <button
                       onClick={saveChanges}
                       disabled={loading}
-                      className="px-6 py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
+                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70"
                     >
                       {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
                       Update Database
@@ -463,14 +463,14 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                 <div className="flex flex-col gap-8">
                   <section>
                     <h3 className="text-lg font-bold text-slate-900 italic mb-4 flex items-center gap-2">
-                      <Building2 size={18} className="text-indigo-600" />
+                      <Building2 size={18} className="text-blue-600" />
                       Party Details
                     </h3>
                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
                       {(Object.entries(PARTY_LABELS) as [keyof BillingPartyType, string][]).map(([subKey, subLabel]) => (
                         <div key={subKey} className="flex flex-col py-3 border-b border-slate-100 last:border-0">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{subLabel}</span>
-                          <span className="text-sm font-bold text-slate-700">{localEntry.billing_party?.[subKey] || "—"}</span>
+                          <span className="text-sm font-bold text-slate-700">{localEntry.billing_party?.[subKey as keyof BillingPartyType] || "—"}</span>
                         </div>
                       ))}
                     </div>
@@ -478,7 +478,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
 
                   <section>
                     <h3 className="text-lg font-bold text-slate-900 italic mb-4 flex items-center gap-2">
-                      <User size={18} className="text-indigo-600" />
+                      <User size={18} className="text-blue-600" />
                       Key Metrics
                     </h3>
                     <div className="grid gap-2">
@@ -502,7 +502,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                 <div className="flex flex-col gap-10">
                   <section>
                     <h3 className="text-lg font-bold text-slate-900 italic mb-4 flex items-center gap-3">
-                      <Plus size={18} className="text-indigo-600" />
+                      <Plus size={18} className="text-blue-600" />
                       Extra Charges
                     </h3>
                     <div className="flex flex-col gap-4">
@@ -521,7 +521,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                       ))}
                       <button
                         onClick={addNewCharge}
-                        className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-400 font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all duration-200 group"
+                        className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-400 font-bold hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 group"
                       >
                         <Plus size={18} className="group-hover:scale-110 transition-transform" />
                         Add New Charge
@@ -552,6 +552,19 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                   </section>
                 </div>
               </div>
+
+              {!hasChanges && (
+                <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteBillEntryMutation.isPending}
+                    className="flex items-center gap-2 px-6 py-3 text-red-500 hover:bg-red-50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95"
+                  >
+                    <Trash2 size={16} />
+                    Delete Bill Entry
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -561,4 +574,3 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
 };
 
 export default BillEntriesDropdownView;
-

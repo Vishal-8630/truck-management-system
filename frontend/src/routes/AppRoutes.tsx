@@ -1,38 +1,52 @@
 import { Route, Routes, Navigate } from "react-router-dom";
-import Home from "../pages/Home";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Profile from "../pages/Profile";
-import NewBillingEntry from "../pages/NewBillingEntry";
-import ProtectedRoute from "../components/ProtectedRoute";
-import LRCopy from "../pages/LRCopy";
-import Bill from "../pages/Bill";
-import BillingParty from "../pages/BillingParty";
-import NotFound from "../pages/NotFound";
-import NewVehicleEntry from "../pages/NewVehicleEntry";
-import VehicleEntries from "../pages/VehicleEntries";
-import NewBalanceParty from "../pages/NewBalanceParty";
-import BalanceParties from "../pages/BalanceParties";
-import PartyBalance from "../pages/PartyBalance";
-import BillEntries from "../pages/BillEntries";
-import PagesOutlet from "../pages/PagesOutlet";
-import AdminRoutes from "../components/AdminRoutes";
-import About from "../pages/About";
-import NewJourneyEntry from "../pages/Journey/NewJourneyEntry";
-import AllJourneyEntries from "../pages/Journey/AllJourneyEntries";
-import NewTruckEntry from "../pages/Journey/NewTruckEntry";
-import AllTruckEntries from "../pages/Journey/AllTruckEntries";
-import NewDriverEntry from "../pages/Journey/NewDriverEntry";
-import AllDriverEntries from "../pages/Journey/AllDriverEntries";
-import TruckDetail from "../pages/Journey/TruckDetail";
-import JourneyDetail from "../pages/Journey/JourneyDetail";
-import DriverDetail from "../pages/Journey/DriverDetail";
-import DriverSettlement from "../pages/Journey/Settlements/DriverSettlement";
-import SettlementPreview from "../pages/Journey/Settlements/SettlementPreview";
-import SettlementDetail from "../pages/Journey/Settlements/SettlementDetail";
-import NewLedger from "../pages/Ledger/NewLedger";
-import AllLedgers from "../pages/Ledger/AllLedgers";
-import LedgerDetail from "../pages/Ledger/LedgerDetail";
+
+// Auth
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import Profile from "@/pages/auth/Profile";
+
+// Shared
+import Home from "@/pages/shared/Home";
+import About from "@/pages/shared/About";
+import NotFound from "@/pages/shared/NotFound";
+import PagesOutlet from "@/pages/shared/PagesOutlet";
+
+// Bills
+import NewBillingEntry from "@/pages/bills/NewBillingEntry";
+import BillEntries from "@/pages/bills/BillEntries";
+import LRCopy from "@/pages/bills/LRCopy";
+import Bill from "@/pages/bills/Bill";
+import BillingParty from "@/pages/bills/BillingParty";
+
+// Vehicles
+import NewVehicleEntry from "@/pages/vehicles/NewVehicleEntry";
+import VehicleEntries from "@/pages/vehicles/VehicleEntries";
+import NewBalanceParty from "@/pages/vehicles/NewBalanceParty";
+import BalanceParties from "@/pages/vehicles/BalanceParties";
+import PartyBalance from "@/pages/vehicles/PartyBalance";
+
+// Journey
+import NewJourneyEntry from "@/pages/Journey/NewJourneyEntry";
+import AllJourneyEntries from "@/pages/Journey/AllJourneyEntries";
+import NewTruckEntry from "@/pages/Journey/NewTruckEntry";
+import AllTruckEntries from "@/pages/Journey/AllTruckEntries";
+import NewDriverEntry from "@/pages/Journey/NewDriverEntry";
+import AllDriverEntries from "@/pages/Journey/AllDriverEntries";
+import TruckDetail from "@/pages/Journey/TruckDetail";
+import JourneyDetail from "@/pages/Journey/JourneyDetail";
+import DriverDetail from "@/pages/Journey/DriverDetail";
+import DriverSettlement from "@/pages/Journey/Settlements/DriverSettlement";
+import SettlementPreview from "@/pages/Journey/Settlements/SettlementPreview";
+import SettlementDetail from "@/pages/Journey/Settlements/SettlementDetail";
+
+// Ledger
+import NewLedger from "@/pages/Ledger/NewLedger";
+import AllLedgers from "@/pages/Ledger/AllLedgers";
+import LedgerDetail from "@/pages/Ledger/LedgerDetail";
+
+// Guards
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoutes from "@/components/AdminRoutes";
 
 const billEntryRoutes = [
   { path: "new-entry", element: <NewBillingEntry /> },
@@ -63,13 +77,13 @@ const journeyEntryRoutes = [
   { path: "driver-detail/:id/settlement", element: <DriverSettlement /> },
   { path: "driver-detail/:id/settlement/preview", element: <SettlementPreview /> },
   { path: "driver-detail/:id/settlement/:settlementId", element: <SettlementDetail /> },
-]
+];
 
 const ledgerEntryRoutes = [
   { path: "new-ledger", element: <NewLedger /> },
   { path: "all-ledgers", element: <AllLedgers /> },
   { path: "ledger-detail/:id", element: <LedgerDetail /> },
-]
+];
 
 const AppRoutes = () => {
   return (
