@@ -27,6 +27,25 @@ import MetaFields from "@/components/MetaFields";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Plus, Sparkles, Receipt, Link2, Wallet, ArrowLeft } from "lucide-react";
 
+const CATEGORY_RULES: Record<string, string[]> = {
+  "Freight Income": ["party", "truck", "journey"],
+  "Diesel Expense": ["truck"],
+  "Driver Advance": ["driver"],
+  "Driver Settlement": ["driver", "settlement"],
+  "In Account": ["party"],
+  "Driver Expense": ["driver"],
+  "Toll Expense": ["truck"],
+  "Repair Expense": ["truck"],
+  "Maintenance Expense": ["truck"],
+  "Office Expense": [],
+  "Payment Received": ["party", "reference_no"],
+  "Payment Made": ["reference_no"],
+  "Cash Transfer": ["party"],
+  "Bank Transfer": ["party"],
+  "Other Income": [],
+  "Other Expense": [],
+};
+
 const LINKED_OBJ_INPUTS: InputType[] = [
   { type: "search", label: "Journey", name: "journey" },
   { type: "search", label: "Truck", name: "truck" },
@@ -61,6 +80,25 @@ const NewLedger = () => {
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
 
+  const fieldRefs: Record<string, React.RefObject<HTMLInputElement>> = {
+    journey: useRef<HTMLInputElement>(null!),
+    truck: useRef<HTMLInputElement>(null!),
+    driver: useRef<HTMLInputElement>(null!),
+    party: useRef<HTMLInputElement>(null!),
+    settlement: useRef<HTMLInputElement>(null!),
+    vehicle_entry: useRef<HTMLInputElement>(null!),
+    reference_no: useRef<HTMLInputElement>(null!),
+    category: useRef<HTMLInputElement>(null!),
+    date: useRef<HTMLInputElement>(null!),
+    transaction_type: useRef<HTMLInputElement>(null!),
+    debit: useRef<HTMLInputElement>(null!),
+    credit: useRef<HTMLInputElement>(null!),
+    payment_mode: useRef<HTMLInputElement>(null!),
+    reference_type: useRef<HTMLInputElement>(null!),
+  };
+
+  const lookupSectionRef = useRef<HTMLDivElement>(null);
+
   const navigate = useNavigate();
   const addMessage = useMessageStore((s) => s.addMessage);
 
@@ -86,33 +124,34 @@ const NewLedger = () => {
     });
   };
 
-  const resetObjValues = () => {
-    setLedger((prev) => ({
-      ...prev,
-      journey: EmptyJourneyType,
-      truck: EmptyTruckType,
-      driver: EmptyDriverType,
-      party: EmptyBillingParty,
-      settlement: EmptySettlementType,
-      vehicle_entry: EmptyVehicleEntry,
-    }));
-  };
+
 
   const handleChange = (value: string, name: string) => {
+    // For complex objects, we ignore handleChange as handleSelectChange takes care of them
+    if (["journey", "truck", "driver", "party", "settlement", "vehicle_entry", "category", "transaction_type", "payment_mode", "reference_type"].includes(name)) return;
+
     if (errorsRef.current[name]) {
       if (name === "debit" || name === "credit") {
-        errorsRef.current["debit"] = ""; errorsRef.current["credit"] = "";
+        errorsRef.current["debit"] = "";
+        errorsRef.current["credit"] = "";
       } else {
         errorsRef.current[name] = "";
       }
       forceRender({});
     }
-    setLedger((prev) => ({ ...prev, [name]: value }));
+
+    // Convert numeric fields to numbers
+    const finalValue = (name === "debit" || name === "credit") ? (parseFloat(value) || 0) : value;
+    setLedger((prev) => ({ ...prev, [name]: finalValue }));
   };
 
   const handleSelectChange = (val: string, name: string, mode: "select" | "search") => {
     if (mode === "select") {
-      if (name === "category") { resetObjError(); resetObjValues(); }
+      if (name === "category") { resetObjError(); }
+      if (errorsRef.current[name]) {
+        errorsRef.current[name] = "";
+        forceRender({});
+      }
       setLedger((prev) => ({ ...prev, [name]: val }));
     } else {
       switch (name) {
@@ -175,19 +214,87 @@ const NewLedger = () => {
     }
   };
 
+  const getRequiredFields = () => {
+    return CATEGORY_RULES[ledger.category] || [];
+  };
+
   const handleLedgerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Client-side validation based on Category Rules
+    const required = getRequiredFields();
+    const newErrors: Record<string, string> = {};
+    let firstErrorField: string | null = null;
+
+    required.forEach(field => {
+      const val = (ledger as any)[field];
+      const isObject = val && typeof val === 'object';
+      const isEmpty = isObject ? !val._id : (!val || val === "");
+
+      if (isEmpty) {
+        newErrors[field] = `${field.replace(/_/g, " ").toUpperCase()} is required for ${ledger.category}`;
+        if (!firstErrorField) firstErrorField = field;
+      }
+    });
+
+    // Check for "At least one lookup" rule
+    const lookupFields = ["journey", "truck", "driver", "party", "settlement", "vehicle_entry"];
+    const hasLookup = lookupFields.some(field => {
+      const val = (ledger as any)[field];
+      return val && (val._id || (typeof val === "string" && val !== ""));
+    });
+
+    if (!hasLookup && Object.keys(newErrors).length === 0) {
+      addMessage({ type: "error", text: "At least one lookup (Party, Truck, Journey, etc.) must be selected" });
+      newErrors.general = "Please link this entry to at least one record";
+
+      lookupSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return; // Stop submission
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      errorsRef.current = newErrors;
+      forceRender({});
+      addMessage({ type: "error", text: `Please fill required fields for ${ledger.category}` });
+
+      if (firstErrorField && (fieldRefs as any)[firstErrorField]) {
+        const el = (fieldRefs as any)[firstErrorField].current;
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => el.focus(), 500);
+        }
+      }
+      return;
+    }
+
     try {
       await addLedgerMutation.mutateAsync(ledger);
       addMessage({ type: "success", text: "New Ledger entry created successfully" });
       navigate("/ledger/all-ledgers");
     } catch (error: any) {
-      const errors = error?.response?.data;
+      const responseData = error?.response?.data;
+      const errors = responseData?.errors || responseData;
+
       if (errors && typeof errors === "object") {
         errorsRef.current = errors;
         forceRender({});
+
+        // Try to focus the first field with a backend error
+        const firstErrorKey = Object.keys(errors).find(key => fieldRefs[key]);
+        if (firstErrorKey) {
+          const el = fieldRefs[firstErrorKey].current;
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            setTimeout(() => el.focus(), 500);
+          }
+        }
       }
-      addMessage({ type: "error", text: errors?.general || "Failed to add new ledger entry" });
+
+      const firstErr = Object.values(errors).find(v => typeof v === 'string') as string;
+      addMessage({
+        type: "error",
+        text: errors?.general || firstErr || responseData?.message || "Failed to add new ledger entry",
+      });
     }
   };
 
@@ -200,19 +307,38 @@ const NewLedger = () => {
 
       if (["journey", "truck", "driver", "party", "settlement", "vehicle_entry"].includes(input.name)) {
         selectMode = "search";
-        value = (ledger as any)[input.name]?._id || "";
+        const obj = (ledger as any)[input.name];
+        value = obj?._id || "";
+        if (obj && obj._id) {
+          let label = "";
+          if (input.name === "truck") label = obj.truck_no;
+          else if (input.name === "driver") label = obj.name;
+          else if (input.name === "party") label = obj.name;
+          else if (input.name === "journey") label = `${obj.truck?.truck_no} | ${obj.driver?.name} | ${obj.from} | ${obj.to} | ${formatDate(new Date(obj.journey_start_date))}`;
+          else if (input.name === "settlement") label = `${obj.driver?.name} | ${formatDate(new Date(obj.period?.from))} | ${formatDate(new Date(obj.period?.to))}`;
+          else if (input.name === "vehicle_entry") label = `${obj.vehicle_no} | ${obj.from} | ${obj.to}`;
+          if (label && !label.includes("undefined")) options = [{ label, value: obj._id }];
+        }
       }
       if (input.name === "category") { options = LEDGER_CATEGORIES.map((c) => ({ label: c, value: c })); value = ledger?.category || ""; }
       if (input.name === "transaction_type") { options = LEDGER_TRANSACTION_TYPES.map((t) => ({ label: t, value: t })); value = ledger?.transaction_type || ""; }
       if (input.name === "payment_mode") { options = LEDGER_PAYMENT_MODES.map((p) => ({ label: p, value: p })); value = ledger?.payment_mode || ""; }
       if (input.name === "reference_type") { options = LEDGER_REFERENCE_TYPES.map((r) => ({ label: r, value: r })); value = ledger?.reference_type || ""; }
 
+      const isFieldRequired = getRequiredFields().includes(input.name);
+      const labelWithAsterisk = (
+        <span className="flex items-center gap-1">
+          {input.label}
+          {isFieldRequired && <span className="text-rose-500 font-bold">*</span>}
+        </span>
+      );
+
       return (
         <FormInput
           key={input.name}
           type={input.type}
           id={input.name}
-          label={input.label}
+          label={labelWithAsterisk as any}
           name={input.name}
           value={value}
           placeholder={input.label}
@@ -223,6 +349,7 @@ const NewLedger = () => {
           onChange={handleChange}
           onSelectChange={(val, name, mode) => handleSelectChange(val, name, mode)}
           fetchOptions={fetchOptions}
+          inputRef={(fieldRefs as any)[input.name]}
         />
       );
     });
@@ -235,21 +362,23 @@ const NewLedger = () => {
           <ArrowLeft size={16} /> Back
         </button>
         <div>
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
-            <BookOpen className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" /> New Ledger <span className="text-blue-600">Entry</span>
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-tight italic flex items-center gap-4 transition-colors">
+            <BookOpen className="text-blue-600 dark:text-blue-400 w-10 h-10 lg:w-12 lg:h-12" /> New Ledger <span className="text-blue-600 dark:text-blue-400">Entry</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg mt-2">Record a new financial transaction in the company ledger.</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-lg mt-2">Record a new financial transaction in the company ledger.</p>
         </div>
       </div>
 
       <form onSubmit={handleLedgerSubmit} className="flex flex-col gap-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 flex flex-col gap-8">
-            <FormSection title="Linked Objects" icon={<Link2 size={18} />}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInputs(LINKED_OBJ_INPUTS)}
-              </div>
-            </FormSection>
+            <div ref={lookupSectionRef}>
+              <FormSection title="Linked Objects" icon={<Link2 size={18} />}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {renderInputs(LINKED_OBJ_INPUTS)}
+                </div>
+              </FormSection>
+            </div>
             <FormSection title="Transaction Details" icon={<Receipt size={18} />}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {renderInputs(LEDGER_INFO_INPUTS)}
@@ -268,7 +397,7 @@ const NewLedger = () => {
         </div>
 
         <FormSection title="Additional Metadata" icon={<Plus size={18} />}>
-          <div className="bg-slate-50/50 p-6 rounded-3xl border border-dashed border-slate-200">
+          <div className="bg-slate-50/50 dark:bg-slate-900/50 p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
             <MetaFields
               value={ledger.meta}
               isEditMode={true}
@@ -277,7 +406,7 @@ const NewLedger = () => {
           </div>
         </FormSection>
 
-        <div className="flex justify-end pt-6 border-t border-slate-100">
+        <div className="flex justify-end pt-6 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="submit"
             isLoading={addLedgerMutation.isPending}

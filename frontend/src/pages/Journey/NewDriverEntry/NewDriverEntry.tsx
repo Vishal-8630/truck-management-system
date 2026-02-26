@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useMessageStore } from "@/store/useMessageStore";
@@ -23,26 +23,42 @@ const NewDriverEntry = () => {
     adhaar_no: "",
     notes: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const errorsRef = useRef<Record<string, string>>({});
+  const [, forceRender] = useState({});
+
+  const fieldRefs: Record<string, React.RefObject<HTMLInputElement | HTMLTextAreaElement>> = {
+    name: useRef<HTMLInputElement>(null!),
+    phone: useRef<HTMLInputElement>(null!),
+    address: useRef<HTMLTextAreaElement>(null!),
+    dl: useRef<HTMLInputElement>(null!),
+    licence_expiry: useRef<HTMLInputElement>(null!),
+    adhaar_no: useRef<HTMLInputElement>(null!),
+    notes: useRef<HTMLTextAreaElement>(null!),
+  };
+
   const [image, setImage] = useState<File | null>(null);
 
   const handleChange = (value: string, name: string) => {
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+    if (errorsRef.current[name]) {
+      errorsRef.current[name] = "";
+      forceRender({});
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    errorsRef.current = {};
+    forceRender({});
+
     if (!form.name.trim()) {
+      errorsRef.current.name = "Driver name is required.";
+      forceRender({});
       addMessage({ type: "error", text: "Driver name is required." });
+      fieldRefs.name.current?.focus();
       return;
     }
+
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
@@ -52,9 +68,19 @@ const NewDriverEntry = () => {
       navigate("/journey/all-driver-entries");
     } catch (err: any) {
       const serverErrors = err.response?.data?.errors;
-      if (serverErrors) {
-        setErrors(serverErrors);
-        addMessage({ type: "error", text: "Please fix the errors below." });
+      if (serverErrors && typeof serverErrors === "object") {
+        errorsRef.current = serverErrors;
+        forceRender({});
+
+        const firstErrorKey = Object.keys(serverErrors)[0];
+        const firstErrorField = fieldRefs[firstErrorKey];
+        if (firstErrorField?.current) {
+          firstErrorField.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => firstErrorField.current?.focus(), 500);
+        }
+
+        const firstErrorMsg = Object.values(serverErrors)[0] as string;
+        addMessage({ type: "error", text: firstErrorMsg || "Please fix the errors below." });
       } else {
         addMessage({ type: "error", text: "Failed to register driver. Please try again." });
       }
@@ -93,7 +119,8 @@ const NewDriverEntry = () => {
                   placeholder="e.g. Rajesh Kumar"
                   value={form.name}
                   onChange={handleChange}
-                  error={errors.name}
+                  error={errorsRef.current.name}
+                  inputRef={fieldRefs.name}
                 />
                 <FormInput
                   type="input"
@@ -103,7 +130,8 @@ const NewDriverEntry = () => {
                   placeholder="e.g. +91 98XXX XXXXX"
                   value={form.phone}
                   onChange={handleChange}
-                  error={errors.phone}
+                  error={errorsRef.current.phone}
+                  inputRef={fieldRefs.phone}
                 />
                 <FormInput
                   type="input"
@@ -113,7 +141,8 @@ const NewDriverEntry = () => {
                   placeholder="XXXX-XXXX-XXXX"
                   value={form.adhaar_no}
                   onChange={handleChange}
-                  error={errors.adhaar_no}
+                  error={errorsRef.current.adhaar_no}
+                  inputRef={fieldRefs.adhaar_no}
                 />
               </div>
               <div className="mt-4">
@@ -124,7 +153,8 @@ const NewDriverEntry = () => {
                   placeholder="House no, street, city..."
                   value={form.address}
                   onChange={handleChange}
-                  error={errors.address}
+                  error={errorsRef.current.address}
+                  inputRef={fieldRefs.address}
                 />
               </div>
             </FormSection>
@@ -139,7 +169,8 @@ const NewDriverEntry = () => {
                   placeholder="e.g. DL-XXXXXXXXXXXXX"
                   value={form.dl}
                   onChange={handleChange}
-                  error={errors.dl}
+                  error={errorsRef.current.dl}
+                  inputRef={fieldRefs.dl}
                 />
                 <FormInput
                   type="date"
@@ -147,7 +178,8 @@ const NewDriverEntry = () => {
                   name="licence_expiry"
                   value={form.licence_expiry}
                   onChange={handleChange}
-                  error={errors.licence_expiry}
+                  error={errorsRef.current.licence_expiry}
+                  inputRef={fieldRefs.licence_expiry}
                 />
               </div>
             </FormSection>
@@ -160,7 +192,8 @@ const NewDriverEntry = () => {
                 placeholder="Years of experience, previous routes, etc..."
                 value={form.notes}
                 onChange={handleChange}
-                error={errors.notes}
+                error={errorsRef.current.notes}
+                inputRef={fieldRefs.notes}
               />
             </FormSection>
           </div>

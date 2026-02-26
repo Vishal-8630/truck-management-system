@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useJourneys } from "@/hooks/useJourneys";
 import { useTrucks } from "@/hooks/useTrucks";
@@ -7,7 +7,7 @@ import { useMessageStore } from "@/store/useMessageStore";
 import FormInput from "@/components/FormInput";
 import FormSection from "@/components/FormSection";
 import Button from "@/components/Button";
-import { Milestone, Save, ArrowLeft, Truck, User, MapPin, Calendar, Zap, FileText, Calculator } from "lucide-react";
+import { Milestone, Save, ArrowLeft, Truck, MapPin, Calendar, Zap, FileText, Calculator } from "lucide-react";
 
 const NewJourneyEntry = () => {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ const NewJourneyEntry = () => {
   const { data: trucks = [] } = useTrucksQuery();
   const { data: drivers = [] } = useDriversQuery();
   const { data: journeys = [] } = useJourneysQuery();
+  const truckRef = useRef<HTMLInputElement>(null!);
+  const driverRef = useRef<HTMLInputElement>(null!);
 
   const [form, setForm] = useState({
     truck: "",
@@ -40,8 +42,8 @@ const NewJourneyEntry = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (name: string, value: string) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (val: string, name: string) => {
+    setForm((prev) => ({ ...prev, [name]: val }));
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -50,23 +52,56 @@ const NewJourneyEntry = () => {
       });
     }
 
-    if (name === "truck") {
-      // Find last journey for this truck
-      const truckJourneys = journeys
-        .filter((j) => (typeof j.truck === "string" ? j.truck === value : j.truck?._id === value))
-        .sort((a, b) => new Date(b.journey_start_date).getTime() - new Date(a.journey_start_date).getTime());
+    if (name === "truck" && val) {
+      // Find all journeys for this truck and find the highest ending_kms
+      const truckJourneys = journeys.filter((j) => {
+        const truckId = typeof j.truck === "object" ? j.truck?._id : j.truck;
+        return truckId === val;
+      });
 
       if (truckJourneys.length > 0) {
-        const lastJourney = truckJourneys[0];
-        setForm((prev) => ({ ...prev, starting_kms: lastJourney.ending_kms || "" }));
+        // Calculate the maximum ending_kms from all historical records
+        const kmsValues = truckJourneys
+          .map((j) => Number(j.ending_kms))
+          .filter((kms) => !isNaN(kms));
+
+        if (kmsValues.length > 0) {
+          const maxKms = Math.max(...kmsValues);
+          setForm((prev) => ({ ...prev, starting_kms: String(maxKms) }));
+        }
       }
     }
   };
 
+  const fetchOptions = (search: string, field: string) => {
+    const s = search.toLowerCase();
+    if (field === "truck") {
+      return trucks
+        .filter((t) => t.truck_no.toLowerCase().includes(s))
+        .map((t) => ({ label: t.truck_no, value: t._id }));
+    }
+    if (field === "driver") {
+      return drivers
+        .filter((d) => d.name.toLowerCase().includes(s))
+        .map((d) => ({ label: d.name, value: d._id }));
+    }
+    return [];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.truck || !form.driver) {
-      addMessage({ type: "error", text: "Please select a truck and driver." });
+    if (!form.truck) {
+      setErrors((prev) => ({ ...prev, truck: "Please select a truck" }));
+      addMessage({ type: "error", text: "Please select a truck." });
+      truckRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      truckRef.current?.focus();
+      return;
+    }
+    if (!form.driver) {
+      setErrors((prev) => ({ ...prev, driver: "Please select a driver" }));
+      addMessage({ type: "error", text: "Please select a driver." });
+      driverRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      driverRef.current?.focus();
       return;
     }
     try {
@@ -139,22 +174,28 @@ const NewJourneyEntry = () => {
             <FormSection title="Assignment" icon={<Truck size={18} />}>
               <div className="grid sm:grid-cols-2 gap-6">
                 <FormInput
-                  type="select"
+                  type="search"
+                  selectMode="search"
                   label="Select Truck"
                   name="truck"
                   value={form.truck}
-                  onChange={(val) => handleChange("truck", val)}
+                  onChange={handleChange}
                   options={truckOptions}
+                  fetchOptions={fetchOptions}
                   error={errors.truck}
+                  inputRef={truckRef}
                 />
                 <FormInput
-                  type="select"
+                  type="search"
+                  selectMode="search"
                   label="Assigned Driver"
                   name="driver"
                   value={form.driver}
-                  onChange={(val) => handleChange("driver", val)}
+                  onChange={handleChange}
                   options={driverOptions}
+                  fetchOptions={fetchOptions}
                   error={errors.driver}
+                  inputRef={driverRef}
                 />
               </div>
             </FormSection>
@@ -168,7 +209,7 @@ const NewJourneyEntry = () => {
                   name="from"
                   placeholder="e.g. Mumbai"
                   value={form.from}
-                  onChange={(val) => handleChange("from", val)}
+                  onChange={handleChange}
                   error={errors.from}
                 />
                 <FormInput
@@ -178,7 +219,7 @@ const NewJourneyEntry = () => {
                   name="to"
                   placeholder="e.g. Delhi"
                   value={form.to}
-                  onChange={(val) => handleChange("to", val)}
+                  onChange={handleChange}
                   error={errors.to}
                 />
               </div>
@@ -186,19 +227,19 @@ const NewJourneyEntry = () => {
 
             <FormSection title="Timelines & Funds" icon={<Calendar size={18} />}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormInput type="date" label="Start Date" name="journey_start_date" value={form.journey_start_date} onChange={(val) => handleChange("journey_start_date", val)} error={errors.journey_start_date} />
-                <FormInput type="date" label="Estimated Arrival" name="journey_end_date" value={form.journey_end_date} onChange={(val) => handleChange("journey_end_date", val)} error={errors.journey_end_date} />
-                <FormInput type="number" label="Starting Cash (₹)" name="journey_starting_cash" value={form.journey_starting_cash} onChange={(val) => handleChange("journey_starting_cash", val)} error={errors.journey_starting_cash} />
-                <FormInput type="number" label="Planned Days" name="journey_days" value={form.journey_days} onChange={(val) => handleChange("journey_days", val)} error={errors.journey_days} />
+                <FormInput type="date" label="Start Date" name="journey_start_date" value={form.journey_start_date} onChange={handleChange} error={errors.journey_start_date} />
+                <FormInput type="date" label="Estimated Arrival" name="journey_end_date" value={form.journey_end_date} onChange={handleChange} error={errors.journey_end_date} />
+                <FormInput type="number" label="Starting Cash (₹)" name="journey_starting_cash" value={form.journey_starting_cash} onChange={handleChange} error={errors.journey_starting_cash} />
+                <FormInput type="number" label="Planned Days" name="journey_days" value={form.journey_days} onChange={handleChange} error={errors.journey_days} />
               </div>
             </FormSection>
 
             <FormSection title="Odometer & Payload" icon={<Zap size={18} />}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormInput type="number" label="Starting KMs" name="starting_kms" value={form.starting_kms} onChange={(val) => handleChange("starting_kms", val)} error={errors.starting_kms} />
-                <FormInput type="number" label="Target Distance (km)" name="distance_km" value={form.distance_km} onChange={(val) => handleChange("distance_km", val)} error={errors.distance_km} />
-                <FormInput type="number" label="Loaded Weight (kg)" name="loaded_weight" value={form.loaded_weight} onChange={(val) => handleChange("loaded_weight", val)} error={errors.loaded_weight} />
-                <FormInput type="number" label="Expected Mileage" name="average_mileage" value={form.average_mileage} onChange={(val) => handleChange("average_mileage", val)} error={errors.average_mileage} />
+                <FormInput type="number" label="Starting KMs" name="starting_kms" value={form.starting_kms} onChange={handleChange} error={errors.starting_kms} />
+                <FormInput type="number" label="Target Distance (km)" name="distance_km" value={form.distance_km} onChange={handleChange} error={errors.distance_km} />
+                <FormInput type="number" label="Loaded Weight (kg)" name="loaded_weight" value={form.loaded_weight} onChange={handleChange} error={errors.loaded_weight} />
+                <FormInput type="number" label="Expected Mileage" name="average_mileage" value={form.average_mileage} onChange={handleChange} error={errors.average_mileage} />
               </div>
             </FormSection>
 
@@ -209,7 +250,7 @@ const NewJourneyEntry = () => {
                 name="journey_summary"
                 placeholder="Details about the trip, priority, or cargo..."
                 value={form.journey_summary}
-                onChange={(val) => handleChange("journey_summary", val)}
+                onChange={handleChange}
                 error={errors.journey_summary}
               />
             </FormSection>

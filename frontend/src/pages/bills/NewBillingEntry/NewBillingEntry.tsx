@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Save, FileText, CreditCard, Calculator, ArrowLeft, Milestone, Receipt } from "lucide-react";
+import DeleteConfirm from "@/components/DeleteConfirm";
 
 import { useMessageStore } from "@/store/useMessageStore";
 
@@ -58,6 +59,7 @@ const Entry: React.FC = () => {
   >(null);
 
   const [state, setState] = useState("UP");
+  const [deleteChargeId, setDeleteChargeId] = useState<string | null>(null);
 
   /** -------------------- Sync Selected Party -------------------- **/
   useEffect(() => {
@@ -184,6 +186,7 @@ const Entry: React.FC = () => {
       ...prev,
       extra_charges: prev.extra_charges.filter((ec) => ec._id !== id),
     }));
+    setDeleteChargeId(null);
   };
 
   const partyValidation = () => {
@@ -252,6 +255,13 @@ const Entry: React.FC = () => {
         ];
       }
 
+      const getHelpText = () => {
+        if (input.name === "state") {
+          return state === "UP" ? "9% CGST + 9% SGST applied" : "18% IGST applied";
+        }
+        return undefined;
+      };
+
       return (
         <FormInput
           key={input.name}
@@ -263,6 +273,7 @@ const Entry: React.FC = () => {
           placeholder={placeholder}
           options={options}
           error={error}
+          helpText={getHelpText()}
           selectMode={selectMode}
           inputType={input.inputType}
           inputRef={inputRef || undefined}
@@ -349,7 +360,7 @@ const Entry: React.FC = () => {
                     ))}
                     <button
                       type="button"
-                      onClick={() => removeExtraCharge(ec._id)}
+                      onClick={() => setDeleteChargeId(ec._id)}
                       className="p-3 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all duration-200 w-fit lg:ml-auto"
                     >
                       <Trash2 size={20} />
@@ -381,6 +392,35 @@ const Entry: React.FC = () => {
               </div>
             </FormSection>
 
+            {/* Calculation Breakdown Note */}
+            <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-[2rem] p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                <Calculator size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Calculation Guide</span>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Sub Total</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-black">Rate + Extra Charges</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Tax Applied</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-black">
+                    {state === "UP" ? "9% CGST + 9% SGST" : "18% IGST"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Final Equation</span>
+                  <span className="text-indigo-600 dark:text-indigo-400 font-black">SubTotal + Tax - Advance</span>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-indigo-100 dark:border-indigo-900/30">
+                <p className="text-[10px] text-indigo-500/70 dark:text-indigo-400/60 font-medium italic leading-relaxed">
+                  * All currency values are rounded as per standard accounting principles.
+                </p>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-4">
               <Button
                 type="submit"
@@ -401,6 +441,14 @@ const Entry: React.FC = () => {
           </div>
         </div>
       </form>
+
+      <DeleteConfirm
+        isOpen={deleteChargeId !== null}
+        onClose={() => setDeleteChargeId(null)}
+        onConfirm={() => deleteChargeId && removeExtraCharge(deleteChargeId)}
+        title="Remove Charge?"
+        message="Are you sure you want to remove this extra charge? This will recalculate the bill total."
+      />
     </div>
   );
 };

@@ -100,7 +100,7 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
                   value={field.key}
                   disabled={!isEditMode}
                   onChange={(e) => updateKey(index, e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-500 transition-all font-bold text-xs uppercase tracking-widest text-slate-700 placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400 shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 focus:border-indigo-500 transition-all font-bold text-xs uppercase tracking-widest text-slate-700 dark:text-slate-300 placeholder:text-slate-300 dark:placeholder:text-slate-600 disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 shadow-sm"
                 />
               </div>
 
@@ -114,7 +114,7 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
                   value={field.value}
                   disabled={!isEditMode}
                   onChange={(e) => updateValue(index, e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100/50 focus:border-indigo-500 transition-all font-black text-sm text-slate-900 placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-500 shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 focus:border-indigo-500 transition-all font-black text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600 disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-600 shadow-sm"
                 />
               </div>
 
@@ -122,7 +122,7 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
                 <button
                   type="button"
                   onClick={() => removeField(index)}
-                  className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95"
+                  className="w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-xl hover:bg-red-500 dark:hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95"
                   title="Remove Field"
                 >
                   <Trash2 size={16} />
@@ -133,8 +133,8 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
         </div>
       ) : (
         !isEditMode && (
-          <div className="text-center py-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">No additional data fields</span>
+          <div className="text-center py-6 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">No additional data fields</span>
           </div>
         )
       )}
@@ -143,7 +143,7 @@ const MetaFields = ({ value, isEditMode, onChange }: MetaFieldsProps) => {
         <button
           type="button"
           onClick={addField}
-          className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 hover:text-white transition-all w-fit shadow-sm"
+          className="flex items-center gap-2 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white transition-all w-fit shadow-sm"
         >
           <Plus size={14} />
           Add Custom Field

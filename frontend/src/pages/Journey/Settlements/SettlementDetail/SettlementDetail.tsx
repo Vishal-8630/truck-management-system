@@ -6,16 +6,22 @@ import type { JourneyType } from "@/types/journey";
 import { formatDate } from "@/utils/formatDate";
 import { usePDFPrint } from "@/hooks/usePDFPrint";
 import { usePDFDownload } from "@/hooks/usePDFDownload";
+import { useMessageStore } from "@/store/useMessageStore";
 import {
   FileText, Printer, Download, ArrowLeft, Calendar, User, TrendingUp,
-  Wallet, Scale, Hash, MapPin, Milestone, Fuel, Calculator,
+  Wallet, Scale, Hash, MapPin, Milestone, Fuel, Calculator, CheckCircle2,
+  RefreshCcw,
 } from "lucide-react";
 
 const SettlementDetail = () => {
   const { settlementId } = useParams<{ settlementId: string }>();
   const navigate = useNavigate();
-  const { useSettlementsQuery } = useSettlements();
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { useSettlementsQuery, useMarkSettledMutation, useUnmarkSettledMutation, useRecalculateSettlementMutation } = useSettlements();
   const { data: settlements = [], isLoading } = useSettlementsQuery();
+  const markSettled = useMarkSettledMutation();
+  const unmarkSettled = useUnmarkSettledMutation();
+  const recalculateMutation = useRecalculateSettlementMutation();
   const printRef = useRef<HTMLDivElement>(null);
 
   const settlement = settlements.find((s: any) => s._id === settlementId);
@@ -65,7 +71,63 @@ const SettlementDetail = () => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {settlement.is_settled ? (
+            <>
+              <div className="flex items-center gap-2 px-5 py-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl font-black text-xs uppercase tracking-widest">
+                <CheckCircle2 size={16} />
+                Settled{settlement.settled_at ? ` on ${formatDate(new Date(settlement.settled_at))}` : ""}
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await unmarkSettled.mutateAsync(settlement._id);
+                    addMessage({ type: "success", text: "Settlement marked as unsettled." });
+                  } catch {
+                    addMessage({ type: "error", text: "Failed to unmark settlement." });
+                  }
+                }}
+                disabled={unmarkSettled.isPending}
+                className="flex items-center gap-2 px-5 py-3.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-100 transition-all disabled:opacity-60"
+              >
+                <CheckCircle2 size={16} />
+                {unmarkSettled.isPending ? "Reverting…" : "Mark as Unsettled"}
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    await markSettled.mutateAsync(settlement._id);
+                    addMessage({ type: "success", text: "Settlement marked as settled!" });
+                  } catch {
+                    addMessage({ type: "error", text: "Failed to mark as settled. Please try again." });
+                  }
+                }}
+                disabled={markSettled.isPending}
+                className="flex items-center gap-2 px-5 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-60"
+              >
+                <CheckCircle2 size={16} />
+                {markSettled.isPending ? "Marking…" : "Mark as Settled"}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await recalculateMutation.mutateAsync(settlement._id);
+                    addMessage({ type: "success", text: "Settlement recalculated successfully!" });
+                  } catch {
+                    addMessage({ type: "error", text: "Failed to recalculate settlement." });
+                  }
+                }}
+                disabled={recalculateMutation.isPending}
+                className="flex items-center gap-2 px-5 py-3.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-60"
+              >
+                <RefreshCcw size={16} className={recalculateMutation.isPending ? "animate-spin" : ""} />
+                {recalculateMutation.isPending ? "Recalculating…" : "Recalculate Settlement"}
+              </button>
+            </div>
+          )}
           <button onClick={handlePrint} className="flex-1 md:flex-none px-6 py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
             <Printer size={16} /> Print
           </button>
@@ -96,13 +158,25 @@ const SettlementDetail = () => {
             </p>
           </div>
         </div>
-        <div className="card-premium p-6 flex items-center gap-4 bg-emerald-50/50 border-emerald-100">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+        <div className={`card-premium p-6 flex items-center gap-4 border ${settlement.payment_status === "Balanced" ? "bg-emerald-50/50 border-emerald-100" :
+          settlement.payment_status === "Driver needs to pay" ? "bg-amber-50/50 border-amber-100" :
+            "bg-blue-50/50 border-blue-100"
+          }`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${settlement.payment_status === "Balanced" ? "bg-emerald-500 shadow-emerald-100" :
+            settlement.payment_status === "Driver needs to pay" ? "bg-amber-500 shadow-amber-100" :
+              "bg-blue-500 shadow-blue-100"
+            }`}>
             <TrendingUp size={20} />
           </div>
           <div>
-            <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Status</span>
-            <p className="text-lg font-black text-emerald-600 uppercase mt-1 italic tracking-widest">{settlement.status}</p>
+            <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${settlement.payment_status === "Balanced" ? "text-emerald-600/60" :
+              settlement.payment_status === "Driver needs to pay" ? "text-amber-600/60" :
+                "text-blue-600/60"
+              }`}>Reconciliation</span>
+            <p className={`text-lg font-black uppercase mt-1 italic tracking-tight ${settlement.payment_status === "Balanced" ? "text-emerald-600" :
+              settlement.payment_status === "Driver needs to pay" ? "text-amber-600" :
+                "text-blue-600"
+              }`}>{settlement.payment_status}</p>
           </div>
         </div>
       </div>

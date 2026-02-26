@@ -32,13 +32,16 @@ export interface SettlementType {
     owner_total: string;
     overall_total: string;
 
-    status: "Pending" | "Paid to Driver" | "Received from Driver";
+    payment_status: "Balanced" | "Driver needs to pay" | "DRL needs to pay";
 
     payment_meta: {
         mode: string,
         date: string,
         remarks: string
     }
+
+    is_settled: boolean;
+    settled_at: string | null;
 
     createdAt: string;
     updatedAt: string;
@@ -75,13 +78,16 @@ export const EmptySettlementType: SettlementType = {
     diesel_rate: "",
     extra_expense: "",
 
-    status: "Pending",
+    payment_status: "Balanced",
 
     payment_meta: {
         mode: "",
         date: "",
         remarks: ""
     },
+
+    is_settled: false,
+    settled_at: null,
 
     createdAt: "",
     updatedAt: ""

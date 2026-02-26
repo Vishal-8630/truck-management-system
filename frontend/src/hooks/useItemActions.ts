@@ -42,6 +42,7 @@ export const useItemActions = <T extends { _id: string }>(
           ...itemState.localItem,
           [key]: updatedValue,
         },
+        hasInteracted: true,
       });
       toggleEditing(itemId, key);
       updateItem(itemId, {
@@ -56,8 +57,9 @@ export const useItemActions = <T extends { _id: string }>(
       localItem: { ...item },
       drafts: {},
       editing: new Set(),
+      hasInteracted: false,
     });
-  }, [itemId, itemState.localItem, updateItem]);
+  }, [itemId, item, updateItem]);
 
   return { handleEdit, handleCancel, handleSave, handleAbortChanges };
 };

@@ -34,6 +34,7 @@ interface FormInputProps {
   className?: string;
   readOnly?: boolean;
   noResultsMessage?: string;
+  helpText?: string;
 }
 
 const FormInput: React.FC<FormInputProps> = ({
@@ -55,6 +56,7 @@ const FormInput: React.FC<FormInputProps> = ({
   className,
   readOnly,
   noResultsMessage,
+  helpText,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -95,8 +97,8 @@ const FormInput: React.FC<FormInputProps> = ({
         className={`form-group-label transition-all duration-300 ${error
           ? "text-rose-500"
           : isFocused
-            ? "text-blue-600"
-            : "text-slate-600"
+            ? "text-blue-600 dark:text-blue-400"
+            : "text-slate-600 dark:text-slate-400"
           }`}
       >
         {label}
@@ -126,7 +128,7 @@ const FormInput: React.FC<FormInputProps> = ({
         <div className="relative group/field">
           {icon && (
             <span
-              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-300 ${isFocused ? "text-blue-600 scale-110" : "text-slate-400 group-hover/field:text-slate-500"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all duration-300 ${isFocused ? "text-blue-600 dark:text-blue-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover/field:text-slate-500 dark:group-hover/field:text-slate-400"
                 }`}
             >
               {icon}
@@ -143,8 +145,9 @@ const FormInput: React.FC<FormInputProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               readOnly={readOnly}
+              ref={inputRef as any}
               className={`input-field min-h-[120px] resize-none ${hasIcon ? "pl-12" : ""
-                } ${error ? "border-rose-200 focus:border-rose-50" : ""} ${readOnly ? "bg-slate-100 cursor-not-allowed opacity-70" : ""}`}
+                } ${error ? "border-rose-200 dark:border-rose-900 focus:border-rose-50 dark:focus:border-rose-900" : ""} ${readOnly ? "bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-70" : ""}`}
             />
           ) : (
             <input
@@ -157,8 +160,9 @@ const FormInput: React.FC<FormInputProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               readOnly={readOnly}
+              ref={inputRef as any}
               className={`input-field ${hasIcon ? "pl-12" : ""} ${isPassword ? "pr-12" : ""
-                } ${error ? "border-rose-200 focus:border-rose-500" : ""} ${readOnly ? "bg-slate-100 cursor-not-allowed opacity-70" : ""}`}
+                } ${error ? "border-rose-200 dark:border-rose-900 focus:border-rose-500 dark:focus:border-rose-900" : ""} ${readOnly ? "bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-70" : ""}`}
               onWheel={(e) => (e.target as HTMLInputElement).blur()}
             />
           )}
@@ -179,6 +183,13 @@ const FormInput: React.FC<FormInputProps> = ({
         <p className="text-[11px] font-bold text-rose-500 mt-2 px-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
           <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0" />
           {error}
+        </p>
+      )}
+
+      {!error && helpText && (
+        <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mt-2 px-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 italic opacity-80">
+          <span className="w-1 h-1 rounded-full bg-indigo-400 shrink-0" />
+          {helpText}
         </p>
       )}
     </div>

@@ -31,7 +31,9 @@ const userSchema = mongoose.Schema({
     isVerified: {
         type: Boolean,
         default: false
-    }
+    },
+    passwordResetToken: String,
+    passwordResetExpires: Date
 }, { timestamps: true });
 
 // Encrypt password before saving

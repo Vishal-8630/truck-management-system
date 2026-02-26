@@ -4,7 +4,7 @@ import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useParties } from "@/hooks/useParties";
 import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2 } from "lucide-react";
-import ConfirmModal from "@/components/ui/ConfirmModal";
+import DeleteConfirm from "@/components/DeleteConfirm";
 import { useItemActions } from "@/hooks/useItemActions";
 import { BALANCE_PARTY_LABELS } from "@/types/balanceParty";
 
@@ -15,6 +15,7 @@ interface BalancePartyDropDownProps {
     drafts: Partial<BalancePartyType>;
     editing: Set<keyof BalancePartyType>;
     isOpen: boolean;
+    hasInteracted: boolean;
   };
   updateItem: (id: string, newState: Partial<any>) => void;
   updateDraft: (id: string, key: keyof BalancePartyType, value: string) => void;
@@ -49,6 +50,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
   const deleteBalancePartyMutation = useDeleteBalancePartyMutation();
   const { addMessage } = useMessageStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [valErrors, setValErrors] = useState<Record<string, string>>({});
 
   const confirmDelete = async () => {
     try {
@@ -62,8 +64,8 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
 
   const loading = updateBalancePartyMutation.isPending;
 
-  // Use the generic hook for all editing actions
-  const { handleEdit, handleCancel, handleSave, handleAbortChanges } =
+  // Use the generic hook for editing actions
+  const { handleEdit, handleCancel, handleSave: originalHandleSave, handleAbortChanges: originalHandleAbortChanges } =
     useItemActions<BalancePartyType>(
       balanceParty,
       balanceParty._id,
@@ -73,17 +75,44 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
       toggleEditing
     );
 
+  const handleSave = (key: keyof BalancePartyType) => {
+    originalHandleSave(key);
+    // Clear error for this field
+    setValErrors(prev => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
+    });
+  }
+
+  const handleAbortChanges = () => {
+    originalHandleAbortChanges();
+    setValErrors({});
+  }
+
   const handleSaveChanges = async () => {
     try {
+      setValErrors({});
       await updateBalancePartyMutation.mutateAsync({
         id: balanceParty._id,
         updatedParty: itemState.localItem,
       });
       addMessage({ type: "success", text: "Balance Party updated successfully" });
+      updateItem(balanceParty._id, { hasInteracted: false });
     } catch (err: any) {
       const errors = err.response?.data?.errors;
       if (errors && Object.keys(errors as object).length > 0) {
-        addMessage({ type: "error", text: Object.entries(errors as object)[0][1] as string });
+        setValErrors(errors);
+
+        // Scroll to the first error
+        const firstErrorKey = Object.keys(errors)[0];
+        const elementId = `bp-field-${balanceParty._id}-${firstErrorKey}`;
+        setTimeout(() => {
+          document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
+        Object.keys(errors).forEach((key) => {
+          addMessage({ type: "error", text: errors[key] || "Failed to update entry" });
+        });
       } else {
         addMessage({ type: "error", text: "Failed to update balance party" });
       }
@@ -94,7 +123,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
     setShowDeleteModal(true);
   };
 
-  const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(balanceParty);
+  const hasChanges = itemState.hasInteracted && JSON.stringify(itemState.localItem) !== JSON.stringify(balanceParty);
 
   return (
     <div className={`
@@ -184,20 +213,25 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-6">
                 {(Object.entries(BALANCE_PARTY_LABELS) as [keyof BalancePartyType, string][]).map(([key, label]) => {
                   const isEditing = itemState.editing.has(key);
+                  const error = valErrors[key];
                   const value = isEditing
                     ? itemState.drafts[key] ?? ""
                     : itemState.localItem[key];
 
                   return (
-                    <div key={key} className="flex flex-col gap-2 py-4 border-b border-slate-50 group">
+                    <div
+                      key={key}
+                      id={`bp-field-${balanceParty._id}-${key}`}
+                      className={`flex flex-col gap-2 py-4 border-b border-slate-50 group transition-all duration-300 ${error ? 'bg-red-50/50 -mx-4 px-4 rounded-xl border-red-100' : ''}`}
+                    >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest leading-none transition-colors ${error ? 'text-red-500' : 'text-slate-400'}`}>
                           {label}
                         </span>
                         {!isEditing && (
                           <button
                             onClick={() => handleEdit(key)}
-                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            className={`p-1.5 rounded-lg transition-all ${error ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'}`}
                           >
                             <Edit3 size={12} />
                           </button>
@@ -207,7 +241,7 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                       {isEditing ? (
                         <div className="flex items-center gap-2 mt-1">
                           <input
-                            className="flex-1 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-blue-50"
+                            className={`flex-1 px-3 py-1.5 bg-white border rounded-lg text-sm font-bold focus:outline-none focus:ring-4 transition-all ${error ? 'border-red-300 focus:ring-red-50' : 'border-blue-200 focus:ring-blue-50'}`}
                             value={value as string}
                             onChange={(e) => updateDraft(balanceParty._id, key, e.target.value)}
                             autoFocus
@@ -218,9 +252,15 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm font-bold text-slate-700 mt-1 min-h-[20px]">
+                        <span className={`text-sm font-bold mt-1 min-h-[20px] transition-colors ${error ? 'text-red-700' : 'text-slate-700'}`}>
                           {value as string || "—"}
                         </span>
+                      )}
+
+                      {error && (
+                        <p className="text-[10px] font-bold text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+                          {error}
+                        </p>
                       )}
                     </div>
                   );
@@ -243,14 +283,12 @@ const BalancePartyDropDown: React.FC<BalancePartyDropDownProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-      <ConfirmModal
+      <DeleteConfirm
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Delete Balance Party?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
-        confirmText="Confirm Delete"
-        isLoading={deleteBalancePartyMutation.isPending}
       />
     </div>
   );

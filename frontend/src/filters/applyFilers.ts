@@ -91,6 +91,13 @@ export function applyFilters<T>(data: T[], filters: FilterWithValue<T>[]): T[] {
           return ts >= minTs && ts <= maxTs;
         }
 
+        case "select": {
+          return (
+            fieldValue.toString().toLowerCase() ===
+            value.toString().toLowerCase()
+          );
+        }
+
         default:
           return true;
       }

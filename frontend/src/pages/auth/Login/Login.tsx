@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate, useNavigate, Link } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { User, Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -31,6 +31,7 @@ const Login: React.FC = () => {
     password: "",
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { authStart, authSuccess, authEnd, user, loading } = useAuthStore();
   const { addMessage } = useMessageStore();
@@ -55,7 +56,7 @@ const Login: React.FC = () => {
     authStart();
 
     try {
-      const { data } = await api.post("/auth/login", formData);
+      const { data } = await api.post("/auth/login", { ...formData, rememberMe });
       authSuccess(data.data.user);
       addMessage({
         type: "success",
@@ -123,11 +124,19 @@ const Login: React.FC = () => {
             <label className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
               />
               <span className="text-xs text-slate-500 font-bold group-hover:text-blue-600 transition-colors uppercase tracking-widest">Remember me</span>
             </label>
-            <a href="#" className="text-xs text-blue-600 font-black hover:underline underline-offset-4 uppercase tracking-widest">Forgot?</a>
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-xs text-blue-600 font-black hover:underline underline-offset-4 uppercase tracking-widest"
+            >
+              Forgot?
+            </button>
           </div>
 
           <Button
@@ -139,14 +148,6 @@ const Login: React.FC = () => {
             Sign In
           </Button>
 
-          <div className="mt-8 text-center bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100">
-            <p className="text-sm text-slate-500 font-medium">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-blue-600 font-bold hover:underline underline-offset-4 transition-all">
-                Sign Up
-              </Link>
-            </p>
-          </div>
         </form>
       </motion.div>
     </div>

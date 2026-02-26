@@ -38,7 +38,10 @@ const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled || isCurrentlyLoading}
       className={`${baseClasses} ${variantClasses} ${className} w-full`}
-      whileHover={!disabled && !isCurrentlyLoading ? { y: -4, boxShadow: "0 20px 25px -5px rgba(37, 99, 235, 0.2)" } : {}}
+      whileHover={!disabled && !isCurrentlyLoading ? {
+        y: -4,
+        boxShadow: "0 20px 25px -5px rgba(37, 99, 235, 0.4)"
+      } : {}}
       whileTap={!disabled && !isCurrentlyLoading ? { scale: 0.98, y: 0 } : {}}
     >
       {isCurrentlyLoading ? (

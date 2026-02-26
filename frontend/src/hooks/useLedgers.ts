@@ -25,6 +25,7 @@ export const useLedgers = () => {
         useMutation({
             mutationFn: async (newLedger: any) => {
                 const response = await api.post("/ledger/new", newLedger);
+                console.log("Response: ", response.data);
                 return response.data.data;
             },
             onSuccess: () => {

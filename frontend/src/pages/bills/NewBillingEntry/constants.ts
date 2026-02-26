@@ -86,14 +86,14 @@ export const BILLING_HIRE_INPUTS: InputType[] = [
     name: "address_of_billing_office",
   },
   { type: "number", label: "Rate", name: "rate", inputType: "number" },
-  { type: "number", label: "Advance", name: "advance", inputType: "number" },
 ];
 
 export const TAX_TOTAL_INPUTS: InputType[] = [
   { type: "select", label: "State", name: "state" },
   { type: "number", label: "Sub Total", name: "sub_total", inputType: "number" },
+  { type: "number", label: "Advance", name: "advance", inputType: "number" },
   { type: "number", label: "CGST", name: "cgst", inputType: "number" },
-  { type: "number", label: "SGST", name: "sgst", inputType: "number" },
   { type: "number", label: "IGST", name: "igst", inputType: "number" },
+  { type: "number", label: "SGST", name: "sgst", inputType: "number" },
   { type: "number", label: "Grand Total", name: "grand_total", inputType: "number" },
 ];

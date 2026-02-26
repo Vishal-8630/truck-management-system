@@ -43,9 +43,45 @@ export const useSettlements = () => {
             },
         });
 
+    const useMarkSettledMutation = () =>
+        useMutation({
+            mutationFn: async (id: string) => {
+                const res = await api.patch(`/settlements/${id}/mark-settled`);
+                return res.data;
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: SETTLEMENT_KEYS.all });
+            },
+        });
+
+    const useUnmarkSettledMutation = () =>
+        useMutation({
+            mutationFn: async (id: string) => {
+                const res = await api.patch(`/settlements/${id}/unmark-settled`);
+                return res.data;
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: SETTLEMENT_KEYS.all });
+            },
+        });
+
+    const useRecalculateSettlementMutation = () =>
+        useMutation({
+            mutationFn: async (id: string) => {
+                const res = await api.post(`/settlements/${id}/recalculate`);
+                return res.data;
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: SETTLEMENT_KEYS.all });
+            },
+        });
+
     return {
         useSettlementsQuery,
         useSettlementPreviewMutation,
         useConfirmSettlementMutation,
+        useMarkSettledMutation,
+        useUnmarkSettledMutation,
+        useRecalculateSettlementMutation,
     };
 };

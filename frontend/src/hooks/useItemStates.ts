@@ -5,6 +5,7 @@ export type ItemState<T> = {
   drafts: Partial<T>;
   editing: Set<keyof T>;
   isOpen: boolean;
+  hasInteracted: boolean;
 };
 
 export const useItemStates = <T extends { _id: string }>(items: T[]) => {
@@ -28,6 +29,7 @@ export const useItemStates = <T extends { _id: string }>(items: T[]) => {
           drafts: {},
           editing: new Set(),
           isOpen: false,
+          hasInteracted: false,
         };
       });
 

@@ -1,21 +1,8 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
-import Loading from "@/components/Loading";
 import { motion } from "framer-motion";
 import { CheckCircle2, Target, Eye, Truck, BarChart3, Clock, ShieldCheck, Fuel } from "lucide-react";
 
 const About = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <Loading />
-  }
-
   const features = [
     { title: "Real-Time Tracking", desc: "Monitor every vehicle’s live location and status with precision.", icon: <Eye className="w-6 h-6" /> },
     { title: "Fleet Dashboard", desc: "Manage your entire fleet from one powerful, unified interface.", icon: <Truck className="w-6 h-6" /> },

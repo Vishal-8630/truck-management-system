@@ -20,6 +20,8 @@ import truckJourneyRoutes from './routes/truckJourneyRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
 import invoiceRoutes from './routes/invoiceRoute.js';
 import ledgerRoutes from './routes/ledgerRoute.js';
+import inquiryRoutes from './routes/inquiryRoute.js';
+import quoteRoutes from './routes/quoteRoute.js';
 
 dotenv.config();
 connectDB();
@@ -36,7 +38,7 @@ const corsOptions = {
     "https://divyanshiroadlines.com",
     "http://localhost:5173",
   ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
 
@@ -58,6 +60,8 @@ app.use("/api/journey", truckJourneyRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/ledger", ledgerRoutes);
+app.use("/api/inquiry", inquiryRoutes);
+app.use("/api/quote", quoteRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {

@@ -1,6 +1,8 @@
 import { formatDate } from "../../../../utils/formatDate";
 import { Plus, Trash2, Calendar, Receipt, AlertCircle, MapPin, MessageSquare, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface ExpenseSectionProps {
   title: string;
@@ -21,11 +23,20 @@ const ExpenseSection = ({
   isEditMode = false,
   emptyValue = "----------",
 }: ExpenseSectionProps) => {
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
+
   const handleFieldChange = (index: number, key: string, value: string) => {
     const updated = data.map((item, i) =>
       i === index ? { ...item, [key]: value } : item
     );
     onChange(updated);
+  };
+
+  const confirmDelete = () => {
+    if (deleteIdx !== null) {
+      onChange(data.filter((_, i) => i !== deleteIdx));
+      setDeleteIdx(null);
+    }
   };
 
   const isDateField = (key: string) => key.toLowerCase().includes("date");
@@ -84,7 +95,7 @@ const ExpenseSection = ({
                   <button
                     type="button"
                     className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    onClick={() => onChange(data.filter((_, i) => i !== index))}
+                    onClick={() => setDeleteIdx(index)}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -121,6 +132,14 @@ const ExpenseSection = ({
           )}
         </AnimatePresence>
       </div>
+
+      <DeleteConfirm
+        isOpen={deleteIdx !== null}
+        onClose={() => setDeleteIdx(null)}
+        onConfirm={confirmDelete}
+        title={`Remove ${title}?`}
+        message={`Are you sure you want to remove this ${title.toLowerCase()} entry? This cannot be undone.`}
+      />
     </div>
   );
 };

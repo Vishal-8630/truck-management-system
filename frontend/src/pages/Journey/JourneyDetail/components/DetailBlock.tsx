@@ -8,13 +8,15 @@ interface DetailField {
   key?: string;
   isEditable?: boolean;
   options?: Option[];
+  mode?: "select" | "search";
+  fetchOptions?: (query: string, field: string) => Option[];
 }
 
 interface DetailBlockProps {
   title: string;
   icon?: React.ReactNode;
   fields: DetailField[];
-  onChange?: (key: string, value: string) => void;
+  onChange?: (key: string, value: string, name?: string, mode?: "select" | "search") => void;
   isEditMode?: boolean;
   emptyValue?: string;
   childs?: React.ReactNode;
@@ -31,14 +33,14 @@ const DetailBlock = ({
   childs,
   errors = {},
 }: DetailBlockProps) => {
-  const handleChange = (key: string | undefined, value: string) => {
-    if (key && onChange) onChange(key, value);
+  const handleChange = (key: string | undefined, value: string, name?: string, mode?: "select" | "search") => {
+    if (key && onChange) onChange(key, value, name, mode);
   };
 
   const isDateField = (label: string) => label.toLowerCase().includes("date");
 
   return (
-    <div className="card-premium h-full flex flex-col gap-6 overflow-hidden">
+    <div className="card-premium h-full flex flex-col gap-6">
       <div className="flex items-center justify-between border-b border-slate-50 pb-4 mb-2">
         <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest italic flex items-center gap-2">
           {icon && <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">{icon}</span>}
@@ -60,10 +62,15 @@ const DetailBlock = ({
                   <div className="mt-1">
                     <SmartDropdown
                       options={f.options}
-                      mode="select"
+                      mode={f.mode || "select"}
                       name={f.key || ""}
                       value={String(f.value) || ""}
-                      onChange={(val: string) => handleChange(f.key, val)}
+                      fetchOptions={f.fetchOptions || ((query: string) => {
+                        return (f.options || []).filter(o => o.label.toLowerCase().includes(query.toLowerCase()));
+                      })}
+                      onChange={(val: string, name: string, mode: "select" | "search") => {
+                        if (f.key && onChange) onChange(f.key, val, name, mode);
+                      }}
                     />
                   </div>
                 ) : (

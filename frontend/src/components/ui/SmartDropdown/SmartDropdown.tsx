@@ -42,9 +42,8 @@ const SmartDropdown = ({
 
   // Sync current selection with prop value
   useEffect(() => {
-    // We only sync if value actually changes relative to our selected state
     if (value !== (selected?.value ?? "")) {
-      const list = mode === "select" ? options : data;
+      const list = [...data, ...options];
       const match = list.find((opt) => opt.value === value);
 
       if (match) {
@@ -58,19 +57,19 @@ const SmartDropdown = ({
         setSearch("");
       }
     }
-  }, [value, mode, options, data, selected?.value]); // only depend on selected.value
+  }, [value, options, data, selected?.value]);
 
   useEffect(() => {
-    const handlePointer = (e: Event) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener("pointerdown", handlePointer, true);
-    document.addEventListener("touchstart", handlePointer, true);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
-      document.removeEventListener("pointerdown", handlePointer, true);
-      document.removeEventListener("touchstart", handlePointer, true);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
 
@@ -113,13 +112,14 @@ const SmartDropdown = ({
 
       {mode === "select" ? (
         <div
-          className={`input-field cursor-pointer flex items-center justify-between gap-2 ${error ? "border-red-500 bg-red-50/10" : open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
+          className={`input-field cursor-pointer flex items-center justify-between gap-2 ${error ? "border-red-500 bg-red-50/10 dark:bg-red-900/10" : open ? "border-blue-500 ring-4 ring-blue-100/50 dark:ring-blue-900/20" : ""}`}
           onClick={(e) => {
             e.stopPropagation();
             setOpen((prev) => !prev);
           }}
           role="button"
           tabIndex={0}
+          ref={inputRef as any}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") setOpen((p) => !p);
           }}
@@ -135,7 +135,7 @@ const SmartDropdown = ({
             id={id}
             name={name}
             type="text"
-            className={`input-field pr-10 ${error ? "border-red-500 bg-red-50/10" : open ? "border-blue-500 ring-4 ring-blue-100/50" : ""}`}
+            className={`input-field pr-10 ${error ? "border-red-500 bg-red-50/10 dark:bg-red-900/10" : open ? "border-blue-500 ring-4 ring-blue-100/50 dark:ring-blue-900/20" : ""}`}
             value={search}
             onChange={(e) => {
               const val = e.target.value;
@@ -160,10 +160,15 @@ const SmartDropdown = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[9999] w-full mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl max-h-[320px] overflow-y-auto p-2"
+            className="absolute z-[9999] w-full mt-2 rounded-2xl max-h-[320px] overflow-y-auto p-2"
+            style={{
+              backgroundColor: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border-default)',
+              boxShadow: 'var(--shadow-card)',
+            }}
           >
             {displayData.length === 0 ? (
-              <li className="p-4 text-center text-slate-400 text-sm font-medium">{noResultsMessage}</li>
+              <li className="p-4 text-center text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>{noResultsMessage}</li>
             ) : (
               displayData.map((opt) => (
                 <li
@@ -171,15 +176,14 @@ const SmartDropdown = ({
                   onClick={() => handleSelect(opt, mode)}
                   role="option"
                   tabIndex={0}
-                  className={`
-                    px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
-                    ${selected?.value === opt.value
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-blue-600"}
-                  `}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleSelect(opt, mode)
-                  }
+                  className="px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
+                  style={{
+                    backgroundColor: selected?.value === opt.value ? 'var(--color-accent-soft)' : undefined,
+                    color: selected?.value === opt.value ? 'var(--color-accent-text)' : 'var(--color-text-secondary)',
+                  }}
+                  onMouseEnter={e => { if (selected?.value !== opt.value) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-bg-raised)'; }}
+                  onMouseLeave={e => { if (selected?.value !== opt.value) (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSelect(opt, mode)}
                 >
                   {opt.label}
                 </li>
@@ -188,6 +192,7 @@ const SmartDropdown = ({
           </motion.ul>
         )}
       </AnimatePresence>
+
       {/* Error message removed since FormInput handles it */}
     </div>
   );

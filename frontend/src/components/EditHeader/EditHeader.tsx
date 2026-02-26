@@ -2,9 +2,11 @@ import type React from "react";
 import { useState } from "react";
 import Overlay from "@/components/Overlay";
 import { Edit3, Save, X, Trash2, AlertCircle } from "lucide-react";
+import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface EditHeaderProps {
   heading: string;
+  description?: string;
   isDirty: boolean;
   onEditClick: () => void;
   onCancelClick: () => void;
@@ -15,6 +17,7 @@ interface EditHeaderProps {
 
 const EditHeader: React.FC<EditHeaderProps> = ({
   heading,
+  description,
   isDirty,
   onEditClick,
   onCancelClick,
@@ -27,16 +30,21 @@ const EditHeader: React.FC<EditHeaderProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-slate-100">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight italic">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-slate-100">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none">
           {heading}
         </h1>
+        {description && (
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1 italic">
+            {description}
+          </p>
+        )}
         {isEditMode && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2">
             <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-400 animate-pulse' : 'bg-slate-300'}`}></span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-              {isDirty ? 'Unsaved Changes' : 'Editing Mode'}
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+              {isDirty ? 'Unsaved Changes' : 'Editing Mode Enabled'}
             </span>
           </div>
         )}
@@ -131,36 +139,11 @@ const EditHeader: React.FC<EditHeaderProps> = ({
         </Overlay>
       )}
 
-      {showDeleteConfirm && (
-        <Overlay onCancel={() => setShowDeleteConfirm(false)}>
-          <div className="p-8 max-w-sm w-full bg-white rounded-[2rem] shadow-2xl flex flex-col items-center text-center gap-6">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
-              <Trash2 size={32} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Remove Record?</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">This action is permanent and cannot be undone. All associated data will be removed.</p>
-            </div>
-            <div className="flex flex-col w-full gap-2">
-              <button
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  onDeleteClick();
-                }}
-                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg"
-              >
-                Confirm Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="w-full py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Overlay>
-      )}
+      <DeleteConfirm
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={onDeleteClick}
+      />
     </div>
   );
 };

@@ -134,6 +134,22 @@ const GenericFilter = <T,>({ filters, onApply, onCancel }: Props<T>) => {
             );
           }
 
+          if (f.type === "select") {
+            return (
+              <div key={idx}>
+                <SmartDropdown
+                  label={f.label}
+                  name={f.field.toString()}
+                  mode="select"
+                  value={filterValues[`${f.field as string}$select`] || ""}
+                  options={f.options || []}
+                  placeholder={`Select ${f.label}`}
+                  onChange={(val) => handleChange(f.field.toString(), val, "select")}
+                />
+              </div>
+            );
+          }
+
           return null;
         })}
       </div>

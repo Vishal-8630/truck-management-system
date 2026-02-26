@@ -6,9 +6,9 @@ import {
 import { useMessageStore } from "@/store/useMessageStore";
 import { useVehicleEntries } from "@/hooks/useLedgers";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2 } from "lucide-react";
+import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2, Calculator } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
-import ConfirmModal from "@/components/ui/ConfirmModal";
+import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface VehicleEntryDropdownProps {
   vehicleEntry: VehicleEntryType;
@@ -17,6 +17,7 @@ interface VehicleEntryDropdownProps {
     drafts: Partial<VehicleEntryType>;
     editing: Set<keyof VehicleEntryType>;
     isOpen: boolean;
+    hasInteracted: boolean;
   };
   updateItem: (id: string, newState: Partial<any>) => void;
   updateDraft: (id: string, key: keyof VehicleEntryType, value: string) => void;
@@ -53,6 +54,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   const deleteVehicleEntryMutation = useDeleteVehicleEntryMutation();
   const { addMessage } = useMessageStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [valErrors, setValErrors] = useState<Record<string, string>>({});
 
   const confirmDelete = async () => {
     try {
@@ -90,10 +92,16 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
         ...itemState.localItem,
         [key]: updatedValue,
       },
+      hasInteracted: true,
     });
     toggleEditing(vehicleEntry._id, key);
     updateItem(vehicleEntry._id, {
       drafts: { ...itemState.drafts, [key]: undefined },
+    });
+    // Clear error when field is saved
+    setValErrors((prev) => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
     });
   };
 
@@ -102,16 +110,36 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
       localItem: { ...vehicleEntry },
       drafts: {},
       editing: new Set(),
+      hasInteracted: false,
     });
+    setValErrors({});
   };
 
   const handleSaveChanges = async () => {
     try {
+      setValErrors({});
       await updateVehicleEntryMutation.mutateAsync(itemState.localItem);
       addMessage({ type: "success", text: "Vehicle entry updated successfully" });
       onVehicleEntryUpdate(itemState.localItem);
-    } catch {
-      addMessage({ type: "error", text: "Something went wrong" });
+      updateItem(vehicleEntry._id, { hasInteracted: false });
+    } catch (err: any) {
+      const errors = err.response?.data?.errors;
+      if (errors && Object.keys(errors).length > 0) {
+        setValErrors(errors);
+
+        // Scroll to the first error
+        const firstErrorKey = Object.keys(errors)[0];
+        const elementId = `v-field-${vehicleEntry._id}-${firstErrorKey}`;
+        setTimeout(() => {
+          document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
+        Object.keys(errors).forEach((key) => {
+          addMessage({ type: "error", text: errors[key] || "Failed to update entry" });
+        });
+      } else {
+        addMessage({ type: "error", text: "Something went wrong" });
+      }
     }
   };
 
@@ -146,8 +174,97 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
     setShowDeleteModal(true);
   };
 
-  const hasChanges = JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
+  const hasChanges = itemState.hasInteracted && JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
   const loading = updateVehicleEntryMutation.isPending;
+
+  const tripInfoKeys: (keyof VehicleEntryType)[] = ["date", "vehicle_no", "from", "to", "movementType"];
+  const financialKeys: (keyof VehicleEntryType)[] = ["freight", "driver_cash", "dala", "kamisan", "in_ac", "halting", "balance"];
+  const otherKeys: (keyof VehicleEntryType)[] = ["balance_party", "owner", "status", "halting_in_date", "halting_out_date", "pod_stock"];
+
+  const renderField = (key: keyof VehicleEntryType) => {
+    const label = VEHICLE_ENTRY_LABELS[key];
+    const isEditing = itemState.editing.has(key);
+    const isBalanceParty = (key as string) === "balance_party";
+    const error = valErrors[key];
+    const isCalculated = key === "balance";
+
+    const value = isEditing
+      ? itemState.drafts[key] ?? ""
+      : isBalanceParty
+        ? itemState.localItem["balance_party"]?.party_name ?? "-"
+        : isKeyDate(key)
+          ? formatDate(new Date(itemState.localItem[key] as string))
+          : itemState.localItem[key] ?? "—";
+
+    return (
+      <div
+        key={key}
+        id={`v-field-${vehicleEntry._id}-${key}`}
+        className={`flex flex-col gap-2 py-4 border-b border-slate-50 last:border-0 group transition-all duration-300 ${error ? 'bg-red-50/50 -mx-4 px-4 rounded-xl border-red-100' : ''}`}
+      >
+        <div className="flex items-center justify-between">
+          <span className={`text-[10px] font-bold uppercase tracking-widest leading-none transition-colors ${error ? 'text-red-500' : 'text-slate-400'}`}>
+            {label}
+            {isCalculated && <span className="ml-2 text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-full font-black uppercase tracking-tighter">Auto</span>}
+          </span>
+          {!isEditing && !isBalanceParty && !isCalculated && (
+            <button
+              onClick={() => handleEdit(key)}
+              className={`p-1.5 rounded-lg transition-all ${error ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'}`}
+            >
+              <Edit3 size={12} />
+            </button>
+          )}
+        </div>
+
+        {isEditing ? (
+          <div className="flex items-center gap-2 mt-1">
+            {key === "status" || key === "movementType" ? (
+              <select
+                className={`flex-1 px-3 py-1.5 bg-white border rounded-lg text-sm font-bold focus:outline-none focus:ring-4 transition-all ${error ? 'border-red-300 focus:ring-red-50' : 'border-indigo-200 focus:ring-indigo-50'}`}
+                value={value as string}
+                onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
+                autoFocus
+              >
+                {key === "status" ? (
+                  <>
+                    <option value="Pending">Pending</option>
+                    <option value="Received">Received</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="From DRL">From DRL</option>
+                    <option value="To DRL">To DRL</option>
+                  </>
+                )}
+              </select>
+            ) : (
+              <input
+                type={isKeyDate(key) ? "date" : "text"}
+                className={`flex-1 px-3 py-1.5 bg-white border rounded-lg text-sm font-bold focus:outline-none focus:ring-4 transition-all ${error ? 'border-red-300 focus:ring-red-50' : 'border-indigo-200 focus:ring-indigo-50'}`}
+                value={value as string}
+                onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
+                autoFocus
+              />
+            )}
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleSave(key)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={16} /></button>
+              <button onClick={() => handleCancel(key)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><X size={16} /></button>
+            </div>
+          </div>
+        ) : (
+          <span className={`text-sm font-bold mt-1 min-h-[20px] transition-colors ${error ? 'text-red-700' : 'text-slate-700'} ${isCalculated ? 'text-blue-600' : ''}`}>
+            {value as string}
+          </span>
+        )}
+        {error && (
+          <p className="text-[10px] font-bold text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={`
@@ -241,7 +358,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
-                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95"
+                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70"
                     >
                       {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
                       Update Records
@@ -250,56 +367,62 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
                 </div>
               )}
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-6">
-                {(Object.entries(VEHICLE_ENTRY_LABELS) as [keyof VehicleEntryType, string][]).map(([key, label]) => {
-                  const isEditing = itemState.editing.has(key);
-                  const isBalanceParty = (key as string) === "balance_party";
-                  const value = isEditing
-                    ? itemState.drafts[key] ?? ""
-                    : isBalanceParty
-                      ? itemState.localItem["balance_party"]?.party_name ?? "-"
-                      : isKeyDate(key)
-                        ? formatDate(new Date(itemState.localItem[key] as string))
-                        : itemState.localItem[key] ?? "—";
+              {/* Grouped Content */}
+              <div className="flex flex-col gap-12">
+                {/* Trip & Vehicle Section */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <MapPin size={18} className="text-blue-500" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Trip & Vehicle Information</h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12">
+                    {tripInfoKeys.map(renderField)}
+                  </div>
+                </div>
 
-                  return (
-                    <div key={key} className="flex flex-col gap-2 py-4 border-b border-slate-50 group">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                          {label}
-                        </span>
-                        {!isEditing && !isBalanceParty && (
-                          <button
-                            onClick={() => handleEdit(key)}
-                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          >
-                            <Edit3 size={12} />
-                          </button>
-                        )}
-                      </div>
+                {/* Financial Section */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <Calculator size={18} className="text-emerald-500" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Financial Calculation</h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12">
+                    {financialKeys.map(renderField)}
+                  </div>
 
-                      {isEditing ? (
-                        <div className="flex items-center gap-2 mt-1">
-                          <input
-                            type={isKeyDate(key) ? "date" : "text"}
-                            className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-50"
-                            value={value as string}
-                            onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
-                            autoFocus
-                          />
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleSave(key)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Check size={16} /></button>
-                            <button onClick={() => handleCancel(key)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><X size={16} /></button>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-bold text-slate-700 mt-1 min-h-[20px]">
-                          {value as string}
-                        </span>
-                      )}
+                  {/* Calculation Breakdown Note */}
+                  <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2rem] p-6 mt-2 flex flex-col gap-4">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                      <Calculator size={16} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Calculation Guide</span>
                     </div>
-                  );
-                })}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500 font-bold uppercase tracking-tighter">Gross Amount</span>
+                        <span className="text-slate-900 font-black">Freight + Halting</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500 font-bold uppercase tracking-tighter">Total Deductions</span>
+                        <span className="text-slate-900 font-black">Cash + Dala + Kamisan + A/C</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500 font-bold uppercase tracking-tighter">Net Balance</span>
+                        <span className="text-indigo-600 font-black">Gross - Deductions</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Other Details Section */}
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <Save size={18} className="text-slate-400" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Other Information</h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12">
+                    {otherKeys.map(renderField)}
+                  </div>
+                </div>
               </div>
 
               {!hasChanges && (
@@ -318,14 +441,12 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-      <ConfirmModal
+      <DeleteConfirm
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Delete Vehicle Entry?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
-        confirmText="Confirm Delete"
-        isLoading={deleteVehicleEntryMutation.isPending}
       />
     </div>
   );

@@ -10,7 +10,7 @@ import Button from "@/components/Button";
 import { useNavigate } from "react-router-dom";
 import { useVehicleEntries } from "@/hooks/useLedgers";
 import { useParties } from "@/hooks/useParties";
-import { Wallet, Clock, UserSquare, Plus, ArrowLeft, Milestone } from "lucide-react";
+import { Wallet, Clock, UserSquare, Plus, ArrowLeft, Milestone, Calculator } from "lucide-react";
 
 interface InputType {
   type: string;
@@ -71,6 +71,7 @@ const NewVehicleEntry = () => {
   const { addMessage } = useMessageStore();
 
   const errorsRef = useRef<Record<string, string>>({});
+  const partyRef = useRef<HTMLInputElement>(null!);
   const [, forceRender] = useState({});
 
   const navigate = useNavigate();
@@ -161,7 +162,11 @@ const NewVehicleEntry = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehicleEntry.balance_party?.party_name?.trim()) {
+      errorsRef.current["party_name"] = "Please select a party";
       addMessage({ type: "error", text: "Please select a party" });
+      forceRender({});
+      partyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      partyRef.current?.focus();
       return;
     }
     try {
@@ -233,6 +238,7 @@ const NewVehicleEntry = () => {
           onChange={handleChange}
           onSelectChange={handleSelectChange}
           fetchOptions={fetchOptions}
+          inputRef={input.name === "party_name" ? partyRef : undefined}
         />
       );
     });
@@ -285,6 +291,33 @@ const NewVehicleEntry = () => {
                 {renderInputs(PARTY_DETAIL)}
               </div>
             </FormSection>
+
+            {/* Calculation Breakdown Note */}
+            <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-[2rem] p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                <Calculator size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Calculation Guide</span>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Gross Amount</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-black">Freight + Halting</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Total Deductions</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-black">Cash + Dala + Kamisan + A/C</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold uppercase tracking-tighter">Net Balance</span>
+                  <span className="text-indigo-600 dark:text-indigo-400 font-black">Gross - Deductions</span>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-indigo-100 dark:border-indigo-900/30">
+                <p className="text-[10px] text-indigo-500/70 dark:text-indigo-400/60 font-medium italic leading-relaxed">
+                  * Net Balance is the final amount payable to the party after accounting for all expenses and haltings.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -298,8 +331,8 @@ const NewVehicleEntry = () => {
             Add Vehicle Entry
           </Button>
         </div>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 };
 

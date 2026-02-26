@@ -81,6 +81,7 @@ export const ledgerValidation = [
 
     const missing = {};
 
+    // 1. Check Category Specific Rules
     required.forEach((field) => {
       const val = req.body[field];
       const label = capitalize(field.replace(/_/g, " "));
@@ -93,6 +94,17 @@ export const ledgerValidation = [
         missing[field] = `${label} is required for ${category}`;
       }
     });
+
+    // 2. Ensure AT LEAST ONE LOOKUP IS PROVIDED (Overall check)
+    const lookupFields = ["journey", "truck", "driver", "party", "settlement", "vehicle_entry"];
+    const hasLookup = lookupFields.some(field => {
+      const val = req.body[field];
+      return val && (typeof val === "object" ? val._id : val !== "");
+    });
+
+    if (!hasLookup) {
+      missing.general = "At least one lookup (Party, Truck, Journey, etc.) must be selected";
+    }
 
     if (Object.keys(missing).length > 0) {
       return Promise.reject({ msg: "CATEGORY_FIELD_ERRORS", missing });

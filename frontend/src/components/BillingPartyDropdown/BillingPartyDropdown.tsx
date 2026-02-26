@@ -1,11 +1,10 @@
-import React, { useRef } from "react";
-import { UserSquare, ChevronDown, ChevronUp, Edit3, Check, X, RotateCcw, Save, Trash2 } from "lucide-react";
+import React, { useState } from "react";
 import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useParties } from "@/hooks/useParties";
-import { AnimatePresence, motion } from "framer-motion";
-import ConfirmModal from "@/components/ui/ConfirmModal";
-import { useState } from "react";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2, Building2 } from "lucide-react";
+import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface PartyProps {
   billingParty: BillingPartyType;
@@ -14,6 +13,7 @@ interface PartyProps {
     drafts: Partial<BillingPartyType>;
     editing: Set<keyof BillingPartyType>;
     isOpen: boolean;
+    hasInteracted: boolean;
   };
   updateItem: (partyId: string, newState: Partial<any>) => void;
   updateDraft: (
@@ -24,6 +24,20 @@ interface PartyProps {
   toggleEditing: (partyId: string, key: keyof BillingPartyType) => void;
   toggleOpen: (partyId: string) => void;
 }
+
+const dropDownVariants: Variants = {
+  hidden: { height: 0, opacity: 0 },
+  visible: {
+    height: "auto",
+    opacity: 1,
+    transition: { height: { duration: 0.4, ease: "easeOut" }, opacity: { duration: 0.3 } }
+  },
+  exit: {
+    height: 0,
+    opacity: 0,
+    transition: { height: { duration: 0.3, ease: "easeIn" }, opacity: { duration: 0.2 } }
+  },
+};
 
 const BillingPartyDropdown: React.FC<PartyProps> = ({
   billingParty,
@@ -38,6 +52,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   const deleteBillingPartyMutation = useDeleteBillingPartyMutation();
   const { addMessage } = useMessageStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [valErrors, setValErrors] = useState<Record<string, string>>({});
 
   const confirmDelete = async () => {
     try {
@@ -48,7 +63,6 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
       addMessage({ type: "error", text: "Failed to delete billing party" });
     }
   };
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const loading = updateBillingPartyMutation.isPending;
 
@@ -59,6 +73,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
 
   const handleCancel = (key: keyof BillingPartyType) => {
     toggleEditing(billingParty._id, key);
+    updateDraft(billingParty._id, key, billingParty[key] ?? ""); // Revert to original
     updateItem(billingParty._id, {
       drafts: { ...itemState.drafts, [key]: undefined },
     });
@@ -68,10 +83,15 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
     const updatedValue = itemState.drafts[key] ?? "";
     updateItem(billingParty._id, {
       localItem: { ...itemState.localItem, [key]: updatedValue },
+      hasInteracted: true,
     });
     toggleEditing(billingParty._id, key);
     updateItem(billingParty._id, {
       drafts: { ...itemState.drafts, [key]: undefined },
+    });
+    setValErrors((prev) => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
     });
   };
 
@@ -80,21 +100,38 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
       localItem: { ...billingParty },
       drafts: {},
       editing: new Set(),
+      hasInteracted: false,
     });
+    setValErrors({});
   };
 
   const handleSaveChanges = async () => {
     try {
+      setValErrors({});
       await updateBillingPartyMutation.mutateAsync({
         id: billingParty._id,
         updatedParty: itemState.localItem,
       });
-      addMessage({
-        type: "success",
-        text: "Billing party updated successfully",
-      });
-    } catch {
-      addMessage({ type: "error", text: "Something went wrong" });
+      addMessage({ type: "success", text: "Billing party updated successfully" });
+      updateItem(billingParty._id, { hasInteracted: false });
+    } catch (err: any) {
+      const errors = err.response?.data?.errors;
+      if (errors && Object.keys(errors as object).length > 0) {
+        setValErrors(errors);
+
+        // Scroll to the first error
+        const firstErrorKey = Object.keys(errors)[0];
+        const elementId = `bp-field-${billingParty._id}-${firstErrorKey}`;
+        setTimeout(() => {
+          document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
+        Object.keys(errors).forEach((key) => {
+          addMessage({ type: "error", text: errors[key] || "Failed to update" });
+        });
+      } else {
+        addMessage({ type: "error", text: "Something went wrong" });
+      }
     }
   };
 
@@ -102,143 +139,182 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
     setShowDeleteModal(true);
   };
 
-  const hasChanges =
-    JSON.stringify(itemState.localItem) !== JSON.stringify(billingParty);
+  const hasChanges = itemState.hasInteracted && JSON.stringify(itemState.localItem) !== JSON.stringify(billingParty);
+
+  const renderField = (key: keyof BillingPartyType) => {
+    const label = PARTY_LABELS[key];
+    if (!label) return null;
+
+    const isEditing = itemState.editing.has(key);
+    const value = isEditing
+      ? itemState.drafts[key] ?? ""
+      : itemState.localItem[key] || "—";
+    const error = valErrors[key];
+
+    return (
+      <div
+        key={key}
+        id={`bp-field-${billingParty._id}-${key}`}
+        className={`flex flex-col gap-2 py-4 border-b border-slate-50 last:border-0 group transition-all duration-300 ${error ? 'bg-red-50/50 -mx-4 px-4 rounded-xl border-red-100' : ''}`}
+      >
+        <div className="flex items-center justify-between">
+          <span className={`text-[10px] font-bold uppercase tracking-widest leading-none transition-colors ${error ? 'text-red-500' : 'text-slate-400'}`}>
+            {label}
+          </span>
+          {!isEditing && (
+            <button
+              onClick={() => handleEdit(key)}
+              className={`p-1.5 rounded-lg transition-all ${error ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'}`}
+            >
+              <Edit3 size={12} />
+            </button>
+          )}
+        </div>
+
+        {isEditing ? (
+          <div className="flex items-center gap-2 mt-1">
+            <input
+              autoFocus
+              className={`flex-1 px-3 py-1.5 bg-white border rounded-lg text-sm font-bold focus:outline-none focus:ring-4 transition-all ${error ? 'border-red-300 focus:ring-red-50' : 'border-blue-200 focus:ring-blue-50'}`}
+              value={value as string}
+              onChange={(e) => updateDraft(billingParty._id, key, e.target.value)}
+            />
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handleSave(key)}
+                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+              >
+                <Check size={16} />
+              </button>
+              <button
+                onClick={() => handleCancel(key)}
+                className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <span className={`text-sm font-bold mt-1 min-h-[20px] transition-colors ${error ? 'text-red-700' : 'text-slate-700'}`}>
+            {value as string}
+          </span>
+        )}
+
+        {error && (
+          <p className="text-[10px] font-bold text-red-500 mt-1 animate-in fade-in slide-in-from-top-1">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="group mb-4 transition-all duration-300">
-      <button
-        onClick={() => toggleOpen(billingParty._id)}
+    <div className={`
+      card-premium overflow-hidden transition-all duration-300 mb-4
+      ${itemState.isOpen ? 'ring-2 ring-blue-100 ring-offset-2' : ''}
+    `}>
+      <div
         className={`
-          w-full text-left bg-white border border-slate-100 rounded-3xl p-5 flex items-center justify-between
-          transition-all duration-300 hover:shadow-xl hover:shadow-blue-50/50 hover:border-blue-100
-          ${itemState.isOpen ? 'shadow-2xl shadow-blue-100/40 border-blue-200 ring-4 ring-blue-50' : 'shadow-lg shadow-slate-100/50'}
+          flex items-center justify-between p-6 cursor-pointer select-none
+          ${itemState.isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
+          transition-colors duration-200
         `}
+        onClick={() => toggleOpen(billingParty._id)}
       >
         <div className="flex items-center gap-6">
           <div className={`
-            w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300
-            ${itemState.isOpen ? 'bg-blue-600 text-white rotate-6' : 'bg-blue-50 text-blue-600'}
-          `}>
-            <UserSquare size={24} />
+              w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300
+              ${itemState.isOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
+           `}>
+            <Building2 size={22} />
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 group-hover:text-blue-400">Billing Party</span>
-            <span className="text-xl font-black text-slate-900 italic tracking-tight">{itemState.localItem.name || "Unnamed Party"}</span>
+
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+              Billing Party
+            </span>
+            <span className="text-lg font-bold text-slate-900 leading-tight italic uppercase tracking-tight">
+              {itemState.localItem.name || "—"}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           {hasChanges && (
-            <div className="px-4 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1.5 animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-              Unsaved Changes
+            <div className="hidden sm:flex items-center gap-2 mr-2">
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-blue-500 uppercase">Unsaved</span>
             </div>
           )}
-          <div className={`
-            w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-            ${itemState.isOpen ? 'bg-slate-100 text-slate-900' : 'bg-slate-50 text-slate-400'}
-           `}>
-            {itemState.isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </div>
+          <motion.div
+            animate={{ rotate: itemState.isOpen ? 180 : 0 }}
+            className={`
+              w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+              ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
+            `}
+          >
+            <ChevronDown size={20} />
+          </motion.div>
         </div>
-      </button>
+      </div>
 
       <AnimatePresence>
         {itemState.isOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: "auto", marginTop: 16 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            className="overflow-hidden bg-white/50 border border-slate-100 rounded-[2.5rem] backdrop-blur-xl"
+            variants={dropDownVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="border-t border-slate-100"
           >
-            <div ref={contentRef} className="p-8 flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {(Object.entries(PARTY_LABELS) as [keyof BillingPartyType, string][]).map(([key, label]) => {
-                  const isEditing = itemState.editing.has(key);
-                  const value = isEditing
-                    ? itemState.drafts[key] ?? ""
-                    : itemState.localItem[key] ?? "—";
-
-                  return (
-                    <div key={key} className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between group/row">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
-                        {!isEditing && (
-                          <button
-                            onClick={() => handleEdit(key)}
-                            className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-all"
-                          >
-                            <Edit3 size={14} />
-                          </button>
-                        )}
-                      </div>
-
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            autoFocus
-                            className="flex-1 bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all"
-                            value={value as string}
-                            onChange={(e) => updateDraft(billingParty._id, key, e.target.value)}
-                          />
-                          <button
-                            onClick={() => handleSave(key)}
-                            className="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-green-100 hover:bg-green-600 transition-colors"
-                          >
-                            <Check size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleCancel(key)}
-                            className="w-10 h-10 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all"
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="text-sm font-bold text-slate-700 bg-white/50 px-4 py-3 rounded-2xl border border-slate-50 group-hover:bg-white group-hover:border-blue-50 transition-colors">
-                          {value as string}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
+            <div className="p-6 lg:p-10 flex flex-col gap-10">
               {hasChanges && (
-                <div className="mt-4 pt-8 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Action Required</span>
-                    <span className="text-xs font-bold text-slate-400">Please save or discard review modifications</span>
+                <div className="flex items-center justify-between bg-blue-600 p-4 rounded-2xl shadow-blue-100 shadow-lg">
+                  <div className="flex items-center gap-3 text-white">
+                    <Save size={20} className="opacity-80" />
+                    <span className="text-sm font-bold tracking-tight">You have unsaved changes</span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={handleAbortChanges}
-                      className="px-6 py-3 bg-slate-50 text-slate-500 text-sm font-bold rounded-2xl hover:bg-red-50 hover:text-red-600 transition-all flex items-center gap-2"
+                      className="px-4 py-2 text-xs font-bold text-white/70 hover:text-white transition-colors"
                     >
-                      <RotateCcw size={16} />
                       Discard
                     </button>
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
-                      className="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-70"
+                      className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70"
                     >
-                      <Save size={16} />
-                      {loading ? "Saving..." : "Apply Changes"}
+                      {loading ? <RotateCcw size={14} className="animate-spin" /> : <Check size={14} />}
+                      Update Account
                     </button>
                   </div>
                 </div>
               )}
+
+              <div className="flex flex-col gap-12">
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <UserSquare size={18} className="text-blue-500" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Account Details</h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12">
+                    {Object.keys(PARTY_LABELS).map((key) => renderField(key as keyof BillingPartyType))}
+                  </div>
+                </div>
+              </div>
+
               {!hasChanges && (
-                <div className="flex items-center justify-end pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-end pt-4 border-t border-slate-50">
                   <button
                     onClick={handleDelete}
                     disabled={deleteBillingPartyMutation.isPending}
-                    className="flex items-center gap-2 px-6 py-3 text-red-500 hover:bg-red-50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                   >
-                    <Trash2 size={16} />
-                    Delete Registration
+                    <Trash2 size={14} />
+                    Delete Account
                   </button>
                 </div>
               )}
@@ -246,14 +322,12 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-      <ConfirmModal
+      <DeleteConfirm
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Delete Billing Party?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
-        confirmText="Confirm Delete"
-        isLoading={deleteBillingPartyMutation.isPending}
       />
     </div>
   );
