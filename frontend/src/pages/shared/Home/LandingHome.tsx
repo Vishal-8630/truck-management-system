@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import api from "@/api/axios";
 import { useMessageStore } from "@/store/useMessageStore";
 import QuoteModal from "@/components/QuoteModal/QuoteModal";
+import TrackingModal from "@/components/TrackingModal";
 
 const LandingHome = () => {
     const navigate = useNavigate();
@@ -22,6 +23,12 @@ const LandingHome = () => {
         message: ""
     });
     const [loading, setLoading] = useState(false);
+
+    // Tracking State
+    const [lrNumber, setLrNumber] = useState("");
+    const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+    const [trackingResult, setTrackingResult] = useState(null);
+    const [isTrackingLoading, setIsTrackingLoading] = useState(false);
 
     const cardDate = [
         {
@@ -132,6 +139,26 @@ const LandingHome = () => {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleTrackingSearch = async () => {
+        if (!lrNumber.trim()) {
+            return addMessage({ type: "error", text: "Please enter a valid LR Number" });
+        }
+
+        setIsTrackingOpen(true);
+        setIsTrackingLoading(true);
+        setTrackingResult(null);
+
+        try {
+            const { data } = await api.get(`/tracking/${lrNumber.trim()}`);
+            setTrackingResult(data);
+        } catch (err: any) {
+            console.error("Tracking error:", err);
+            // Result staying null will show the "Not Found" state in modal
+        } finally {
+            setIsTrackingLoading(false);
         }
     };
 
@@ -314,6 +341,9 @@ const LandingHome = () => {
                         <div className="relative flex-1">
                             <input
                                 type="text"
+                                value={lrNumber}
+                                onChange={(e) => setLrNumber(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleTrackingSearch()}
                                 placeholder="Enter LR Number (e.g. DRL-2024-001)"
                                 className="input-field pr-12"
                             />
@@ -321,7 +351,10 @@ const LandingHome = () => {
                                 <Truck className="w-5 h-5" />
                             </div>
                         </div>
-                        <button className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap min-w-[160px]">
+                        <button
+                            onClick={handleTrackingSearch}
+                            className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap min-w-[160px]"
+                        >
                             <Zap className="w-4 h-4 fill-white" />
                             Track Now
                         </button>
@@ -492,6 +525,13 @@ const LandingHome = () => {
             <QuoteModal
                 isOpen={isQuoteOpen}
                 onClose={() => setIsQuoteOpen(false)}
+            />
+
+            <TrackingModal
+                isOpen={isTrackingOpen}
+                onClose={() => setIsTrackingOpen(false)}
+                trackingData={trackingResult}
+                isLoading={isTrackingLoading}
             />
         </div>
     );

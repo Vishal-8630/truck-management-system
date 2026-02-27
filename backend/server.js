@@ -22,6 +22,7 @@ import invoiceRoutes from './routes/invoiceRoute.js';
 import ledgerRoutes from './routes/ledgerRoute.js';
 import inquiryRoutes from './routes/inquiryRoute.js';
 import quoteRoutes from './routes/quoteRoute.js';
+import trackingRoutes from './routes/trackingRoute.js';
 
 dotenv.config();
 connectDB();
@@ -62,6 +63,7 @@ app.use("/api/invoice", invoiceRoutes);
 app.use("/api/ledger", ledgerRoutes);
 app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/quote", quoteRoutes);
+app.use("/api/tracking", trackingRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {

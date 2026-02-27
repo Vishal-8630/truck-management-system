@@ -15,13 +15,14 @@ import {
     Clock,
     Scale,
     ArrowRight,
-    Wallet
+    Wallet,
+    Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTrucks } from "@/hooks/useTrucks";
 import { useJourneys } from "@/hooks/useJourneys";
-import { useBillEntries } from "@/hooks/useLedgers";
+import { useBillEntries, useLedgers } from "@/hooks/useLedgers";
 import { useSettlements } from "@/hooks/useSettlements";
 import { useEffect, useState, useMemo } from "react";
 import api from "@/api/axios";
@@ -36,11 +37,13 @@ const Dashboard = () => {
     const { useJourneysQuery } = useJourneys();
     const { useBillEntriesQuery } = useBillEntries();
     const { useSettlementsQuery } = useSettlements();
+    const { useLedgersQuery } = useLedgers();
 
     const { data: trucks = [] } = useTrucksQuery();
     const { data: journeys = [] } = useJourneysQuery();
     const { data: billEntries = [] } = useBillEntriesQuery();
     const { data: settlements = [] } = useSettlementsQuery();
+    const { data: ledgers = [] } = useLedgersQuery();
 
     const [inquiryCount, setInquiryCount] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
@@ -109,10 +112,72 @@ const Dashboard = () => {
         return alerts.sort((a, b) => a.daysLeft - b.daysLeft);
     }, [trucks]);
 
-    // Pending Settlements
+    // Pending Settlements (Driver)
+    const unsettledJourneys = useMemo(() => {
+        return journeys.filter(j =>
+            j.status === 'Completed' &&
+            (!j.journey_settlement_status || j.journey_settlement_status === 'Unsettled')
+        );
+    }, [journeys]);
+
+    // Active Settlement Records (In Progress)
     const pendingSettlements = useMemo(() => {
-        return settlements.filter((s: any) => !s.is_settled);
+        return settlements.filter(s => !s.is_settled);
     }, [settlements]);
+
+    // Party Payment Alerts
+    const pendingPartyPayments = useMemo(() => {
+        const today = new Date();
+        return journeys.filter(j => {
+            if (j.party_payment_status === 'Paid') return false;
+            if (!j.party_payment_due_date) return false;
+            const dueDate = new Date(j.party_payment_due_date);
+            const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return diffDays <= 7; // Show payments due within a week
+        });
+    }, [journeys]);
+
+    // Missing Progress Updates (Checkpoint Alerts)
+    const missedCheckpoints = useMemo(() => {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        return journeys.filter(j => {
+            if (j.status !== 'Active') return false;
+
+            // Check if any progress entry matches today's date
+            const todayProgress = j.daily_progress?.find((p: any) => {
+                if (!p.date) return false;
+                try {
+                    return new Date(p.date).toISOString().split('T')[0] === todayStr;
+                } catch {
+                    return false;
+                }
+            });
+
+            return !todayProgress || !todayProgress.location || todayProgress.location.trim() === "";
+        });
+    }, [journeys]);
+
+    // Upcoming Checkpoints (Route Intelligence)
+    const upcomingCheckpoints = useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        return journeys.filter(j => j.status === 'Active')
+            .map(j => {
+                // Find the first upcoming checkpoint that hasn't been updated yet
+                const nextProgress = j.daily_progress?.find((p: any) => {
+                    if (!p.date) return false;
+                    try {
+                        const isFuture = new Date(p.date).toISOString().split('T')[0] > todayStr;
+                        const isNotUpdated = !p.location || p.location.trim() === "";
+                        return isFuture && isNotUpdated;
+                    } catch {
+                        return false;
+                    }
+                });
+                return nextProgress ? { journey: j, next: nextProgress } : null;
+            }).filter(Boolean).slice(0, 5);
+    }, [journeys]);
 
     // Upcoming Dates (Renewals + Active Journeys)
     const upcomingEvents = useMemo(() => {
@@ -159,34 +224,68 @@ const Dashboard = () => {
         };
     }, [searchQuery, trucks, journeys, billEntries]);
 
+    // Financial Performance (Monthly Pulse)
+    const financialSummary = useMemo(() => {
+        const months: Record<string, { label: string, credit: number, debit: number, rawDate: Date }> = {};
+        const today = new Date();
+
+        // Initialize last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+            months[key] = {
+                label: d.toLocaleString('default', { month: 'short' }),
+                credit: 0,
+                debit: 0,
+                rawDate: d
+            };
+        }
+
+        ledgers.forEach(entry => {
+            const d = new Date(entry.date);
+            const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+            if (months[key]) {
+                months[key].credit += Number(entry.credit) || 0;
+                months[key].debit += Number(entry.debit) || 0;
+            }
+        });
+
+        return Object.values(months).sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+    }, [ledgers]);
+
+    const maxFinanceValue = useMemo(() => {
+        const values = financialSummary.flatMap(m => [m.credit, m.debit]);
+        return Math.max(...values, 1000); // at least 1000 for scale
+    }, [financialSummary]);
+
     const stats = [
         {
-            label: "Active Units",
-            value: journeys.filter(j => j.status === 'Active').length,
-            icon: <MapPin className="text-emerald-500" />,
-            trend: "On Road",
-            color: "emerald"
+            label: "Update Missing",
+            value: missedCheckpoints.length,
+            icon: <MapPin className="text-rose-500" />,
+            trend: "Missed Checkpoints",
+            color: "rose"
         },
         {
-            label: "Pending Settlements",
-            value: pendingSettlements.length,
+            label: "Unsettled",
+            value: unsettledJourneys.length + pendingSettlements.length,
             icon: <Scale className="text-amber-500" />,
             trend: "Awaiting Action",
             color: "amber"
         },
         {
-            label: "Period Revenue",
-            value: `₹${(totalRevenue / 100000).toFixed(1)}L`,
-            icon: <TrendingUp className="text-indigo-500" />,
-            trend: "Overall Sales",
+            label: "Pending Bills",
+            value: pendingPartyPayments.length,
+            icon: <Wallet className="text-indigo-500" />,
+            trend: "Party Payments",
             color: "indigo"
         },
         {
             label: "New Inquiries",
             value: inquiryCount,
-            icon: <Bell className="text-rose-500" />,
+            icon: <Bell className="text-slate-500" />,
             trend: "Leads",
-            color: "rose"
+            color: "slate"
         }
     ];
 
@@ -404,6 +503,90 @@ const Dashboard = () => {
                         </div>
                     </section>
 
+                    {/* Financial Pulse - Monthly Charts */}
+                    <section className="flex flex-col gap-6">
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-2xl font-black flex items-center gap-3 italic">
+                                Financial <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Pulse</span>
+                            </h3>
+                            <button onClick={() => navigate("/ledger/all-ledgers")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-2 group">
+                                View Full Ledger <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+
+                        <div className="card-premium !p-8 flex flex-col gap-10">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Monthly Performance</p>
+                                    <h4 className="text-lg font-black text-slate-900 dark:text-white italic">Cash Flow Overview</h4>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-100"></div>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inflow (Credit)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-rose-500 shadow-lg shadow-rose-100"></div>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Outflow (Debit)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-end justify-between gap-2 h-44 sm:h-64 pt-4 border-b border-slate-50 relative">
+                                {financialSummary.map((m, idx) => (
+                                    <div key={idx} className="flex-1 flex flex-col items-center gap-4 group h-full">
+                                        <div className="w-full flex items-end justify-center gap-1 sm:gap-2 h-full">
+                                            {/* Credit Bar */}
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${(m.credit / (maxFinanceValue || 1)) * 100}%` }}
+                                                transition={{ delay: idx * 0.1, duration: 1 }}
+                                                className="w-3 sm:w-6 lg:w-8 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg relative group-hover:shadow-lg group-hover:shadow-emerald-100 transition-all cursor-pointer"
+                                            >
+                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-black px-2 py-1.5 rounded-lg transition-opacity z-20 shadow-xl pointer-events-none">
+                                                    CR: ₹{m.credit.toLocaleString()}
+                                                </div>
+                                            </motion.div>
+                                            {/* Debit Bar */}
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${(m.debit / (maxFinanceValue || 1)) * 100}%` }}
+                                                transition={{ delay: idx * 0.1 + 0.2, duration: 1 }}
+                                                className="w-3 sm:w-6 lg:w-8 bg-gradient-to-t from-rose-500 to-rose-400 rounded-t-lg relative group-hover:shadow-lg group-hover:shadow-rose-100 transition-all cursor-pointer"
+                                            >
+                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-black px-2 py-1.5 rounded-lg transition-opacity z-20 shadow-xl pointer-events-none">
+                                                    DR: ₹{m.debit.toLocaleString()}
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Month</span>
+                                    <span className={`text-xl font-black italic tracking-tight ${financialSummary[5].credit >= financialSummary[5].debit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {financialSummary[5].credit >= financialSummary[5].debit ? '+' : '-'} ₹{Math.abs(financialSummary[5].credit - financialSummary[5].debit).toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Change</span>
+                                    <span className="text-xl font-black italic tracking-tight text-indigo-600">Calculated IQ</span>
+                                </div>
+                                <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Impact</span>
+                                    <span className="text-sm font-black italic tracking-tight text-slate-900 leading-tight">System Managed</span>
+                                </div>
+                                <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Balance Status</span>
+                                    <span className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 w-fit mt-1">OPERATIONAL</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* Compliance Alerts & Critical Renewals */}
                     {documentAlerts.length > 0 && (
                         <section className="flex flex-col gap-6">
@@ -450,93 +633,227 @@ const Dashboard = () => {
                     )}
 
                     {/* Activity Feed */}
-                    <section className="flex flex-col gap-6">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-2xl font-black flex items-center gap-3 italic">
-                                Operational <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Activity</span>
-                                <span className="px-3 py-1 rounded-xl bg-slate-50 text-slate-400 text-[10px] uppercase font-black border border-slate-100">Live Feed</span>
-                            </h3>
-                        </div>
-                        <div className="card-premium !p-0 overflow-hidden divide-y divide-slate-50 shadow-2xl shadow-slate-100/50">
-                            {recentActivity.length === 0 ? (
-                                <div className="p-20 text-center flex flex-col items-center gap-4">
-                                    <Clock size={48} className="text-slate-200" />
-                                    <p className="text-slate-400 font-bold italic">No recent activity detected in the system logs.</p>
-                                </div>
-                            ) : (
-                                recentActivity.map((item, i) => (
-                                    <div key={i} className="p-6 flex items-center gap-6 hover:bg-slate-50/80 transition-all group cursor-default">
-                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${item.type === 'journey' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
-                                            }`}>
-                                            {item.type === 'journey' ? <MapPin size={24} /> : <FileText size={24} />}
+                    <div className="flex flex-col gap-10">
+                        {/* Journey Operations Center */}
+                        <section className="flex flex-col gap-6">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-2xl font-black flex items-center gap-3 italic">
+                                    Journey <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Operations</span>
+                                    <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-600 text-[10px] uppercase font-black border border-indigo-100">Live IQ</span>
+                                </h3>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Checkpoint Alerts */}
+                                <div className="card-premium flex flex-col gap-4 !bg-slate-50/50 border-slate-200">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Checkpoint Alerts</p>
+                                        <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                                            <Bell size={16} />
                                         </div>
-                                        <div className="flex flex-col flex-1 gap-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${item.type === 'journey' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                                                    {item.type}
-                                                </span>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                                    {formatDate(new Date(item.createdAt))}
+                                    </div>
+                                    {missedCheckpoints.length > 0 ? (
+                                        <div className="flex flex-col gap-3">
+                                            {missedCheckpoints.slice(0, 3).map((j: any) => (
+                                                <div key={j._id} onClick={() => navigate(`/journey/journey-detail/${j._id}`)} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-rose-100 hover:border-rose-300 transition-all cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                                                        <MapPin size={18} />
+                                                    </div>
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="text-sm font-black text-slate-900 truncate">{j.truck?.truck_no}</span>
+                                                        <span className="text-[10px] font-bold text-rose-500 uppercase">Update Missing for Today</span>
+                                                    </div>
+                                                    <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:translate-x-1 transition-all" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">All active journey checkpoints updated.</div>
+                                    )}
+                                </div>
+
+                                {/* Upcoming Route Checkpoints */}
+                                <div className="card-premium flex flex-col gap-4 !bg-slate-50/50 border-slate-200">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Coming Up Next</p>
+                                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                            <ArrowRight size={16} />
+                                        </div>
+                                    </div>
+                                    {upcomingCheckpoints.length > 0 ? (
+                                        <div className="flex flex-col gap-3">
+                                            {upcomingCheckpoints.map((item: any, i) => (
+                                                <div key={i} onClick={() => navigate(`/journey/journey-detail/${item.journey._id}`)} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-indigo-100 hover:border-indigo-300 transition-all cursor-pointer group">
+                                                    <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
+                                                        <Calendar size={18} />
+                                                    </div>
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="text-sm font-black text-slate-900 truncate">Day {item.next.day_number}: {item.journey.truck?.truck_no}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">{formatDate(new Date(item.next.date))} Checkpoint</span>
+                                                    </div>
+                                                    <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:translate-x-1 transition-all" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">No scheduled checkpoints found.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="flex flex-col gap-6">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-2xl font-black flex items-center gap-3 italic">
+                                    Operational <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Activity</span>
+                                    <span className="px-3 py-1 rounded-xl bg-slate-50 text-slate-400 text-[10px] uppercase font-black border border-slate-100">Live Feed</span>
+                                </h3>
+                            </div>
+                            <div className="card-premium !p-0 overflow-hidden divide-y divide-slate-50 shadow-2xl shadow-slate-100/50">
+                                {recentActivity.length === 0 ? (
+                                    <div className="p-20 text-center flex flex-col items-center gap-4">
+                                        <Clock size={48} className="text-slate-200" />
+                                        <p className="text-slate-400 font-bold italic">No recent activity detected in the system logs.</p>
+                                    </div>
+                                ) : (
+                                    recentActivity.map((item, i) => (
+                                        <div key={i} className="p-6 flex items-center gap-6 hover:bg-slate-50/80 transition-all group cursor-default">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${item.type === 'journey' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
+                                                }`}>
+                                                {item.type === 'journey' ? <MapPin size={24} /> : <FileText size={24} />}
+                                            </div>
+                                            <div className="flex flex-col flex-1 gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${item.type === 'journey' ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                        {item.type}
+                                                    </span>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                                        {formatDate(new Date(item.createdAt))}
+                                                    </p>
+                                                </div>
+                                                <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
+                                                    {item.type === 'journey'
+                                                        ? `Journey Dispatched: Truck ${item.truck?.truck_no || "N/A"}`
+                                                        : `Invoice Created: ₹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
                                                 </p>
                                             </div>
-                                            <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
-                                                {item.type === 'journey'
-                                                    ? `Journey Dispatched: Truck ${item.truck.truck_no || item.truck}`
-                                                    : `Invoice Created: ₹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
-                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    if (item.type === 'journey') navigate(`/journey/journey-detail/${item._id}`);
+                                                    else navigate(`/bill-entry/bill?bill_no=${item.bill_no}`);
+                                                }}
+                                                className="px-6 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:shadow-lg transition-all"
+                                            >
+                                                Inspect
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                if (item.type === 'journey') navigate(`/journey/journey-detail/${item._id}`);
-                                                else navigate(`/bill-entry/bill?bill_no=${item.bill_no}`);
-                                            }}
-                                            className="px-6 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:shadow-lg transition-all"
-                                        >
-                                            Inspect
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </section>
+                                    ))
+                                )}
+                            </div>
+                        </section>
+                    </div>
                 </div>
 
                 {/* Right Column: Fleet Status & Insights */}
                 <div className="lg:col-span-4 flex flex-col gap-10">
 
-                    {/* Pending Settlements Card */}
-                    {pendingSettlements.length > 0 && (
-                        <section className="flex flex-col gap-6">
-                            <h3 className="text-2xl font-black px-2 italic">Awaiting <span className="text-amber-600">Settlement</span></h3>
+                    {/* Financial Reconciliation Section */}
+                    <section className="flex flex-col gap-10">
+                        {/* Driver Settlement Payouts */}
+                        <div className="flex flex-col gap-6">
+                            <h3 className="text-2xl font-black px-2 italic">Driver <span className="text-amber-600">Settlements</span></h3>
                             <div className="card-premium flex flex-col gap-6 !p-6 border-amber-100 bg-amber-50/10">
-                                <div className="flex flex-col gap-4">
-                                    {pendingSettlements.slice(0, 3).map((s: any, i) => (
-                                        <div key={i} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/driver-detail/${s.driver?._id}/settlement/${s._id}`)}>
-                                            <div className="flex items-center justify-between relative z-10">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.driver?.name}</span>
-                                                    <span className="text-lg font-black text-slate-900 italic tracking-tight">₹{Math.ceil(s.overall_total || 0)}</span>
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Required</p>
+                                    <div className="flex flex-col gap-3">
+                                        {/* Pending Settlement Records First */}
+                                        {pendingSettlements.slice(0, 2).map((s: any, i) => (
+                                            <div key={`pending-s-${i}`} className="flex flex-col gap-2 p-4 bg-indigo-700 text-white rounded-2xl shadow-xl relative overflow-hidden group cursor-pointer hover:bg-indigo-800 transition-all border border-indigo-600" onClick={() => navigate(`/journey/driver-detail/${s.driver?._id || s.driver}/settlement/${s._id}`)}>
+                                                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                                                <div className="flex items-center justify-between relative z-10">
+                                                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Settlement Draft</span>
+                                                    <span className="text-[8px] font-black bg-white/20 px-2 py-0.5 rounded">Awaiting Payout</span>
                                                 </div>
-                                                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                                                    <Wallet size={20} />
+                                                <div className="flex flex-col relative z-10">
+                                                    <span className="text-sm font-black italic uppercase tracking-tight">{s.driver?.name}</span>
+                                                    <span className="text-[10px] font-bold opacity-80 whitespace-nowrap overflow-hidden text-ellipsis">Period: {formatDate(new Date(s.period.from))} - {formatDate(new Date(s.period.to))}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                                <span>{s.journeys?.length || 0} Trips</span>
-                                                <span className="flex items-center gap-1 text-amber-600">Pending <ArrowRight size={10} /></span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+
+                                        {/* Then Unsettled Journeys */}
+                                        {unsettledJourneys.length > 0 ? (
+                                            unsettledJourneys.slice(0, 3).map((j: any, i) => (
+                                                <div key={`unsettled-j-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
+                                                    <div className="flex items-center justify-between relative z-10">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{j.driver?.name}</span>
+                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase">{j.truck?.truck_no}</span>
+                                                        </div>
+                                                        <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                                                            <Scale size={18} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">Reached {j.to}</span>
+                                                        <span className="text-[9px] font-black text-amber-600 uppercase flex items-center gap-1 font-italic">Settle Now <ArrowRight size={8} /></span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            pendingSettlements.length === 0 && (
+                                                <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-amber-100 w-full">All completed trips settled.</div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => navigate("/journey/all-settlements")}
                                     className="w-full py-4 rounded-xl bg-amber-600 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-amber-700 hover:shadow-xl transition-all shadow-lg shadow-amber-100"
                                 >
-                                    Manage All Payouts
+                                    Settlement Center
                                 </button>
                             </div>
-                        </section>
-                    )}
+                        </div>
+
+                        {/* Party Payments Watchlist */}
+                        <div className="flex flex-col gap-6">
+                            <h3 className="text-2xl font-black px-2 italic">Party <span className="text-indigo-600">Payments</span></h3>
+                            <div className="card-premium flex flex-col gap-6 !p-6 border-indigo-100 bg-indigo-50/10">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Upcoming Receivables</p>
+                                {pendingPartyPayments.length > 0 ? (
+                                    <div className="flex flex-col gap-4">
+                                        {pendingPartyPayments.slice(0, 3).map((j: any, i) => {
+                                            const isOverdue = new Date(j.party_payment_due_date).getTime() < new Date().setHours(0, 0, 0, 0);
+                                            return (
+                                                <div key={i} className={`flex flex-col gap-3 p-4 rounded-2xl border shadow-sm relative overflow-hidden group transition-all cursor-pointer ${isOverdue ? 'bg-rose-50 border-rose-200 hover:border-rose-400' : 'bg-white border-indigo-100 hover:border-indigo-400'}`} onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
+                                                    <div className="flex items-center justify-between relative z-10">
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOverdue ? 'text-rose-600' : 'text-slate-400'}`}>
+                                                                {isOverdue ? 'OVERDUE' : 'Due'} {formatDate(new Date(j.party_payment_due_date))}
+                                                            </span>
+                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">Truck: {j.truck?.truck_no}</span>
+                                                        </div>
+                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${isOverdue ? 'bg-rose-100 text-rose-600 border-rose-200' : j.party_payment_status === 'Partially Paid' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+                                                            <Wallet size={18} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">{j.from} → {j.to}</span>
+                                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isOverdue ? 'bg-rose-600 text-white' : j.party_payment_status === 'Partially Paid' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                            {j.party_payment_status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100">No overdue party payments.</div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
 
                     {/* Upcoming Events / Dates */}
                     <section className="flex flex-col gap-6">

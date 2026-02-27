@@ -77,9 +77,10 @@ const DetailBlock = ({
                   <>
                     <input
                       type={isDateField(f.label || "") ? "date" : "text"}
+                      data-error={!!(f.key && errors[f.key])}
                       className={`w-full px-4 py-2 bg-white border rounded-xl text-sm font-bold transition-all placeholder:text-slate-300 focus:outline-none focus:ring-4 
                         ${f.key && errors[f.key]
-                          ? "border-red-500 text-red-600 focus:ring-red-50"
+                          ? "border-red-500 text-red-600 focus:ring-red-50 ring-2 ring-red-200"
                           : "border-indigo-100 text-slate-700 focus:ring-indigo-50"}`}
                       placeholder={`Enter ${f.label.toLowerCase()}...`}
                       value={

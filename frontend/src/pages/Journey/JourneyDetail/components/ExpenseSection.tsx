@@ -12,6 +12,7 @@ interface ExpenseSectionProps {
   onChange: (updatedData: any[]) => void;
   emptyValue?: string;
   isEditMode?: boolean;
+  icon?: React.ReactNode;
 }
 
 const ExpenseSection = ({
@@ -22,6 +23,7 @@ const ExpenseSection = ({
   onChange,
   isEditMode = false,
   emptyValue = "----------",
+  icon
 }: ExpenseSectionProps) => {
   const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
 
@@ -48,6 +50,7 @@ const ExpenseSection = ({
   };
 
   const getSectionIcon = (title: string) => {
+    if (icon) return icon;
     const lower = title.toLowerCase();
     if (lower.includes("driver")) return <Receipt size={18} />;
     if (lower.includes("diesel")) return <AlertCircle size={18} />;

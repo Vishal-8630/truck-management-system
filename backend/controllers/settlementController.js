@@ -1,6 +1,7 @@
 import Driver from '../models/driverModel.js';
 import Settlement from '../models/settlementModel.js';
 import TruckJourney from '../models/truckJourneyModel.js';
+import Ledger from '../models/ledgerModel.js';
 import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import mongoose from 'mongoose';
@@ -230,6 +231,10 @@ export const confirmSettlement = async (req, res, next) => {
         updates.advance_amount = "0";
 
         await Driver.findByIdAndUpdate(driver._id, { $set: updates });
+
+        // Ledger entry creation removed from here to prevent duplication with markSettled
+        // Only markSettled will handle the official ledger record for the payout.
+
         return successResponse(res, "Settlement Created Successfully", savedSettlement);
     } catch (err) {
         console.log("Error in confirmSettlement: ", err);
@@ -267,6 +272,50 @@ export const markSettled = async (req, res, next) => {
             return next(new AppError("Settlement not found", 404));
         }
 
+        // --- AUTO-GENERATE/SYNC LEDGER ENTRY on markSettled ---
+        try {
+            const absTotal = Math.abs(settlement.overall_total || 0);
+            const settlementId = settlement._id;
+
+            // Always clean up existing records for this settlement to avoid duplicates
+            await Ledger.deleteMany({
+                settlement: settlementId,
+                is_auto_generated: true
+            });
+
+            if (absTotal > 0) {
+                const isDRLPays = settlement.payment_status === "DRL needs to pay";
+                const paymentMode = settlement.payment_meta?.mode || "Cash";
+                const paymentDate = settlement.payment_meta?.date
+                    ? new Date(settlement.payment_meta.date)
+                    : new Date();
+
+                await Ledger.create({
+                    date: isNaN(paymentDate.getTime()) ? new Date() : paymentDate,
+                    settlement: settlementId,
+                    driver: settlement.driver,
+                    category: "Driver Settlement", // Standardized category
+                    transaction_type: "Driver Settlement",
+                    description: `Settlement Payout — ${settlement.driver?.name || 'Driver'} | ${settlement.payment_status} | ₹${absTotal} | Mode: ${paymentMode}`,
+                    debit: isDRLPays ? absTotal : 0,
+                    credit: isDRLPays ? 0 : absTotal,
+                    amount: absTotal,
+                    balance_type: isDRLPays ? "Debit" : "Credit",
+                    payment_mode: ["Cash", "Bank", "UPI", "Cheque", "Credit"].includes(paymentMode) ? paymentMode : "Cash",
+                    reference_no: settlement.payment_meta?.remarks || "",
+                    notes: `Settlement Finalized. ID: ${settlementId}`,
+                    is_auto_generated: true,
+                    meta: {
+                        settlement_id: settlementId.toString(),
+                        driver_id: settlement.driver?.toString(),
+                        payment_status: settlement.payment_status,
+                    }
+                });
+            }
+        } catch (ledgerErr) {
+            console.error("Auto-ledger sync failed at markSettled:", ledgerErr.message);
+        }
+
         return successResponse(res, "Settlement marked as settled successfully.", settlement);
     } catch (err) {
         console.log("Error in markSettled: ", err);
@@ -291,6 +340,16 @@ export const unmarkSettled = async (req, res, next) => {
 
         if (!settlement) {
             return next(new AppError("Settlement not found", 404));
+        }
+
+        // --- Clean up Ledger on Unsettle ---
+        try {
+            await Ledger.deleteMany({
+                settlement: id,
+                is_auto_generated: true
+            });
+        } catch (err) {
+            console.error("Ledger cleanup failed at unmarkSettled:", err.message);
         }
 
         return successResponse(res, "Settlement marked as unsettled.", settlement);

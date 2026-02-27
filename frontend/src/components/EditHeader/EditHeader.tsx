@@ -10,7 +10,7 @@ interface EditHeaderProps {
   isDirty: boolean;
   onEditClick: () => void;
   onCancelClick: () => void;
-  onSaveClick: () => void;
+  onSaveClick: () => any;
   onDeleteClick: () => void;
   onDiscardClick: () => void;
 }
@@ -74,9 +74,11 @@ const EditHeader: React.FC<EditHeaderProps> = ({
         ) : (
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                onSaveClick();
-                setIsEditMode(false);
+              onClick={async () => {
+                const result = await onSaveClick();
+                if (result !== false) {
+                  setIsEditMode(false);
+                }
               }}
               disabled={!isDirty}
               className={`

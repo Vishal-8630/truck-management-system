@@ -9,7 +9,7 @@ import ExpenseSection from "./components/ExpenseSection";
 import DetailBlock from "./components/DetailBlock";
 import EditHeader from "@/components/EditHeader";
 import type { Option } from "@/types/form";
-import { ArrowLeft, Milestone, Truck, DollarSign, Activity, FileText } from "lucide-react";
+import { ArrowLeft, Milestone, Truck, DollarSign, Activity, FileText, Wallet, Calendar, Clock } from "lucide-react";
 
 const JourneyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -72,20 +72,35 @@ const JourneyDetail = () => {
   };
 
   const handleSave = async () => {
-    if (!localJourney) return;
+    if (!localJourney) return false;
     try {
       await updateJourney.mutateAsync(localJourney);
       addMessage({ type: "success", text: "Journey updated successfully" });
       setLocalJourney(null);
       setErrors({});
+      return true;
     } catch (err: any) {
       const serverErrors = err.response?.data?.errors;
       if (serverErrors) {
         setErrors(serverErrors);
-        addMessage({ type: "error", text: "Please fix the errors below." });
+
+        // Build a readable message from server error fields
+        const errorMessages = Object.values(serverErrors) as string[];
+        const toastText = errorMessages.length === 1
+          ? errorMessages[0]
+          : `${errorMessages.length} fields need attention: ${errorMessages[0]}${errorMessages.length > 1 ? ` (+${errorMessages.length - 1} more)` : ""}`;
+
+        addMessage({ type: "error", text: toastText });
+
+        // Scroll to first highlighted error field
+        setTimeout(() => {
+          const firstErrorEl = document.querySelector("[data-error='true']");
+          if (firstErrorEl) firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
       } else {
-        addMessage({ type: "error", text: "Failed to update journey" });
+        addMessage({ type: "error", text: err.response?.data?.message || "Failed to update journey." });
       }
+      return false;
     }
   };
 
@@ -110,10 +125,14 @@ const JourneyDetail = () => {
           heading="Journey Roadmap"
           isDirty={isDirty}
           onEditClick={() => { setBackupJourney(currentDisplay); setLocalJourney({ ...currentDisplay }); setIsEditMode(true); }}
-          onSaveClick={() => { handleSave(); setIsEditMode(false); }}
-          onCancelClick={() => { setLocalJourney(backupJourney); setIsEditMode(false); }}
+          onSaveClick={async () => {
+            const success = await handleSave();
+            if (success) setIsEditMode(false);
+            return success;
+          }}
+          onCancelClick={() => { setLocalJourney(backupJourney); setIsEditMode(false); setErrors({}); }}
           onDeleteClick={() => handleDelete(currentDisplay._id)}
-          onDiscardClick={() => { setLocalJourney(backupJourney); setIsEditMode(false); }}
+          onDiscardClick={() => { setLocalJourney(backupJourney); setIsEditMode(false); setErrors({}); }}
         />
       </div>
 
@@ -177,8 +196,8 @@ const JourneyDetail = () => {
                 { label: "Odometer Initial", value: currentDisplay.starting_kms, key: "starting_kms", isEditable: true },
                 { label: "Odometer Final", value: currentDisplay.ending_kms, key: "ending_kms", isEditable: true },
                 { label: "Assigned Route", value: currentDisplay.route?.join(", "), key: "route", isEditable: true },
-                { label: "Commencement Date", value: safeDate(currentDisplay.journey_start_date), key: "journey_start_date", isEditable: true },
-                { label: "Completion Date", value: safeDate(currentDisplay.journey_end_date), key: "journey_end_date", isEditable: true },
+                { label: "Commencement Date", value: isEditMode ? currentDisplay.journey_start_date : safeDate(currentDisplay.journey_start_date), key: "journey_start_date", isEditable: true },
+                { label: "Completion Date", value: isEditMode ? currentDisplay.journey_end_date : safeDate(currentDisplay.journey_end_date), key: "journey_end_date", isEditable: true },
                 { label: "Update Status", value: currentDisplay.status, isEditable: true, key: "status", options: status_options },
               ]}
             />
@@ -211,6 +230,7 @@ const JourneyDetail = () => {
             />
             <ExpenseSection
               title="Route Checkpoints"
+              icon={<Calendar size={18} />}
               data={currentDisplay.daily_progress || []}
               fields={[{ label: "Day", key: "day_number" }, { label: "Date", key: "date" }, { label: "At", key: "location" }, { label: "Note", key: "remarks" }]}
               onAdd={() => handleBtnClick("daily_progress")}
@@ -251,6 +271,42 @@ const JourneyDetail = () => {
                   <div className="text-4xl font-black italic">₹{currentDisplay.total_expense || 0}</div>
                 </div>
               </div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/10">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-2">
+                    <Activity size={10} className="text-indigo-400" /> Efficiency
+                  </span>
+                  <span className="text-xl font-black italic">
+                    {currentDisplay.total_diesel_expense ? (Number(currentDisplay.ending_kms || 0) - Number(currentDisplay.starting_kms || 0) / (Number(currentDisplay.total_diesel_expense) / 100 || 1)).toFixed(1) : "0.0"} KMPL
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-2">
+                    <Clock size={10} className="text-amber-400" /> Schedule
+                  </span>
+                  <span className={`text-xl font-black italic ${Number(currentDisplay.journey_days) < (currentDisplay.daily_progress?.length || 0) ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {currentDisplay.daily_progress?.length || 0} / {currentDisplay.journey_days} Days
+                  </span>
+                </div>
+              </div>
+
+              {/* Party Payment Highlights */}
+              <div className="mt-8 pt-8 border-t border-white/10 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Party Payment</span>
+                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${currentDisplay.party_payment_status === 'Paid' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                    {currentDisplay.party_payment_status || 'Pending'}
+                  </span>
+                </div>
+                {currentDisplay.party_payment_due_date && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Due Date</span>
+                    <span className="text-xs font-black">{formatDate(new Date(currentDisplay.party_payment_due_date))}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -267,11 +323,13 @@ const JourneyDetail = () => {
                 }
                 return { ...prev, [key]: value } as JourneyType;
               });
+              if (errors[key]) setErrors(p => { const n = { ...p }; delete n[key]; return n; });
             }}
+            errors={errors}
             fields={[
               { label: "Receiver Name", value: currentDisplay.delivery_details?.delivered_to, key: "delivery_details.delivered_to", isEditable: true },
-              { label: "Warehouse Entry", value: safeDate(currentDisplay.delivery_details?.entry_date), key: "delivery_details.entry_date", isEditable: true },
-              { label: "Container Empty", value: safeDate(currentDisplay.delivery_details?.empty_date), key: "delivery_details.empty_date", isEditable: true },
+              { label: "Warehouse Entry", value: isEditMode ? currentDisplay.delivery_details?.entry_date : safeDate(currentDisplay.delivery_details?.entry_date), key: "delivery_details.entry_date", isEditable: true },
+              { label: "Container Empty", value: isEditMode ? currentDisplay.delivery_details?.empty_date : safeDate(currentDisplay.delivery_details?.empty_date), key: "delivery_details.empty_date", isEditable: true },
               { label: "POD Remarks", value: currentDisplay.delivery_details?.remarks, key: "delivery_details.remarks", isEditable: true },
             ]}
           />
@@ -289,12 +347,54 @@ const JourneyDetail = () => {
                 }
                 return { ...prev, [key]: value } as JourneyType;
               });
+              if (errors[key]) setErrors(p => { const n = { ...p }; delete n[key]; return n; });
             }}
+            errors={errors}
             fields={[
               { label: "Final Paid Amt", value: currentDisplay.settlement?.amount_paid, key: "settlement.amount_paid", isEditable: true },
-              { label: "Payment Date", value: safeDate(currentDisplay.settlement?.date_paid), key: "settlement.date_paid", isEditable: true },
+              { label: "Payment Date", value: isEditMode ? currentDisplay.settlement?.date_paid : safeDate(currentDisplay.settlement?.date_paid), key: "settlement.date_paid", isEditable: true },
               { label: "Txn Mode", value: currentDisplay.settlement?.mode, key: "settlement.mode", isEditable: true },
               { label: "Final Remarks", value: currentDisplay.settlement?.remarks, key: "settlement.remarks", isEditable: true },
+            ]}
+          />
+
+          <DetailBlock
+            title="Financial Reconciliation"
+            icon={<Wallet size={18} />}
+            isEditMode={isEditMode}
+            onChange={(key, value) => {
+              setLocalJourney((prev) => {
+                if (!prev) return prev;
+                return { ...prev, [key]: value } as JourneyType;
+              });
+              if (errors[key]) setErrors(p => { const n = { ...p }; delete n[key]; return n; });
+            }}
+            errors={errors}
+            fields={[
+              {
+                label: "Party Pay Status",
+                value: currentDisplay.party_payment_status,
+                key: "party_payment_status",
+                isEditable: true,
+                options: [
+                  { label: "Pending", value: "Pending" },
+                  { label: "Partially Paid", value: "Partially Paid" },
+                  { label: "Paid", value: "Paid" }
+                ]
+              },
+              { label: "Payment Due Date", value: isEditMode ? currentDisplay.party_payment_due_date : safeDate(currentDisplay.party_payment_due_date), key: "party_payment_due_date", isEditable: true },
+              { label: "Payment Received", value: isEditMode ? currentDisplay.party_payment_received_date : safeDate(currentDisplay.party_payment_received_date), key: "party_payment_received_date", isEditable: true },
+              { label: "Payment Remarks", value: currentDisplay.party_payment_remarks, key: "party_payment_remarks", isEditable: true },
+              {
+                label: "Journey Settled",
+                value: currentDisplay.journey_settlement_status || "Unsettled",
+                key: "journey_settlement_status",
+                isEditable: true,
+                options: [
+                  { label: "Unsettled", value: "Unsettled" },
+                  { label: "Settled", value: "Settled" }
+                ]
+              },
             ]}
           />
         </div>

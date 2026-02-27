@@ -84,6 +84,15 @@ export interface JourneyType {
   settled: boolean;
   settlement_ref: SettlementType;
 
+  // New: user-facing settlement status with validation
+  journey_settlement_status?: "Settled" | "Unsettled";
+
+  // --- Party Payment Tracking ---
+  party_payment_status?: "Pending" | "Partially Paid" | "Paid";
+  party_payment_due_date?: string;
+  party_payment_received_date?: string;
+  party_payment_remarks?: string;
+
   createdAt?: string;
   updatedAt?: string;
 }
@@ -140,6 +149,13 @@ export const EmptyJourneyType: JourneyType = {
 
   settled: false,
   settlement_ref: EmptySettlementType,
+
+  journey_settlement_status: "Unsettled",
+
+  party_payment_status: "Pending",
+  party_payment_due_date: "",
+  party_payment_received_date: "",
+  party_payment_remarks: "",
 
   createdAt: "",
   updatedAt: ""

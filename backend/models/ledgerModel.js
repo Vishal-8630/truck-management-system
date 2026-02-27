@@ -18,6 +18,7 @@ const ledgerSchema = new mongoose.Schema(
         "In Account", "Driver Expense", "Toll Expense", "Repair Expense",
         "Maintenance Expense", "Office Expense", "Payment Received", "Payment Made",
         "Cash Transfer", "Bank Transfer", "Other Income", "Other Expense",
+        "Journey Settlement",
       ],
       required: true,
     },
