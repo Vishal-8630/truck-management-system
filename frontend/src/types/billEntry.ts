@@ -61,6 +61,8 @@ export interface BillEntryType {
   grand_total: string;
   gst_up: string;
   if_gst_other_state: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const ENTRY_LABELS: Record<string, string> = {
