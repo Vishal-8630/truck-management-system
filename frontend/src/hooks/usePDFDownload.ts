@@ -35,13 +35,33 @@ export const usePDFDownload = <T>({
     if (!ref.current) return;
     console.log(`Download clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
-    // ================== MOBILE / SERVER FLOW ==================
-    if (isMobile && serverMode) {
+    // ================== SERVER FLOW (Accurate Puppeteer) ==================
+    if (serverMode) {
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
         .map((el) => el.outerHTML)
         .join("\n");
+
+      // Inject some print-specific CSS to ensure it looks good in Puppeteer
+      const printStyles = `
+        <style>
+          @page {
+            size: A4 ${orientation === "l" ? "landscape" : "portrait"} !important;
+            margin: 5mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background: white !important;
+          }
+          .card-premium {
+            border: 1px solid #f1f5f9 !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+        </style>
+      `;
 
       const html = `
         <!DOCTYPE html>
@@ -50,8 +70,9 @@ export const usePDFDownload = <T>({
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             ${styles}
+            ${printStyles}
           </head>
-          <body>${ref.current.outerHTML}</body>
+          <body style="background: white;">${ref.current.outerHTML}</body>
         </html>
       `;
 
@@ -62,18 +83,17 @@ export const usePDFDownload = <T>({
       );
 
       try {
+        addMessage({ type: "info", text: "Generating high-quality PDF..." });
+
         const res = await api.post(
           endpoint,
           { html: processedHTML, landscape: orientation === "l" },
           {
-            responseType: "arraybuffer",
-            transformResponse: [(data) => data],
+            responseType: "blob",
           }
         );
 
-        const uint8Array = new Uint8Array(res.data);
-        const blob = new Blob([uint8Array], { type: "application/pdf" });
-
+        const blob = new Blob([res.data], { type: "application/pdf" });
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = blobUrl;

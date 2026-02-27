@@ -33,7 +33,8 @@ const userSchema = mongoose.Schema({
         default: false
     },
     passwordResetToken: String,
-    passwordResetExpires: Date
+    passwordResetExpires: Date,
+    avatar: String
 }, { timestamps: true });
 
 // Encrypt password before saving

@@ -5,12 +5,13 @@ import {
   type BillEntryType,
   type ExtraCharge,
 } from "@/types/billEntry";
-import { ChevronDown, Edit3, Check, X, Trash2, Plus, Save, RotateCcw, Building2, Calculator } from "lucide-react";
+import { ChevronDown, Edit3, Check, X, Trash2, Plus, Save, RotateCcw, Building2, Calculator, ExternalLink } from "lucide-react";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useBillEntries } from "@/hooks/useLedgers";
 import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
 import { formatDate } from "@/utils/formatDate";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface DropdownViewProps {
@@ -214,6 +215,25 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
     </div>
   </div>
 );
+
+const QuickActionLink: React.FC<{ to: string; label: string; icon: React.ReactNode; color: string }> = ({ to, label, icon, color }) => {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); navigate(to); }}
+      className={`flex items-center gap-3 px-6 py-4 rounded-2xl border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group ${color}`}
+    >
+      <div className="p-2 rounded-lg bg-current/10 border border-current/20">
+        {icon}
+      </div>
+      <div className="flex flex-col items-start">
+        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Navigate to</span>
+        <span className="text-sm font-bold tracking-tight">{label}</span>
+      </div>
+      <ExternalLink size={14} className="ml-2 opacity-0 group-hover:opacity-40 transition-opacity" />
+    </button>
+  );
+};
 
 // --- Main DropdownView ---
 const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
@@ -583,6 +603,22 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
             className="border-t border-slate-100"
           >
             <div className="p-6 lg:p-10 flex flex-col gap-10">
+              {/* Quick Actions Bar */}
+              <div className="flex flex-wrap items-center gap-4 p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100">
+                <QuickActionLink
+                  to={`/bill-entry/lrcopy?lr_no=${localEntry.lr_no}`}
+                  label="LR Copy Document"
+                  icon={<Building2 size={18} />}
+                  color="text-indigo-600 border-indigo-100"
+                />
+                <QuickActionLink
+                  to={`/bill-entry/bill?bill_no=${localEntry.bill_no}`}
+                  label="Generated Bill"
+                  icon={<Calculator size={18} />}
+                  color="text-amber-600 border-amber-100"
+                />
+              </div>
+
               {hasChanges && (
                 <div className="flex items-center justify-between bg-blue-600 p-4 rounded-2xl shadow-blue-100 shadow-lg">
                   <div className="flex items-center gap-3 text-white">

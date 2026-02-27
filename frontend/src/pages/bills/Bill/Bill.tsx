@@ -1,5 +1,5 @@
 import { Search, X, FileText, Download, Printer, Receipt } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useMessageStore } from "@/store/useMessageStore";
 import type { BillEntryType } from "@/types/billEntry";
 import BillInvoice from "@/components/BillInvoice";
@@ -8,14 +8,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useBillEntries } from "@/hooks/useLedgers";
 import { usePDFDownload } from "@/hooks/usePDFDownload";
 import { usePDFPrint } from "@/hooks/usePDFPrint";
+import { useSearchParams } from "react-router-dom";
 
 const Bill = () => {
+  const [searchParams] = useSearchParams();
+  const billNoFromUrl = searchParams.get("bill_no");
+
   const [search, setSearch] = useState("");
   const [entry, setEntry] = useState<Partial<BillEntryType> | {}>({});
   const { useBillEntriesQuery } = useBillEntries();
   const { data: entries = [], isLoading } = useBillEntriesQuery();
   const billRef = useRef<HTMLDivElement>(null);
   const { addMessage } = useMessageStore();
+
+  useEffect(() => {
+    if (billNoFromUrl && entries.length > 0) {
+      const found = entries.find((e: BillEntryType) => e.bill_no === billNoFromUrl);
+      if (found) {
+        setSearch(billNoFromUrl);
+        setEntry(found);
+      }
+    }
+  }, [billNoFromUrl, entries]);
 
   const handleSearchClear = () => {
     setSearch("");

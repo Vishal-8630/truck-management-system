@@ -6,6 +6,16 @@ import jwt from 'jsonwebtoken';
 import { errorResponse } from '../utils/response.js';
 import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedS3Url } from "../middlewares/s3Helper.js";
+
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+});
 
 const registerUser = async (req, res, next) => {
     const { fullname, username, email, password } = req.body;
@@ -43,7 +53,8 @@ const registerUser = async (req, res, next) => {
             email: newUser.email,
             createdAt: newUser.createdAt,
             isAdmin: newUser.isAdmin,
-            isVerified: newUser.isVerified
+            isVerified: newUser.isVerified,
+            avatar: await getSignedS3Url(newUser.avatar)
         }
     });
 }
@@ -80,7 +91,8 @@ const loginUser = async (req, res, next) => {
             email: user.email,
             createdAt: user.createdAt,
             isAdmin: user.isAdmin,
-            isVerified: user.isVerified
+            isVerified: user.isVerified,
+            avatar: await getSignedS3Url(user.avatar)
         }
     });
 }
@@ -108,7 +120,13 @@ const getCurrentUser = async (req, res, next) => {
         if (!user) {
             return next(new AppError("User not found", 401));
         }
-        return successResponse(res, "", user);
+
+        const userWithAvatar = {
+            ...user._doc,
+            avatar: await getSignedS3Url(user.avatar)
+        };
+
+        return successResponse(res, "", userWithAvatar);
     } catch (error) {
         return errorResponse(res, "Token not found", 401, error);
     }
@@ -191,9 +209,113 @@ const resetPassword = async (req, res, next) => {
             fullname: user.fullname,
             username: user.username,
             email: user.email,
-            isAdmin: user.isAdmin
+            isAdmin: user.isAdmin,
+            avatar: await getSignedS3Url(user.avatar)
         }
     });
 };
 
-export { loginUser, registerUser, logoutUser, getCurrentUser, forgotPassword, resetPassword };
+const updateProfile = async (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return next(new AppError("Not Authenticated", 401));
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(payload.id);
+
+        if (!user) return next(new AppError("User not found", 404));
+
+        const { fullname, email } = req.body;
+        if (fullname) user.fullname = fullname;
+        if (email) user.email = email;
+
+        await user.save();
+
+        return successResponse(res, "Profile Updated Successfully", {
+            user: {
+                id: user._id,
+                fullname: user.fullname,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                avatar: await getSignedS3Url(user.avatar)
+            }
+        });
+    } catch (error) {
+        return next(new AppError("Invalid Token", 401));
+    }
+};
+
+const updatePassword = async (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return next(new AppError("Not Authenticated", 401));
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        return next(new AppError("Please provide current and new password", 400));
+    }
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(payload.id);
+
+        if (!user || !(await user.comparePassword(currentPassword))) {
+            return next(new AppError("Invalid current password", 401));
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        return successResponse(res, "Password Updated Successfully");
+    } catch (error) {
+        return next(new AppError("Invalid Token", 401));
+    }
+};
+
+
+const updateAvatar = async (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return next(new AppError("Not Authenticated", 401));
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(payload.id);
+
+        if (!user) return next(new AppError("User not found", 404));
+
+        if (!req.file) {
+            return next(new AppError("Please upload an image", 400));
+        }
+
+        // Delete old avatar if exists
+        if (user.avatar && user.avatar.includes('amazonaws.com')) {
+            const oldKey = user.avatar.split('.com/')[1];
+            try {
+                await s3.send(new DeleteObjectCommand({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: oldKey
+                }));
+            } catch (err) {
+                console.warn("Failed to delete old avatar", err);
+            }
+        }
+
+        user.avatar = req.file.location; // location is provided by multer-s3
+        await user.save();
+
+        return successResponse(res, "Avatar Updated Successfully", {
+            user: {
+                id: user._id,
+                fullname: user.fullname,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+                avatar: await getSignedS3Url(user.avatar)
+            }
+        });
+    } catch (error) {
+        return next(new AppError("Avatar update failed", 500));
+    }
+};
+
+export { loginUser, registerUser, logoutUser, getCurrentUser, forgotPassword, resetPassword, updateProfile, updatePassword, updateAvatar };

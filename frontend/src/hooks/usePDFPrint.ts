@@ -64,8 +64,8 @@ export const usePDFPrint = <T>({
 
     console.log(`Print clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
-    // ======= MOBILE / SERVER PDF FLOW =======
-    if (isMobile && serverMode) {
+    // ======= SERVER PDF FLOW (Accurate Puppeteer) =======
+    if (serverMode) {
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
@@ -80,16 +80,25 @@ export const usePDFPrint = <T>({
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             ${styles}
             <style>
+              @page {
+                size: A4 ${isLandscape ? "landscape" : "portrait"} !important;
+                margin: 5mm;
+              }
               body {
-              -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
                 margin: 0;
                 padding: 0;
-                font-family: Arial, sans-serif;
+                background: white !important;
+              }
+              .card-premium {
+                border: 1px solid #f1f5f9 !important;
+                box-shadow: none !important;
+                background: white !important;
               }
             </style>
           </head>
-          <body>${ref.current.outerHTML}</body>
+          <body style="background: white;">${ref.current.outerHTML}</body>
         </html>
       `;
 
@@ -100,6 +109,11 @@ export const usePDFPrint = <T>({
       );
 
       try {
+        addMessage({
+          type: "info",
+          text: "Preparing printable document...",
+        });
+
         const res = await api.post<Blob>(
           endpoint,
           { html: processedHTML, landscape: isLandscape },

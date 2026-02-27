@@ -16,102 +16,109 @@ router.post("/generate-pdf", async (req, res) => {
 
     // 🧠 Launch Puppeteer
     const browser = await puppeteer.launch({
-      headless: "new",
+      headless: true, // Standard headless mode
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--no-zygote",
+        "--font-render-hinting=none", // Improves text rendering
       ],
     });
 
-    const page = await browser.newPage();
-
-    // 🧩 Apply viewport based on orientation
-    if (landscape) {
-      await page.setViewport({ width: 1600, height: 900 }); // landscape
-    } else {
-      await page.setViewport({ width: 1100, height: 1600 }); // portrait
-    }
-
-    // 🧩 Inject CSS to enforce true landscape geometry
+    // 🧩 Inject CSS to enforce true single-page geometry
     const htmlWithStyle = `
       <style>
         @page {
           size: A4 ${landscape ? "landscape" : "portrait"} !important;
-          margin: 5mm;
+          margin: 0 !important;
         }
-
         html, body {
-          margin: 0;
-          padding: 0;
+          margin: 0 !important;
+          padding: 0 !important;
           width: ${landscape ? "297mm" : "210mm"} !important;
           height: ${landscape ? "210mm" : "297mm"} !important;
-          overflow: hidden !important;             /* don't let content push a second page */
+          overflow: hidden !important;
+          background: white;
+          display: flex !important;
+          justify-content: center !important; /* 🎯 Absolute horizontal center */
+          align-items: flex-start !important;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
-
-        /* keep everything on one page */
-        * {
-          page-break-before: avoid !important;
-          page-break-after: avoid !important;
-          page-break-inside: avoid !important;
-        }
-
-        /* shrink slightly so it always fits */
-        body {
-          transform: scale(0.98);
-          transform-origin: top left;
-        }
-
-        /* smaller header & logo for better fit */
-        #logo {
-          width: 80px !important;
-          height: 60px !important;
-        }
-
-        #title {
-          font-size: 2.5rem !important;
-          font-weight: 700 !important;
-          text-transform: uppercase;
-        }
-
-        .header {
-          padding: 4mm 0 !important;
-        }
-
-        body::-webkit-scrollbar {
-          display: none;
-        }
-        body > * {
+        /* The content wrapper that gets scaled */
+        .pdf-scale-wrapper {
           width: 100% !important;
-          max-width: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          transform-origin: top center !important;
+          padding-top: 5mm !important; /* Some top breathing room */
+          box-sizing: border-box !important;
         }
+        /* Clean up any margins from the user-provided HTML */
+        .pdf-scale-wrapper > * {
+          margin: 0 !important; 
+          flex-shrink: 0 !important;
+        }
+        * {
+          page-break-inside: avoid !important;
+          -webkit-print-color-adjust: exact !important;
+        }
+        ::-webkit-scrollbar { display: none !important; }
       </style>
-      ${html}
+      <div class="pdf-scale-wrapper">
+        ${html}
+      </div>
+      <script>
+        const wrapper = document.querySelector('.pdf-scale-wrapper');
+        const targetHeight = ${landscape ? 210 : 297} * 3.78 - 40; // Approx px
+        const currentHeight = wrapper.offsetHeight;
+        
+        if (currentHeight > targetHeight) {
+          const scaleFactor = (targetHeight / currentHeight);
+          wrapper.style.transform = "scale(" + Math.min(scaleFactor, 1) + ")";
+        }
+      </script>
     `;
 
-    // 🧩 Load HTML into Puppeteer
-    await page.setContent(htmlWithStyle, { waitUntil: "networkidle0" });
+    try {
+      const page = await browser.newPage();
 
-    // 🧾 Generate PDF Buffer
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      landscape,
-      margin: { top: "5mm", bottom: "5mm", left: "5mm", right: "5mm" },
-    });
+      // 🧩 Apply viewport based on orientation
+      if (landscape) {
+        await page.setViewport({ width: 1400, height: 900, deviceScaleFactor: 2 });
+      } else {
+        await page.setViewport({ width: 900, height: 1400, deviceScaleFactor: 2 });
+      }
 
-    await browser.close();
+      // 🧩 Load HTML into Puppeteer
+      await page.setContent(htmlWithStyle, { waitUntil: "networkidle0", timeout: 60000 });
 
-    // 🧱 Send as pure binary
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="invoice.pdf"');
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Content-Length", pdfBuffer.length);
-    res.end(Buffer.from(pdfBuffer), "binary");
+      // Wait for a bit longer to ensure scaling script and layout settle
+      await new Promise(r => setTimeout(r, 800));
+
+      // 🧾 Generate PDF Buffer
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        landscape,
+        margin: { top: "0", bottom: "0", left: "0", right: "0" },
+        preferCSSPageSize: true
+      });
+
+      await browser.close();
+
+      // 🧱 Send as pure binary
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="document-${Date.now()}.pdf"`);
+      res.setHeader("Cache-Control", "no-store");
+      res.end(pdfBuffer);
+
+    } catch (pageError) {
+      await browser.close();
+      throw pageError;
+    }
 
   } catch (error) {
     console.error("❌ PDF generation error:", error);

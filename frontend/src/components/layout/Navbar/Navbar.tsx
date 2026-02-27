@@ -16,6 +16,7 @@ const Navbar = () => {
   const { addMessage } = useMessageStore();
   const { theme, toggleTheme } = useThemeStore();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,16 @@ const Navbar = () => {
               to: "/bill-entry/billing-party",
               label: "Billing Party",
               content: "Click here to add Billing Party.",
+            },
+            {
+              to: "/bill-entry/lrcopy",
+              label: "LR Copy",
+              content: "Search and print LR copies.",
+            },
+            {
+              to: "/bill-entry/bill",
+              label: "Invoice Search",
+              content: "Find and print generated bills.",
             },
             {
               to: "/vehicle-entry/all-vehicle-entries",
@@ -212,10 +223,19 @@ const Navbar = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/profile")}
-              className={`hidden lg:flex p-2.5 rounded-xl border transition-all ${pathname === '/profile' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
+              className={`hidden lg:flex p-1 rounded-xl border transition-all overflow-hidden w-11 h-11 items-center justify-center ${pathname === '/profile' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
               title="View Profile"
             >
-              <User size={20} />
+              {user?.avatar && !imgError ? (
+                <img
+                  src={user.avatar}
+                  alt={user.fullname}
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <User size={20} />
+              )}
             </button>
             <button
               onClick={handleLogout}

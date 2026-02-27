@@ -304,61 +304,130 @@ const SettlementDetail = () => {
 
       {/* Hidden print ref */}
       <div className="hidden">
-        <div ref={printRef} className="p-12 text-slate-900 bg-white font-serif max-w-[800px] mx-auto border border-slate-200">
-          <div className="text-center flex flex-col gap-1 mb-8 border-b-2 border-slate-900 pb-6">
-            <h1 className="text-4xl font-black uppercase tracking-tighter italic mb-2">Divyanshi Road Lines</h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 mb-2">Fleet Owner • Transport Contractors • Commission Agent</p>
-            <div className="text-[10px] font-medium leading-relaxed max-w-md mx-auto">
+        <div ref={printRef} className="p-10 text-slate-900 bg-white font-serif max-w-[850px] mx-auto border border-slate-300">
+          <div className="text-center flex flex-col gap-1 mb-8 border-b-2 border-slate-900 pb-6 uppercase">
+            <h1 className="text-4xl font-black tracking-tighter italic mb-1">Divyanshi Road Lines</h1>
+            <p className="text-[9px] font-bold tracking-[0.4em] text-slate-500 mb-2">Fleet Owner • Transport Contractors • Commission Agent</p>
+            <div className="text-[9px] font-medium leading-relaxed max-w-lg mx-auto normal-case">
               <strong>H.O:</strong> Near Essar Fuel Pump, Lohvan Bhagichi, Laxmi Nagar, Mathura - 281001<br />
               <strong>B.O:</strong> Near Kuber Jee Dharam Kanta, Shashtripuram, Agra - 281305<br />
               <strong>Contact:</strong> 8630836045, 7983635608 | <strong>Email:</strong> drldivyashi@gmail.com
             </div>
           </div>
-          <div className="flex justify-between items-center mb-8 bg-slate-50 p-4 border border-slate-100 rounded-lg">
-            <div><span className="text-[10px] font-bold uppercase text-slate-400">Driver</span><p className="text-lg font-black uppercase">{driverName}</p></div>
-            <div className="text-right"><span className="text-[10px] font-bold uppercase text-slate-400">Settlement Period</span><p className="text-sm font-bold">{formatDate(new Date(settlement.period.from))} to {formatDate(new Date(settlement.period.to))}</p></div>
+
+          <div className="flex justify-between items-center mb-6 bg-slate-50 p-5 border border-slate-200 rounded-xl">
+            <div>
+              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Driver / Vehicle Info</span>
+              <p className="text-xl font-black uppercase italic tracking-tight">{driverName}</p>
+              <p className="text-xs font-bold text-slate-500 mt-1 uppercase">Vehicle: {settlement.journeys?.[0]?.truck?.truck_no || "N/A"}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Settlement Period</span>
+              <p className="text-lg font-black italic">{formatDate(new Date(settlement.period.from))} → {formatDate(new Date(settlement.period.to))}</p>
+              <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest">{settlement.payment_status}</p>
+            </div>
           </div>
-          <table className="w-full mb-10 border border-slate-900 border-collapse">
+
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            {[
+              { label: "Total Distance", value: `${settlement.total_distance} Km` },
+              { label: "Rate Per Km", value: `₹${settlement.rate_per_km}` },
+              { label: "Diesel Rate", value: `₹${settlement.diesel_rate}` },
+              { label: "Avg Mileage", value: `${settlement.avg_mileage} Kmpl` },
+            ].map((stat, i) => (
+              <div key={i} className="p-3 border border-slate-200 rounded-lg flex flex-col gap-1 items-center bg-slate-50/30">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{stat.label}</span>
+                <span className="text-sm font-black italic">{stat.value}</span>
+              </div>
+            ))}
+          </div>
+
+          <table className="w-full mb-8 border border-slate-900 border-collapse">
             <thead>
               <tr className="bg-slate-900 text-white">
-                {["#", "Route (From - To)", "Km", "Diesel", "Exp"].map((h) => <th key={h} className="p-3 text-left text-[10px] font-black uppercase border border-slate-900">{h}</th>)}
+                {["#", "Route Details", "Kms", "Diesel (T/U)", "Initial Cash", "Expense"].map((h, i) => (
+                  <th key={i} className="p-2.5 text-left text-[9px] font-black uppercase border border-slate-900">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {settlement.journeys.map((j: JourneyType, i: number) => {
                 const distance = Number(j.ending_kms) - Number(j.starting_kms);
                 const dieselTaken = j.diesel_expenses?.reduce((t: number, d: any) => t + Number(d.quantity), 0) || 0;
+                const dieselUsed = Math.floor(distance / Number(settlement.avg_mileage || 1));
                 return (
-                  <tr key={i} className="border-b border-slate-200">
-                    <td className="p-3 text-xs font-bold border-r border-slate-200">{i + 1}</td>
-                    <td className="p-3 text-xs font-black uppercase border-r border-slate-200">{j.from} - {j.to}</td>
-                    <td className="p-3 text-xs font-bold text-right border-r border-slate-200">{Math.floor(distance)}</td>
-                    <td className="p-3 text-xs font-bold text-right border-r border-slate-200">{Math.ceil(dieselTaken)}L</td>
-                    <td className="p-3 text-xs font-bold text-right">₹{j.total_driver_expense}</td>
+                  <tr key={i} className="border-b border-slate-200 font-bold">
+                    <td className="p-2.5 text-[10px] border-r border-slate-200">{i + 1}</td>
+                    <td className="p-2.5 text-[10px] uppercase border-r border-slate-200">{j.from} - {j.to}</td>
+                    <td className="p-2.5 text-[10px] text-right border-r border-slate-200">{Math.floor(distance)}</td>
+                    <td className="p-2.5 text-[10px] text-right border-r border-slate-200">{Math.ceil(dieselTaken)} / {dieselUsed}L</td>
+                    <td className="p-2.5 text-[10px] text-right border-r border-slate-200">₹{j.journey_starting_cash || 0}</td>
+                    <td className="p-2.5 text-[10px] text-right">₹{j.total_driver_expense}</td>
                   </tr>
                 );
               })}
             </tbody>
+            <tfoot className="bg-slate-100 font-black">
+              <tr>
+                <td colSpan={2} className="p-2.5 text-[9px] uppercase text-right">Totals:</td>
+                <td className="p-2.5 text-[10px] text-right border-r border-slate-900">{settlement.total_distance}</td>
+                <td className="p-2.5 text-[10px] text-right border-r border-slate-900">
+                  {Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + (j.diesel_expenses?.reduce((t: number, d: any) => t + Number(d.quantity), 0) || 0), 0))}L
+                </td>
+                <td className="p-2.5 text-[10px] text-right border-r border-slate-900">₹{Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + Number(j.journey_starting_cash || 0), 0))}</td>
+                <td className="p-2.5 text-[10px] text-right">₹{Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + Number(j.total_driver_expense || 0), 0))}</td>
+              </tr>
+            </tfoot>
           </table>
-          <div className="flex justify-end">
-            <div className="w-1/2 flex flex-col gap-3">
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Km Earnings (x{settlement.rate_per_km})</span>
-                <span className="text-sm font-bold italic">₹{Number(settlement.total_distance) * Number(settlement.rate_per_km)}</span>
+
+          <div className="flex justify-between items-start gap-10">
+            <div className="flex-1">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-200 pb-2">Calculation Breakdown</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-500">Diesel Variance:</span>
+                    <span className={Number(settlement.diesel_diff) < 0 ? "text-red-600" : "text-emerald-600"}>{settlement.diesel_diff} Liters</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-500">Km Earnings:</span>
+                    <span>₹{Number(settlement.total_distance) * Number(settlement.rate_per_km)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-100">
+                    <span className="text-slate-500">Owner Share:</span>
+                    <span>₹{settlement.owner_total}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Diesel Diff ({settlement.diesel_diff}L)</span>
-                <span className="text-sm font-bold italic">- ₹{Math.abs(Number(settlement.diesel_diff) * Number(settlement.diesel_rate))}</span>
+            </div>
+
+            <div className="w-[300px] flex flex-col gap-3">
+              <div className="flex justify-between p-4 bg-slate-100 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-black uppercase text-slate-500">Total Driver Payout</span>
+                <span className="text-lg font-black italic">₹{settlement.driver_total}</span>
               </div>
-              <div className="flex justify-between p-4 bg-slate-900 text-white rounded-lg mt-2">
-                <span className="text-xs font-black uppercase">Final Payout</span>
-                <span className="text-xl font-black italic">₹{settlement.driver_total}</span>
+              <div className="flex justify-between p-5 bg-slate-900 text-white rounded-2xl shadow-xl">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">Net Settlement</span>
+                  <span className="text-2xl font-black italic tracking-tighter">₹{settlement.overall_total}</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="mt-20 flex justify-between px-4 italic">
-            <div className="flex flex-col items-center"><div className="w-32 border-b border-slate-900 mb-2" /><span className="text-[10px] font-bold uppercase">Receiver's Signature</span></div>
-            <div className="flex flex-col items-center"><div className="w-32 border-b border-slate-900 mb-2" /><span className="text-[10px] font-bold uppercase">Authorized Signatory</span></div>
+
+          <div className="mt-20 flex justify-between px-8 italic font-bold">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-40 border-b border-slate-900" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Driver's Signature</span>
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-40 border-b border-slate-900" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authorized Signatory</span>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">This is a computer generated document. No physical signature required.</p>
           </div>
         </div>
       </div>

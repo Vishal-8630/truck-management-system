@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Search, X, FileSearch, Download, Printer, ArrowLeft } from "lucide-react";
 import Invoice from "@/components/Invoice";
 import { useMessageStore } from "@/store/useMessageStore";
@@ -8,15 +8,40 @@ import { usePDFDownload } from "@/hooks/usePDFDownload";
 import { usePDFPrint } from "@/hooks/usePDFPrint";
 import { useNavigate } from "react-router-dom";
 import Loading from "@/components/Loading";
+import { useSearchParams } from "react-router-dom";
 
 const LRCopy = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const lrNoFromUrl = searchParams.get("lr_no");
+
   const [search, setSearch] = useState("");
   const [entry, setEntry] = useState<BillEntryType | null>(null);
   const { useBillEntriesQuery } = useBillEntries();
   const { data: entries = [], isLoading } = useBillEntriesQuery();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const { addMessage } = useMessageStore();
+
+  useState(() => {
+    if (lrNoFromUrl && entries.length > 0) {
+      const found = entries.find((e: BillEntryType) => e.lr_no === lrNoFromUrl);
+      if (found) {
+        setSearch(lrNoFromUrl);
+        setEntry(found);
+      }
+    }
+  });
+
+  // Effect to handle late-loading entries
+  useEffect(() => {
+    if (lrNoFromUrl && entries.length > 0 && !entry) {
+      const found = entries.find((e: BillEntryType) => e.lr_no === lrNoFromUrl);
+      if (found) {
+        setSearch(lrNoFromUrl);
+        setEntry(found);
+      }
+    }
+  }, [lrNoFromUrl, entries, entry]);
 
   const handleSearchClear = () => {
     setSearch("");

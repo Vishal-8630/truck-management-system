@@ -41,11 +41,10 @@ const BottomBar = () => {
             </div>
           </div>
           <div className="flex flex-col gap-6">
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Legal & Support</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Legal</h4>
             <div className="flex flex-col gap-4 text-sm font-bold text-slate-400">
               <Link to="/privacy-policy" className="hover:text-indigo-400 transition-colors w-fit">Privacy Policy</Link>
               <Link to="/terms-and-conditions" className="hover:text-indigo-400 transition-colors w-fit">Terms of Service</Link>
-              <Link to="/support" className="hover:text-indigo-400 transition-colors w-fit">Support Center</Link>
             </div>
           </div>
         </div>

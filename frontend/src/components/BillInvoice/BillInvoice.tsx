@@ -63,7 +63,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
   }, [grossBill, entry?.advance]);
 
   return (
-    <div className="flex flex-col text-slate-800 font-sans max-w-5xl mx-auto bg-white">
+    <div className="flex flex-col text-slate-800 font-sans w-[800px] mx-auto bg-white border border-slate-100 shadow-sm">
       {/* Header */}
       <div className="flex flex-col items-center text-center py-6 border-b-2 border-indigo-600 mb-8 bg-indigo-50/50 rounded-t-xl">
         <h1 className="text-4xl font-black text-indigo-900 italic tracking-tighter mb-1 uppercase">Divyanshi Road Lines</h1>
