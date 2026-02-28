@@ -1,3 +1,1 @@
-import MoveToTopButton from "./MoveToTopButton";
-
-export default MoveToTopButton;
+export { default } from '@/components/layout/MoveToTopButton';

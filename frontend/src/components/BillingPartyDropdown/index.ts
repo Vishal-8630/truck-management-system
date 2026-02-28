@@ -1,3 +1,3 @@
-import BillingPartyDropdown from "./BillingPartyDropdown";
+import BillingPartyDropdown from "@/components/BillingPartyDropdown/BillingPartyDropdown";
 
 export default BillingPartyDropdown;

@@ -1,3 +1,1 @@
-import PaginatedList from "./PaginatedList";
-
-export default PaginatedList;
+export { default } from '@/components/ui/PaginatedList';

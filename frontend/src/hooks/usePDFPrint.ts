@@ -1,7 +1,5 @@
-import { useDispatch } from "react-redux";
-import { addMessage } from "../features/message";
-import type { AppDispatch } from "../app/store";
-import api from "../api/axios";
+import { useMessageStore } from "@/store/useMessageStore";
+import api from "@/api/axios";
 import { useReactToPrint } from "react-to-print";
 
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -23,47 +21,42 @@ export const usePDFPrint = <T>({
   endpoint = "/invoice/generate-pdf",
   serverMode = true,
 }: UsePDFPrintOptions<T>) => {
-  const dispatch: AppDispatch = useDispatch();
+  const { addMessage } = useMessageStore();
   const isLandscape = orientation === "l";
 
   const printNow = useReactToPrint({
     contentRef: ref,
-    documentTitle: "Invoice",
+    documentTitle: "Document",
     pageStyle: `
       @page {
         size: A4 ${isLandscape ? "landscape" : "portrait"};
-        margin: 5mm;
+        margin: 0;
       }
       @media print {
         html, body {
           margin: 0;
           padding: 0;
+          width: 100%;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          font-family: Arial, sans-serif;
         }
-
-        /* ---- Force Landscape Transform ---- */
-        ${
-          isLandscape
-            ? `
-          body {
-            transform: rotate(-90deg) translate(-100%);
-            transform-origin: top left;
-            width: 100vh;
-            height: 100vw;
-            overflow: visible;
-          }
-        `
-            : ""
+        body {
+          zoom: 0.85; /* Ensures content fits on one page */
+        }
+        .card-premium {
+          border: none !important;
+          box-shadow: none !important;
+        }
+        * {
+          page-break-inside: avoid !important;
         }
       }
     `,
   });
 
   const handlePrint = async (): Promise<void> => {
-    if (!data || !Object.keys(data).length) {
-      dispatch(addMessage({ type: "error", text: emptyMessage }));
+    if (!data || !Object.keys(data as object).length) {
+      addMessage({ type: "error", text: emptyMessage });
       return;
     }
 
@@ -71,8 +64,8 @@ export const usePDFPrint = <T>({
 
     console.log(`Print clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
-    // ======= MOBILE / SERVER PDF FLOW =======
-    if (isMobile && serverMode) {
+    // ======= SERVER PDF FLOW (Accurate Puppeteer) =======
+    if (serverMode) {
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
@@ -87,16 +80,25 @@ export const usePDFPrint = <T>({
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             ${styles}
             <style>
+              @page {
+                size: A4 ${isLandscape ? "landscape" : "portrait"} !important;
+                margin: 5mm;
+              }
               body {
-              -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
                 margin: 0;
                 padding: 0;
-                font-family: Arial, sans-serif;
+                background: white !important;
+              }
+              .card-premium {
+                border: 1px solid #f1f5f9 !important;
+                box-shadow: none !important;
+                background: white !important;
               }
             </style>
           </head>
-          <body>${ref.current.outerHTML}</body>
+          <body style="background: white;">${ref.current.outerHTML}</body>
         </html>
       `;
 
@@ -107,6 +109,11 @@ export const usePDFPrint = <T>({
       );
 
       try {
+        addMessage({
+          type: "info",
+          text: "Preparing printable document...",
+        });
+
         const res = await api.post<Blob>(
           endpoint,
           { html: processedHTML, landscape: isLandscape },
@@ -115,20 +122,16 @@ export const usePDFPrint = <T>({
 
         const blobUrl = URL.createObjectURL(res.data);
         window.open(blobUrl, "_blank");
-        dispatch(
-          addMessage({
-            type: "success",
-            text: "Opening styled PDF for print...",
-          })
-        );
+        addMessage({
+          type: "success",
+          text: "Opening styled PDF for print...",
+        });
       } catch (error) {
         console.error("PDF print error:", error);
-        dispatch(
-          addMessage({
-            type: "error",
-            text: "Failed to generate printable PDF",
-          })
-        );
+        addMessage({
+          type: "error",
+          text: "Failed to generate printable PDF",
+        });
       }
 
       return;
@@ -138,9 +141,7 @@ export const usePDFPrint = <T>({
     if (printNow) {
       printNow();
     } else {
-      dispatch(
-        addMessage({ type: "error", text: "Print function not ready." })
-      );
+      addMessage({ type: "error", text: "Print function not ready." });
     }
   };
 

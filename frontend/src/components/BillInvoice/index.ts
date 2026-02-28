@@ -1,3 +1,3 @@
-import BillInvoice from "./BillInvoice";
+import BillInvoice from "@/components/BillInvoice/BillInvoice";
 
 export default BillInvoice;

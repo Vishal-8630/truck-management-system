@@ -1,3 +1,1 @@
-import GenericFilter from "./GenericFilter";
-
-export default GenericFilter;
+export { default } from '@/components/ui/GenericFilter';

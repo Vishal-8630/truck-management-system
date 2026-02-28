@@ -1,3 +1,1 @@
-import FormInputImage from "./FormInputImage";
-
-export default FormInputImage;
+export { default } from '@/components/ui/FormInputImage';

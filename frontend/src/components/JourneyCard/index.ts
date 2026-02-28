@@ -1,2 +1,2 @@
-import JourneyCard from "./JourneyCard";
+import JourneyCard from "@/components/JourneyCard/JourneyCard";
 export default JourneyCard;

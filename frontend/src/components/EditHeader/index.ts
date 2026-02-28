@@ -1,3 +1,3 @@
-import EditHeader from "./EditHeader";
+import EditHeader from "@/components/EditHeader/EditHeader";
 
 export default EditHeader;

@@ -1,6 +1,6 @@
-import { EmptyDriverType, type DriverType } from "./driver";
-import { EmptySettlementType, type SettlementType } from "./settlement";
-import { EmptyTruckType, type TruckType } from "./truck";
+import { EmptyDriverType, type DriverType } from "@/types/driver";
+import { EmptySettlementType, type SettlementType } from "@/types/settlement";
+import { EmptyTruckType, type TruckType } from "@/types/truck";
 
 export interface JourneyType {
   _id: string;
@@ -84,97 +84,113 @@ export interface JourneyType {
   settled: boolean;
   settlement_ref: SettlementType;
 
-  createdAt: string;
-  updatedAt: string;
+  // New: user-facing settlement status with validation
+  journey_settlement_status?: "Settled" | "Unsettled";
+
+  // --- Party Payment Tracking ---
+  party_payment_status?: "Pending" | "Partially Paid" | "Paid";
+  party_payment_due_date?: string;
+  party_payment_received_date?: string;
+  party_payment_remarks?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const EmptyJourneyType: JourneyType = {
-    _id: "",
-    truck: EmptyTruckType,
-    driver: EmptyDriverType,
+  _id: "",
+  truck: EmptyTruckType,
+  driver: EmptyDriverType,
 
-    from: "",
-    to: "",
-    route: [],
+  from: "",
+  to: "",
+  route: [],
 
-    journey_days: "5",
-    journey_start_date: "",
-    journey_end_date: "",
-    journey_starting_cash: "",
+  journey_days: "5",
+  journey_start_date: "",
+  journey_end_date: "",
+  journey_starting_cash: "",
 
-    distance_km: "",
-    loaded_weight: "",
-    average_mileage: "",
+  distance_km: "",
+  loaded_weight: "",
+  average_mileage: "",
 
-    starting_kms: "",
-    ending_kms: "",
+  starting_kms: "",
+  ending_kms: "",
 
-    status: "Active",
+  status: "Active",
 
-    driver_expenses: [],
-    diesel_expenses: [],
-    delays: [],
-    settlement: {
-        amount_paid: "",
-        date_paid: "",
-        mode: "",
-        remarks: ""
-    },
+  driver_expenses: [],
+  diesel_expenses: [],
+  delays: [],
+  settlement: {
+    amount_paid: "",
+    date_paid: "",
+    mode: "",
+    remarks: ""
+  },
 
-    total_driver_expense: "",
-    total_diesel_expense: "",
+  total_driver_expense: "",
+  total_diesel_expense: "",
 
-    daily_progress: [],
-    issues: [],
-    journey_summary: "",
+  daily_progress: [],
+  issues: [],
+  journey_summary: "",
 
-    delivery_details: {
-        delivered_to: "",
-        entry_date: "",
-        empty_date: "",
-        remarks: ""
-    },
+  delivery_details: {
+    delivered_to: "",
+    entry_date: "",
+    empty_date: "",
+    remarks: ""
+  },
 
-    status_updates: [],
-    total_expense: "",
+  status_updates: [],
+  total_expense: "",
 
-    settled: false,
-    settlement_ref: EmptySettlementType,
+  settled: false,
+  settlement_ref: EmptySettlementType,
 
-    createdAt: "",
-    updatedAt: ""
+  journey_settlement_status: "Unsettled",
+
+  party_payment_status: "Pending",
+  party_payment_due_date: "",
+  party_payment_received_date: "",
+  party_payment_remarks: "",
+
+  createdAt: "",
+  updatedAt: ""
 }
 
 export const JOURNEY_ENTRY_LABELS = {
-    truck: "Truck",
-    driver: "Driver",
+  truck: "Truck",
+  driver: "Driver",
 
-    from: "From",
-    to: "To",
-    route: "Route",
+  from: "From",
+  to: "To",
+  route: "Route",
 
-    journey_days: "Journey Days",
-    journey_start_date: "Journey Start Date",
-    journey_end_date: "Journey End Date",
+  journey_days: "Journey Days",
+  journey_start_date: "Journey Start Date",
+  journey_end_date: "Journey End Date",
 
-    distance_km: "Distance (Km)",
-    average_mileage: "Average Mileage",
+  distance_km: "Distance (Km)",
+  average_mileage: "Average Mileage",
 
-    status: "Status",
+  status: "Status",
 
-    driver_expenses: "Working Expenses",
-    diesel_expenses: "Diesel Expenses",
-    delays: "Delays",
-    settlement: "Settlement",
+  driver_expenses: "Working Expenses",
+  diesel_expenses: "Diesel Expenses",
+  delays: "Delays",
+  settlement: "Settlement",
 
-    total_driver_expense: "Total Working Expense",
-    total_diesel_expense: "Total Diesel Expense",
+  total_driver_expense: "Total Working Expense",
+  total_diesel_expense: "Total Diesel Expense",
 
-    daily_progress: "Daily Progress",
-    issues: "Issues",
-    journey_summary: "Journey Summary",
+  daily_progress: "Daily Progress",
+  issues: "Issues",
+  journey_summary: "Journey Summary",
 
-    delivery_details: "Delivery Details",
-    status_updates: "Status Updates",
-    total_expense: "Total Expense"
+  delivery_details: "Delivery Details",
+  status_updates: "Status Updates",
+  total_expense: "Total Expense"
 }

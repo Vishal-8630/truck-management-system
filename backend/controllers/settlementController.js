@@ -1,9 +1,11 @@
 import Driver from '../models/driverModel.js';
 import Settlement from '../models/settlementModel.js';
 import TruckJourney from '../models/truckJourneyModel.js';
+import Ledger from '../models/ledgerModel.js';
 import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import mongoose from 'mongoose';
+import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 
 const toNum = v => {
     if (v === undefined || v === null || v === "") return 0;
@@ -11,11 +13,97 @@ const toNum = v => {
     return Number.isFinite(n) ? n : 0;
 }
 
+const calculateTotals = (journeys, ratePerKm, dieselRate, extraExpense, defaultMileage = 1) => {
+    let totalDriverExpense = 0;
+    let totalDieselExpense = 0;
+    let totalDieselQty = 0;
+    let totalDistance = 0;
+    let totalAvgMileageSum = 0;
+    let mileageCount = 0;
+    let totalJourneyGivenCash = 0;
+
+    for (const j of journeys) {
+        totalDriverExpense += toNum(j.total_driver_expense);
+        totalDieselExpense += toNum(j.total_diesel_expense);
+        totalAvgMileageSum += toNum(j.average_mileage);
+        totalJourneyGivenCash += toNum(j.journey_starting_cash);
+
+        if (j.average_mileage) mileageCount++;
+
+        const start = toNum(j.starting_kms);
+        const end = toNum(j.ending_kms);
+        const dist = Math.max(end - start, 0);
+        totalDistance += dist;
+
+        if (Array.isArray(j.diesel_expenses)) {
+            for (const d of j.diesel_expenses) {
+                totalDieselQty += toNum(d.quantity);
+            }
+        }
+    }
+
+    const avgMileage = mileageCount ? (totalAvgMileageSum / mileageCount) : (toNum(defaultMileage) || 1);
+    const totalDieselUsed = avgMileage ? Math.floor((totalDistance / avgMileage)) : 0;
+    const dieselDiff = totalDieselUsed - totalDieselQty;
+    let dieselValue = dieselDiff * dieselRate;
+
+    const fuelMoneyAdjustment = dieselDiff * avgMileage;
+    const totalRatePerKm = (totalDistance * ratePerKm);
+
+    let driverTotal = totalRatePerKm + totalDriverExpense;
+    let ownerTotal = totalJourneyGivenCash;
+
+    if (dieselDiff > 0) {
+        dieselValue = Math.floor(dieselValue);
+        driverTotal += dieselValue;
+    } else {
+        dieselValue = Math.ceil(dieselValue);
+        ownerTotal += (-dieselValue);
+    }
+
+    if (extraExpense > 0) {
+        ownerTotal += extraExpense;
+    } else {
+        driverTotal += extraExpense;
+    }
+
+    const overallTotal = ownerTotal - driverTotal;
+
+    return {
+        total_driver_expense: Number(totalDriverExpense.toFixed(2)),
+        total_diesel_expense: Number(totalDieselExpense.toFixed(2)),
+        total_diesel_quantity: Number(totalDieselQty.toFixed(2)),
+        total_journey_starting_cash: Number(totalJourneyGivenCash.toFixed(2)),
+        total_distance: Number(totalDistance.toFixed(2)),
+        total_rate_per_km: Number(totalRatePerKm.toFixed(2)),
+        avg_mileage: Number(avgMileage.toFixed(2)),
+        total_diesel_used: Number(totalDieselUsed.toFixed(2)),
+        diesel_diff: Number(dieselDiff.toFixed(2)),
+        diesel_value: Number(dieselValue.toFixed(2)),
+        driver_total: Number(driverTotal.toFixed(2)),
+        owner_total: Number(ownerTotal.toFixed(2)),
+        overall_total: Number(overallTotal.toFixed(2)),
+        fuelMoneyAdjustment: Number(fuelMoneyAdjustment.toFixed(2)),
+        extra_expense: extraExpense,
+        rate_per_km: ratePerKm,
+        diesel_rate: dieselRate,
+    };
+};
+
 export const previewSettlement = async (req, res, next) => {
     try {
         const { driverId, from, to } = req.query;
-        if (!driverId || !from || !to) {
-            return next(new AppError("Driver ID, From and To are required", 400));
+        console.log(from, to);
+
+        const errors = {};
+        if (!driverId) errors.driverId = "Driver ID is required";
+        if (!from) errors.from = "From Date is required";
+        if (!to) errors.to = "To Date is required";
+        if (!req.query.ratePerKm) errors.ratePerKm = "Rate Per Km is required";
+        if (!req.query.dieselRate) errors.dieselRate = "Diesel Rate is required";
+
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const includeSettled = String(req.query.includeSettled || "false") === "true";
@@ -53,83 +141,11 @@ export const previewSettlement = async (req, res, next) => {
             });
         }
 
-        let totalDriverExpense = 0;
-        let totalDieselExpense = 0;
-        let totalDieselQty = 0;
-        let totalDistance = 0;
-        let totalAvgMileageSum = 0;
-        let mileageCount = 0;
-        let totalJourneyGivenCash = 0;
-        let totalRatePerKm = 0;
-
-        for (const j of journeys) {
-            totalDriverExpense += toNum(j.total_driver_expense);
-            totalDieselExpense += toNum(j.total_diesel_expense);
-            totalAvgMileageSum += toNum(j.average_mileage);
-            totalJourneyGivenCash += toNum(j.journey_starting_cash);
-
-            if (j.average_mileage) mileageCount++;
-
-            const start = toNum(j.starting_kms);
-            const end = toNum(j.ending_kms);
-            const dist = Math.max(end - start, 0);
-            totalDistance += dist;
-
-            if (Array.isArray(j.diesel_expenses)) {
-                for (const d of j.diesel_expenses) {
-                    totalDieselQty += toNum(d.quantity);
-                }
-            }
-        }
-
-        const avgMileage = mileageCount ? (totalAvgMileageSum / mileageCount) : (toNum(req.query.defaultMileage) || 1);
-        const totalDieselUsed = avgMileage ? Math.floor((totalDistance / avgMileage)) : 0;
-        const dieselDiff = totalDieselUsed - totalDieselQty;
-        const dieselValue = dieselDiff * DIESEL_RATE;
-
-        const fuelMoneyAdjustment = dieselDiff * avgMileage;
-        totalRatePerKm = (totalDistance * RATE_PER_KM);
-
-        let driverTotal = totalRatePerKm + totalDriverExpense;
-        let ownerTotal = totalJourneyGivenCash;
-
-        if (dieselDiff > 0) {
-            dieselValue = Math.floor(dieselValue);
-            driverTotal += dieselValue;
-        } else {
-            dieselValue = Math.ceil(dieselValue);
-            ownerTotal += (-dieselValue);
-        }
-
-        if (EXTRA_EXPENSE > 0) {
-            ownerTotal += EXTRA_EXPENSE;
-        } else {
-            driverTotal += EXTRA_EXPENSE;
-        }
-
-        const overallTotal = ownerTotal - driverTotal;
+        const totals = calculateTotals(journeys, RATE_PER_KM, DIESEL_RATE, EXTRA_EXPENSE, req.query.defaultMileage);
 
         const result = {
             journeys: journeys.map(j => ({ ...j })),
-            totals: {
-                total_driver_expense: Number(totalDriverExpense.toFixed(2)),
-                total_diesel_expense: Number(totalDieselExpense.toFixed(2)),
-                total_diesel_quantity: Number(totalDieselQty.toFixed(2)),
-                total_journey_starting_cash: Number(totalJourneyGivenCash.toFixed(2)),
-                total_distance: Number(totalDistance.toFixed(2)),
-                total_rate_per_km: Number(totalRatePerKm.toFixed(2)),
-                avg_mileage: Number(avgMileage.toFixed(2)),
-                total_diesel_used: Number(totalDieselUsed.toFixed(2)),
-                diesel_diff: Number(dieselDiff.toFixed(2)),
-                diesel_value: Number(dieselValue.toFixed(2)),
-                driver_total: Number(driverTotal.toFixed(2)),
-                owner_total: Number(ownerTotal.toFixed(2)),
-                overall_total: Number(overallTotal.toFixed(2)),
-                fuelMoneyAdjustment: Number(fuelMoneyAdjustment.toFixed(2)),
-                extra_expense: EXTRA_EXPENSE,
-                rate_per_km: RATE_PER_KM,
-                diesel_rate: DIESEL_RATE,
-            }
+            totals
         }
 
         return successResponse(res, "Success", result);
@@ -181,7 +197,8 @@ export const confirmSettlement = async (req, res, next) => {
             rate_per_km: Number(totals.rate_per_km.toFixed(2)),
             diesel_rate: Number(totals.diesel_rate.toFixed(2)),
 
-            status: totals.overall_total === 0 ? "Settled" : totals.overall_total > 0 ? "Driver needs to pay" : "DRL needs to pay",
+            payment_status: totals.overall_total === 0 ? "Balanced" : totals.overall_total > 0 ? "Driver needs to pay" : "DRL needs to pay",
+            is_settled: false
         });
 
         // mark journeys settled and link them
@@ -215,6 +232,13 @@ export const confirmSettlement = async (req, res, next) => {
         updates.advance_amount = "0";
 
         await Driver.findByIdAndUpdate(driver._id, { $set: updates });
+
+        // Ledger entry creation removed from here to prevent duplication with markSettled
+        // Only markSettled will handle the official ledger record for the payout.
+
+        // WhatsApp notification
+        sendWhatsApp(WA.newDriverSettlement({ driver, totals, period, journeys }));
+
         return successResponse(res, "Settlement Created Successfully", savedSettlement);
     } catch (err) {
         console.log("Error in confirmSettlement: ", err);
@@ -228,6 +252,172 @@ export const allSettlements = async (req, res, next) => {
         return successResponse(res, "Success", settlements);
     } catch (err) {
         console.log("Error in allSettlements: ", err);
+        next(err);
+    }
+};
+
+export const markSettled = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const today = new Date().toISOString().split("T")[0];
+
+        const settlement = await Settlement.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    is_settled: true,
+                    settled_at: today
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!settlement) {
+            return next(new AppError("Settlement not found", 404));
+        }
+
+        // --- AUTO-GENERATE/SYNC LEDGER ENTRY on markSettled ---
+        try {
+            const absTotal = Math.abs(settlement.overall_total || 0);
+            const settlementId = settlement._id;
+
+            // Always clean up existing records for this settlement to avoid duplicates
+            await Ledger.deleteMany({
+                settlement: settlementId,
+                is_auto_generated: true
+            });
+
+            if (absTotal > 0) {
+                const isDRLPays = settlement.payment_status === "DRL needs to pay";
+                const paymentMode = settlement.payment_meta?.mode || "Cash";
+                const paymentDate = settlement.payment_meta?.date
+                    ? new Date(settlement.payment_meta.date)
+                    : new Date();
+
+                await Ledger.create({
+                    date: isNaN(paymentDate.getTime()) ? new Date() : paymentDate,
+                    settlement: settlementId,
+                    driver: settlement.driver,
+                    category: "Driver Settlement", // Standardized category
+                    transaction_type: "Driver Settlement",
+                    description: `Settlement Payout — ${settlement.driver?.name || 'Driver'} | ${settlement.payment_status} | ₹${absTotal} | Mode: ${paymentMode}`,
+                    debit: isDRLPays ? absTotal : 0,
+                    credit: isDRLPays ? 0 : absTotal,
+                    amount: absTotal,
+                    balance_type: isDRLPays ? "Debit" : "Credit",
+                    payment_mode: ["Cash", "Bank", "UPI", "Cheque", "Credit"].includes(paymentMode) ? paymentMode : "Cash",
+                    reference_no: settlement.payment_meta?.remarks || "",
+                    notes: `Settlement Finalized. ID: ${settlementId}`,
+                    is_auto_generated: true,
+                    meta: {
+                        settlement_id: settlementId.toString(),
+                        driver_id: settlement.driver?.toString(),
+                        payment_status: settlement.payment_status,
+                    }
+                });
+            }
+        } catch (ledgerErr) {
+            console.error("Auto-ledger sync failed at markSettled:", ledgerErr.message);
+        }
+
+        // WhatsApp notification
+        sendWhatsApp(WA.settlementMarkedSettled(settlement));
+
+        return successResponse(res, "Settlement marked as settled successfully.", settlement);
+    } catch (err) {
+        console.log("Error in markSettled: ", err);
+        next(err);
+    }
+};
+
+export const unmarkSettled = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const settlement = await Settlement.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    is_settled: false,
+                    settled_at: null
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!settlement) {
+            return next(new AppError("Settlement not found", 404));
+        }
+
+        // --- Clean up Ledger on Unsettle ---
+        try {
+            await Ledger.deleteMany({
+                settlement: id,
+                is_auto_generated: true
+            });
+        } catch (err) {
+            console.error("Ledger cleanup failed at unmarkSettled:", err.message);
+        }
+
+        // WhatsApp notification
+        sendWhatsApp(WA.settlementMarkedUnpaid(settlement));
+
+        return successResponse(res, "Settlement marked as unsettled.", settlement);
+    } catch (err) {
+        console.log("Error in unmarkSettled: ", err);
+        next(err);
+    }
+};
+
+export const recalculateSettlement = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const settlement = await Settlement.findById(id).populate("journeys");
+
+        if (!settlement) {
+            return next(new AppError("Settlement not found", 404));
+        }
+
+        if (settlement.is_settled) {
+            return next(new AppError("Cannot recalculate a settled record", 400));
+        }
+
+        // recalculate totals using the extracted function
+        const totals = calculateTotals(
+            settlement.journeys,
+            settlement.rate_per_km,
+            settlement.diesel_rate,
+            settlement.extra_expense,
+            settlement.avg_mileage
+        );
+
+        // update the settlement record with new totals
+        const updatedSettlement = await Settlement.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    total_driver_expense: totals.total_driver_expense,
+                    total_diesel_expense: totals.total_diesel_expense,
+                    total_diesel_quantity: totals.total_diesel_quantity,
+                    total_journey_starting_cash: totals.total_journey_starting_cash,
+                    total_distance: totals.total_distance,
+                    total_rate_per_km: totals.total_rate_per_km,
+                    avg_mileage: totals.avg_mileage,
+                    total_diesel_used: totals.total_diesel_used,
+                    diesel_diff: totals.diesel_diff,
+                    diesel_value: totals.diesel_value,
+                    driver_total: totals.driver_total,
+                    owner_total: totals.owner_total,
+                    overall_total: totals.overall_total,
+                    payment_status: totals.overall_total === 0 ? "Balanced" : totals.overall_total > 0 ? "Driver needs to pay" : "DRL needs to pay",
+                }
+            },
+            { new: true }
+        );
+
+        return successResponse(res, "Settlement recalculated successfully", updatedSettlement);
+    } catch (err) {
+        console.log("Error in recalculateSettlement: ", err);
         next(err);
     }
 };

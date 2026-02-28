@@ -1,6 +1,5 @@
 import type React from "react";
-import { useSelector } from "react-redux";
-import { selectUser } from "../../features/auth/authSelectors";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Navigate } from "react-router-dom";
 
 type AdminRoutesProps = {
@@ -8,7 +7,7 @@ type AdminRoutesProps = {
 };
 
 const AdminRoutes: React.FC<AdminRoutesProps> = ({ children }) => {
-  const user = useSelector(selectUser);
+  const { user } = useAuthStore();
 
   if (user && !user.isAdmin) {
     return <Navigate to="/" replace />;

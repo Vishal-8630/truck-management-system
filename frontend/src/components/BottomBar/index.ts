@@ -1,3 +1,1 @@
-import BottomBar from "./BottomBar";
-
-export default BottomBar;
+export { default } from '@/components/layout/BottomBar';

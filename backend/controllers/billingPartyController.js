@@ -4,6 +4,23 @@ import { successResponse } from '../utils/response.js';
 
 const newBillingParty = async (req, res, next) => {
     const { name, address, gst_no } = req.body;
+    const errors = {};
+    if (!name) errors.name = "Company name is required";
+    if (!address) errors.address = "Address is required";
+    if (!gst_no) errors.gst_no = "GST number is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
+    }
+
+    const existing = await BillingParty.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+    if (existing) {
+        return res.status(400).json({
+            status: "fail",
+            errors: { name: "Party name already exists" }
+        });
+    }
+
     const party = new BillingParty({
         name,
         address,
@@ -19,19 +36,32 @@ const getAllBillingParties = async (req, res) => {
 }
 
 const updateBillingParty = async (req, res, next) => {
-    const partyId = req.params.id;
-    const { name, address, gst_no } = req.body;
+    try {
+        const partyId = req.params.id;
+        const { name, address, gst_no } = req.body;
 
-    const party = await BillingParty.findByIdAndUpdate(partyId, {
-        name,
-        address,
-        gst_no
-    }, { new: true });
+        const errors = {};
+        if (!name) errors.name = "Company name is required";
+        if (!address) errors.address = "Address is required";
+        if (!gst_no) errors.gst_no = "GST number is required";
 
-    if (!party) {
-        return next(new AppError("Billing Party not found", 404));
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({ status: "fail", errors });
+        }
+
+        const party = await BillingParty.findByIdAndUpdate(partyId, {
+            name,
+            address,
+            gst_no
+        }, { new: true });
+
+        if (!party) {
+            return next(new AppError("Billing Party not found", 404));
+        }
+        return successResponse(res, "Billing Party Updated", party);
+    } catch (error) {
+        return next(new AppError("Failed to update billing party", 500));
     }
-    return successResponse(res, "Billing Party Updated", party);
 }
 
 const getBillingPartyByName = async (req, res, next) => {

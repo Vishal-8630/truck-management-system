@@ -1,5 +1,6 @@
-export const formatDate = (dateInput: Date) => {
-    const date = new Date(dateInput);
+export const formatDate = (dateInput: any) => {
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "—";
 
   const day = date.getDate();
   const month = date.toLocaleString("en-US", { month: "short" });

@@ -1,31 +1,30 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import api from "../api/axios";
-import { authEnd, authStart, authSuccess } from "../features/auth";
+import api from "@/api/axios";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const useAuthCheck = () => {
     const [checking, setChecking] = useState(true);
-    const dispatch = useDispatch();
+    const { authStart, authSuccess, authEnd } = useAuthStore();
 
     useEffect(() => {
         const fetchUser = async () => {
-            dispatch(authStart());
+            authStart();
             try {
                 const res = await api.get("/auth/me");
                 const obj = res.data;
                 if (res.status === 200 && obj.data) {
-                    dispatch(authSuccess(obj.data));
+                    authSuccess(obj.data);
                 } else {
-                    dispatch(authEnd());
+                    authEnd();
                 }
-            } catch (error: any ) {
-                dispatch(authEnd());
+            } catch (error: any) {
+                authEnd();
             } finally {
                 setChecking(false);
             }
         }
         fetchUser();
-    }, [dispatch]);
+    }, [authStart, authSuccess, authEnd]);
 
     return checking;
 }

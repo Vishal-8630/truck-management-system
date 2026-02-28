@@ -10,7 +10,7 @@ export interface DriverType {
     adhaar_front_img?: string | File,
     adhaar_back_img?: string | File,
     dl_front_img?: string | File,
-    dl_back_img? : string | File,
+    dl_back_img?: string | File,
 
     last_payment_clear_date: string,
     last_payment_amount: string,
@@ -23,8 +23,8 @@ export interface DriverType {
         assignedAt: string,
         unassignedAt?: string
     }[],
-    createdAt: string,
-    updatedAt: string
+    createdAt?: string,
+    updatedAt?: string
 }
 
 export const EmptyDriverType: DriverType = {
@@ -69,6 +69,6 @@ export const DRIVER_ENTRY_LABELS = {
     advance_amount: "Advance Amount",
     amount_to_pay: "Amount to Pay",
     amount_to_receive: "Amount to Receive",
-    
+
     vehicles: []
 }

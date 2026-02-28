@@ -1,3 +1,3 @@
-import Invoice from "./Invoice";
+import Invoice from "@/components/Invoice/Invoice";
 
 export default Invoice;

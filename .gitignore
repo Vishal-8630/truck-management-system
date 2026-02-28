@@ -3,8 +3,9 @@ node_modules/
 **/node_modules/
 
 # Build outputs
-frontend/build/
+frontend/dist/
 backend/dist/
+frontend/build/
 
 # Environment files
 *.env
@@ -28,3 +29,6 @@ coverage/
 
 # Temporary files/uploads
 uploads/
+
+.wwebjs_auth/
+.wwebjs_cache/

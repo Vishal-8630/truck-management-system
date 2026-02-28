@@ -1,9 +1,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useDispatch } from "react-redux";
-import { addMessage } from "../features/message";
-import type { AppDispatch } from "../app/store";
-import api from "../api/axios";
+import { useMessageStore } from "@/store/useMessageStore";
+import api from "@/api/axios";
 
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
@@ -26,24 +24,44 @@ export const usePDFDownload = <T>({
   endpoint = "/invoice/generate-pdf",
   serverMode = true,
 }: UsePDFDownloadOptions<T>) => {
-  const dispatch: AppDispatch = useDispatch();
+  const { addMessage } = useMessageStore();
 
   const handleDownload = async (): Promise<void> => {
     if (!data || !Object.keys(data).length) {
-      dispatch(addMessage({ type: "error", text: emptyMessage }));
+      addMessage({ type: "error", text: emptyMessage });
       return;
     }
 
     if (!ref.current) return;
     console.log(`Download clicked from ${isMobile ? "Mobile" : "Laptop"}`);
 
-    // ================== MOBILE / SERVER FLOW ==================
-    if (isMobile && serverMode) {
+    // ================== SERVER FLOW (Accurate Puppeteer) ==================
+    if (serverMode) {
       const styles = Array.from(
         document.querySelectorAll("style, link[rel='stylesheet']")
       )
         .map((el) => el.outerHTML)
         .join("\n");
+
+      // Inject some print-specific CSS to ensure it looks good in Puppeteer
+      const printStyles = `
+        <style>
+          @page {
+            size: A4 ${orientation === "l" ? "landscape" : "portrait"} !important;
+            margin: 5mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background: white !important;
+          }
+          .card-premium {
+            border: 1px solid #f1f5f9 !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+        </style>
+      `;
 
       const html = `
         <!DOCTYPE html>
@@ -52,8 +70,9 @@ export const usePDFDownload = <T>({
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             ${styles}
+            ${printStyles}
           </head>
-          <body>${ref.current.outerHTML}</body>
+          <body style="background: white;">${ref.current.outerHTML}</body>
         </html>
       `;
 
@@ -64,18 +83,17 @@ export const usePDFDownload = <T>({
       );
 
       try {
+        addMessage({ type: "info", text: "Generating high-quality PDF..." });
+
         const res = await api.post(
           endpoint,
           { html: processedHTML, landscape: orientation === "l" },
           {
-            responseType: "arraybuffer",
-            transformResponse: [(data) => data],
+            responseType: "blob",
           }
         );
 
-        const uint8Array = new Uint8Array(res.data);
-        const blob = new Blob([uint8Array], { type: "application/pdf" });
-
+        const blob = new Blob([res.data], { type: "application/pdf" });
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = blobUrl;
@@ -85,10 +103,10 @@ export const usePDFDownload = <T>({
         link.remove();
         setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
 
-        dispatch(addMessage({ type: "success", text: "PDF downloaded!" }));
+        addMessage({ type: "success", text: "PDF downloaded!" });
       } catch (error) {
         console.error("PDF generation error:", error);
-        dispatch(addMessage({ type: "error", text: "Failed to generate PDF" }));
+        addMessage({ type: "error", text: "Failed to generate PDF" });
       }
 
       return;
@@ -151,26 +169,40 @@ export const usePDFDownload = <T>({
 
     // 🖼️ Render to canvas
     const canvas = await html2canvas(clone, {
-      scale: 2,
+      scale: 3, // Higher scale for better quality
       useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      logging: false,
       scrollY: -window.scrollY,
       windowWidth: clone.scrollWidth,
       windowHeight: clone.scrollHeight,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/png", 1.0);
     const pdf = new jsPDF(orientation, "mm", "a4");
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     const margin = 5;
 
-    const renderWidth = pdfWidth - margin * 2;
-    const renderHeight = (canvas.height * renderWidth) / canvas.width;
+    const maxRenderWidth = pdfWidth - margin * 2;
+    const maxRenderHeight = pdfHeight - margin * 2;
 
-    const x = margin;
+    let finalWidth = maxRenderWidth;
+    let finalHeight = (canvas.height * finalWidth) / canvas.width;
+
+    // If height exceeds page, scale down to fit height
+    if (finalHeight > maxRenderHeight) {
+      finalHeight = maxRenderHeight;
+      finalWidth = (canvas.width * finalHeight) / canvas.height;
+    }
+
+    // Center horizontally if scaled down by height
+    const x = margin + (maxRenderWidth - finalWidth) / 2;
     const y = margin;
 
-    pdf.addImage(imgData, "PNG", x, y, renderWidth, renderHeight);
+    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight, undefined, "FAST");
     pdf.save(filename);
 
     document.body.removeChild(clone);

@@ -114,8 +114,27 @@ const truckJourneySchema = new mongoose.Schema({
 
   is_deleted: { type: Boolean, default: false },
 
+  // settled & settlement_ref: managed by the bulk driver-settlement batch workflow
   settled: { type: Boolean, default: false },
-  settlement_ref: { type: mongoose.Schema.Types.ObjectId, ref: "DriverSettlement", default: null }
+  settlement_ref: { type: mongoose.Schema.Types.ObjectId, ref: "DriverSettlement", default: null },
+
+  // journey_settlement_status: user-facing flag on the journey detail page
+  // Only allowed to set "Settled" when settlement.amount_paid + settlement.date_paid are filled
+  journey_settlement_status: {
+    type: String,
+    enum: ["Settled", "Unsettled"],
+    default: "Unsettled"
+  },
+
+  // --- Party Payment Tracking ---
+  party_payment_status: {
+    type: String,
+    enum: ["Pending", "Partially Paid", "Paid"],
+    default: "Pending"
+  },
+  party_payment_due_date: { type: String },
+  party_payment_received_date: { type: String },
+  party_payment_remarks: { type: String, trim: true }
 
 }, { timestamps: true });
 
@@ -168,9 +187,9 @@ truckJourneySchema.pre("save", function (next) {
   next();
 });
 
-truckJourneySchema.virtual("total_expense").get(function() {
-  const total = 
-    parseFloat(this.total_diesel_expense || 0) + 
+truckJourneySchema.virtual("total_expense").get(function () {
+  const total =
+    parseFloat(this.total_diesel_expense || 0) +
     parseFloat(this.total_driver_expense || 0);
   return String(total);
 });

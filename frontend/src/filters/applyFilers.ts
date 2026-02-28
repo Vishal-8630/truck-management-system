@@ -1,5 +1,5 @@
-import type { FilterWithValue } from "./filter";
-import getNestedValue from "./getNestedValue";
+import type { FilterWithValue } from "@/filters/filter";
+import getNestedValue from "@/filters/getNestedValue";
 
 export function applyFilters<T>(data: T[], filters: FilterWithValue<T>[]): T[] {
   let result = [...data];
@@ -89,6 +89,13 @@ export function applyFilters<T>(data: T[], filters: FilterWithValue<T>[]): T[] {
           const minTs = min ? new Date(min as string).getTime() : -Infinity;
           const maxTs = max ? new Date(max as string).getTime() : Infinity;
           return ts >= minTs && ts <= maxTs;
+        }
+
+        case "select": {
+          return (
+            fieldValue.toString().toLowerCase() ===
+            value.toString().toLowerCase()
+          );
         }
 
         default:

@@ -1,3 +1,1 @@
-import SmartDropdown from "./SmartDropdown";
-
-export default SmartDropdown;
+export { default } from '@/components/ui/SmartDropdown';

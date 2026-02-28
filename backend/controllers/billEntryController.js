@@ -2,13 +2,22 @@ import { successResponse } from '../utils/response.js';
 import Entry from '../models/billingEntryModel.js';
 import AppError from '../utils/appError.js';
 import mongoose from 'mongoose';
+import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 
 const addNewBillingEntry = async (req, res, next) => {
     const { extra_charges, billing_party, _id, ...rest } = req.body;
     const charges = [];
 
-    if (!billing_party || !billing_party._id) {
-        return next(new AppError("billing_party is required with a valid _id", 400));
+    const { lr_no, date, consignor, consignee } = rest;
+    const errors = {};
+    if (!billing_party || !billing_party._id) errors.billing_party = "Billing party is required";
+    if (!lr_no) errors.lr_no = "LR Number is required";
+    if (!date) errors.date = "Date is required";
+    if (!consignor) errors.consignor = "Consignor is required";
+    if (!consignee) errors.consignee = "Consignee is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
     }
 
     if (Array.isArray(extra_charges)) {
@@ -33,6 +42,10 @@ const addNewBillingEntry = async (req, res, next) => {
         return next(new AppError("Failed to create new entry", 400))
     }
 
+    // WhatsApp notification — populate billing_party for the message
+    const populated = await Entry.findById(newEntry._id).populate('billing_party').lean();
+    sendWhatsApp(WA.newBillEntry(populated)); // fire-and-forget
+
     return successResponse(res, "Entry Added Successfully");
 }
 
@@ -48,6 +61,18 @@ const updateBillingEntry = async (req, res, next) => {
 
     const { extra_charges, ...rest } = updatedEntry;
     const charges = [];
+
+    const { lr_no, date, consignor, consignee, billing_party } = rest;
+    const errors = {};
+    if (!billing_party || !billing_party._id) errors.billing_party = "Billing party is required";
+    if (!lr_no) errors.lr_no = "LR Number is required";
+    if (!date) errors.date = "Date is required";
+    if (!consignor) errors.consignor = "Consignor is required";
+    if (!consignee) errors.consignee = "Consignee is required";
+
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({ status: "fail", errors });
+    }
 
     if (Array.isArray(extra_charges)) {
         extra_charges.forEach((charge) => {

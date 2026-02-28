@@ -1,3 +1,3 @@
-import AdminRoutes from "./AdminRoutes";
+import AdminRoutes from "@/components/AdminRoutes/AdminRoutes";
 
 export default AdminRoutes;

@@ -50,7 +50,8 @@ export const EmptyVehicleEntry: VehicleEntryType = {
     movementType: "From DRL",
 };
 
-export const VEHICLE_ENTRY_LABELS = {
+export const VEHICLE_ENTRY_LABELS: Record<string, string> = {
+    _id: "ID",
     date: "Date",
     vehicle_no: "Vehicle No",
     from: "From",

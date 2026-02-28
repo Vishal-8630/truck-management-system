@@ -29,10 +29,10 @@ const settlementSchema = new mongoose.Schema({
   diesel_rate: { type: Number, default: 0 },
   extra_expense: { type: Number, default: 0 },
 
-  status: {
+  payment_status: {
     type: String,
-    enum: ["Settled", "Driver needs to pay", "DRL needs to pay"],
-    default: "Pending"
+    enum: ["Balanced", "Driver needs to pay", "DRL needs to pay"],
+    default: "Balanced"
   },
 
   payment_meta: {
@@ -40,6 +40,10 @@ const settlementSchema = new mongoose.Schema({
     date: String,
     remarks: String
   },
+
+  is_settled: { type: Boolean, default: false },
+  settled_at: { type: String, default: null },
+
 }, { timestamps: true });
 
 const Settlement = mongoose.model("Settlement", settlementSchema);

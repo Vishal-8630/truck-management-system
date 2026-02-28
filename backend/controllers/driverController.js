@@ -4,6 +4,7 @@ import AppError from '../utils/appError.js';
 import { deleteFromS3 } from "../middlewares/uploadMiddleware.js";
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 import safeJSONParse from "../utils/safeJSONParse.js";
+import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 
 const newDriver = async (req, res, next) => {
     try {
@@ -11,7 +12,12 @@ const newDriver = async (req, res, next) => {
 
         if (!name || !phone || !adhaar_no || !dl) {
             if (req.files) await deleteFromS3(req.files);
-            return next(new AppError("All required fields must be provided", 400));
+            const errors = {};
+            if (!name) errors.name = "Driver name is required";
+            if (!phone) errors.phone = "Phone number is required";
+            if (!adhaar_no) errors.adhaar_no = "Adhaar number is required";
+            if (!dl) errors.dl = "Driving license is required";
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const getFile = (key) => req.files?.[key]?.[0]?.location || null;
@@ -41,16 +47,15 @@ const newDriver = async (req, res, next) => {
 
         if (existingDriver) {
             if (req.files) await deleteFromS3(req.files);
-            let field =
-                existingDriver.adhaar_no === adhaar_no
-                    ? "Adhaar Number"
-                    : existingDriver.dl === dl
-                        ? "Driving License"
-                        : "Phone Number";
-            return next(new AppError(`Driver with this ${field} already exists`, 400));
+            const errors = {};
+            if (existingDriver.adhaar_no === adhaar_no) errors.adhaar_no = "Adhaar number already exists";
+            if (existingDriver.dl === dl) errors.dl = "Driving license already exists";
+            if (existingDriver.phone === phone) errors.phone = "Phone number already exists";
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const newDriver = await Driver.create(driverData);
+        sendWhatsApp(WA.newDriver(driverData)); // fire-and-forget
         return successResponse(res, "Driver Added Successfully", newDriver);
 
     } catch (error) {
@@ -97,7 +102,12 @@ const updateDriver = async (req, res, next) => {
 
         if (!name || !phone || !adhaar_no || !dl) {
             if (req.files) await deleteFromS3(req.files);
-            return next(new AppError("All required fields must be provided", 400));
+            const errors = {};
+            if (!name) errors.name = "Driver name is required";
+            if (!phone) errors.phone = "Phone number is required";
+            if (!adhaar_no) errors.adhaar_no = "Adhaar number is required";
+            if (!dl) errors.dl = "Driving license is required";
+            return res.status(400).json({ status: "fail", errors });
         }
 
         const existingDriver = await Driver.findOne({

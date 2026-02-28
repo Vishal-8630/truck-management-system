@@ -19,6 +19,13 @@ import driverRoutes from './routes/driverRoute.js';
 import truckJourneyRoutes from './routes/truckJourneyRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
 import invoiceRoutes from './routes/invoiceRoute.js';
+import ledgerRoutes from './routes/ledgerRoute.js';
+import inquiryRoutes from './routes/inquiryRoute.js';
+import quoteRoutes from './routes/quoteRoute.js';
+import trackingRoutes from './routes/trackingRoute.js';
+import { initWhatsApp } from './utils/sendWhatsApp.js';
+import { initScheduler } from './utils/whatsappScheduler.js';
+import whatsappRoute from './routes/whatsappRoute.js';
 
 dotenv.config();
 connectDB();
@@ -35,7 +42,7 @@ const corsOptions = {
     "https://divyanshiroadlines.com",
     "http://localhost:5173",
   ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
 
@@ -56,6 +63,11 @@ app.use("/api/driver", driverRoutes);
 app.use("/api/journey", truckJourneyRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/invoice", invoiceRoutes);
+app.use("/api/ledger", ledgerRoutes);
+app.use("/api/inquiry", inquiryRoutes);
+app.use("/api/quote", quoteRoutes);
+app.use("/api/tracking", trackingRoutes);
+app.use("/api/whatsapp", whatsappRoute);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {
@@ -73,4 +85,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+  // Initialize WhatsApp client (shows QR in terminal on first run)
+  initWhatsApp();
+  // Start daily 8 AM WhatsApp alert scheduler
+  initScheduler();
 });

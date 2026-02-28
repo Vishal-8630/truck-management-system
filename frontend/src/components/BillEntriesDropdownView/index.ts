@@ -1,3 +1,3 @@
-import DropdownView from "./BillEntriesDropdownView";
+import DropdownView from "@/components/BillEntriesDropdownView/BillEntriesDropdownView";
 
 export default DropdownView;

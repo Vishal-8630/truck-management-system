@@ -2,7 +2,7 @@ import {
   buildRows,
   getHeaderLabels,
   getOrderedHeaders,
-} from "./flattenEntries";
+} from "@/utils/flattenEntries";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 

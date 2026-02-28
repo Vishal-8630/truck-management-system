@@ -1,250 +1,236 @@
-import React, { useRef, useState } from "react";
-import FormInput from "../../../components/FormInput";
-import FormSection from "../../../components/FormSection";
-import styles from "./NewDriverEntry.module.scss";
-import { EmptyDriverType, type DriverType } from "../../../types/driver";
-import FormInputImage from "../../../components/FormInputImage";
-import { useDispatch } from "react-redux";
-import { addMessage } from "../../../features/message";
-import { addDriverEntryAsync } from "../../../features/driver";
-import type { AppDispatch } from "../../../app/store";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDrivers } from "@/hooks/useDrivers";
+import { useMessageStore } from "@/store/useMessageStore";
+import FormInput from "@/components/FormInput";
+import FormSection from "@/components/FormSection";
+import FormInputImage from "@/components/ui/FormInputImage";
+import Button from "@/components/Button";
+import { User, Save, ArrowLeft, ShieldCheck, FileText, Activity, Image as ImageIcon } from "lucide-react";
 
-const NewDriverEntry: React.FC = () => {
-  const dispatch: AppDispatch = useDispatch();
+const NewDriverEntry = () => {
   const navigate = useNavigate();
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { useAddDriverMutation } = useDrivers();
+  const addDriver = useAddDriverMutation();
+
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    dl: "",
+    licence_expiry: "",
+    adhaar_no: "",
+    notes: "",
+  });
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
 
-  const [driver, setDriver] =
-    useState<Omit<DriverType, "_id">>(EmptyDriverType);
+  const fieldRefs: Record<string, React.RefObject<HTMLInputElement | HTMLTextAreaElement>> = {
+    name: useRef<HTMLInputElement>(null!),
+    phone: useRef<HTMLInputElement>(null!),
+    address: useRef<HTMLTextAreaElement>(null!),
+    dl: useRef<HTMLInputElement>(null!),
+    licence_expiry: useRef<HTMLInputElement>(null!),
+    adhaar_no: useRef<HTMLInputElement>(null!),
+    notes: useRef<HTMLTextAreaElement>(null!),
+  };
 
-  // Need to work on this logic
-  // const isValidDL = (value: string) =>
-  //   /^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$/.test(value);
+  const [image, setImage] = useState<File | null>(null);
 
-  const handleTextInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (value: string, name: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
     if (errorsRef.current[name]) {
       errorsRef.current[name] = "";
       forceRender({});
     }
-    if (name === "phone" || name === "home_phone") {
-      const phone_no = value.replace(/[^0-9]/g, "").slice(0, 10);
-      setDriver((prev) => ({ ...prev, [name]: phone_no }));
-    } else if (name === "adhaar_no") {
-      const adhaar_no = value.replace(/[^0-9]/g, "").slice(0, 12);
-      const formatted = adhaar_no.replace(/(\d{4})(?=\d)/g, "$1 ");
-      setDriver((prev) => ({ ...prev, [name]: formatted }));
-    } else if (name === "dl") {
-      const dl = value
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "")
-        .slice(0, 15)
-        .replace(
-          /^([A-Z]{2})([0-9]{2})([0-9]{4})([0-9]{0,7}).*$/,
-          "$1 $2 $3 $4"
-        )
-        .trim();
-
-      setDriver((prev) => ({ ...prev, [name]: dl }));
-    } else {
-      setDriver((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleFileSelect = (file: File | null, field: keyof DriverType) => {
-    setDriver((prev) => ({
-      ...prev,
-      [field]: file,
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    errorsRef.current = {};
+    forceRender({});
 
-    /*
-     TODO: Need to fix the valid dl logic
-    const isDLValid = isValidDL(driver.dl || "");
-    if (!isDLValid) {
-      dispatch(addMessage({ type: "error", text: "Invalid DL Number" }));
+    if (!form.name.trim()) {
+      errorsRef.current.name = "Driver name is required.";
+      forceRender({});
+      addMessage({ type: "error", text: "Driver name is required." });
+      fieldRefs.name.current?.focus();
+      return;
     }
-    */
 
     try {
-      const formData = new FormData();
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      if (image) fd.append("driver_img", image);
+      await addDriver.mutateAsync(fd);
+      addMessage({ type: "success", text: "Driver registered successfully!" });
+      navigate("/journey/all-driver-entries");
+    } catch (err: any) {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors && typeof serverErrors === "object") {
+        errorsRef.current = serverErrors;
+        forceRender({});
 
-      Object.entries(driver).forEach(([key, value]) => {
-        if (!value) return;
-
-        if (value instanceof File) {
-          formData.append(key, value);
-        } else if (typeof value === "string") {
-          formData.append(key, value);
-        } else if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
-        } else if (typeof value === "object") {
-          formData.append(key, JSON.stringify(value));
+        const firstErrorKey = Object.keys(serverErrors)[0];
+        const firstErrorField = fieldRefs[firstErrorKey];
+        if (firstErrorField?.current) {
+          firstErrorField.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => firstErrorField.current?.focus(), 500);
         }
-      });
 
-      const resultAction = await dispatch(addDriverEntryAsync(formData));
-      if (addDriverEntryAsync.fulfilled.match(resultAction)) {
-        dispatch(
-          addMessage({ type: "success", text: "Driver added successfully" })
-        );
-        setDriver(EmptyDriverType);
-        navigate("/journey/all-driver-entries");
-      } else if (addDriverEntryAsync.rejected.match(resultAction)) {
-        const errors = resultAction.payload;
-        if (errors && !errors?.length && Object.keys(errors)?.length > 0) {
-          errorsRef.current = errors;
-          forceRender({});
-        }
-        dispatch(
-          addMessage({
-            type: "error",
-            text: errors?.general || "Failed to add new driver"
-          })
-        )
+        const firstErrorMsg = Object.values(serverErrors)[0] as string;
+        addMessage({ type: "error", text: firstErrorMsg || "Please fix the errors below." });
+      } else {
+        addMessage({ type: "error", text: "Failed to register driver. Please try again." });
       }
-    } catch {
-      dispatch(addMessage({ type: "error", text: "Something went wrong" }));
     }
   };
 
   return (
-    <div className={styles.newDriverEntryContainer}>
-      <form className={styles.newDriverForm} onSubmit={handleSubmit}>
-        <FormSection title="Add Driver">
-          <FormInput
-            type="text"
-            id="name"
-            name="name"
-            label="Name"
-            value={driver.name}
-            error={errorsRef.current['name']}
-            placeholder="Name"
-            onChange={handleTextInputChange}
-          />
+    <div className="flex flex-col gap-10 pb-24">
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-all text-sm font-semibold mb-2 w-fit"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-tight italic flex items-center gap-4">
+            <User className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" />
+            Register <span className="text-blue-600">Driver</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">Onboard a new driver to your fleet registry.</p>
+        </div>
+      </div>
 
-          <FormInputImage
-            label="Driver Photo"
-            id="driver_img"
-            name="driver_img"
-            isEditMode
-            value={
-              typeof driver.driver_img === "string" ? driver.driver_img : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "driver_img")}
-          />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            <FormSection title="Personal Profile" icon={<User size={18} />}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Full Name"
+                  name="name"
+                  placeholder="e.g. Rajesh Kumar"
+                  value={form.name}
+                  onChange={handleChange}
+                  error={errorsRef.current.name}
+                  inputRef={fieldRefs.name}
+                />
+                <FormInput
+                  type="input"
+                  inputType="tel"
+                  label="Mobile Number"
+                  name="phone"
+                  placeholder="e.g. +91 98XXX XXXXX"
+                  value={form.phone}
+                  onChange={handleChange}
+                  error={errorsRef.current.phone}
+                  inputRef={fieldRefs.phone}
+                />
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Adhaar Card No."
+                  name="adhaar_no"
+                  placeholder="XXXX-XXXX-XXXX"
+                  value={form.adhaar_no}
+                  onChange={handleChange}
+                  error={errorsRef.current.adhaar_no}
+                  inputRef={fieldRefs.adhaar_no}
+                />
+              </div>
+              <div className="mt-4">
+                <FormInput
+                  type="textarea"
+                  label="Permanent Address"
+                  name="address"
+                  placeholder="House no, street, city..."
+                  value={form.address}
+                  onChange={handleChange}
+                  error={errorsRef.current.address}
+                  inputRef={fieldRefs.address}
+                />
+              </div>
+            </FormSection>
 
-          <FormInput
-            type="textarea"
-            id="address"
-            name="address"
-            error={errorsRef.current['address']}
-            label="Address"
-            value={driver.address || ""}
-            placeholder="Address"
-            onChange={handleTextInputChange}
-          />
+            <FormSection title="Official Documents" icon={<ShieldCheck size={18} />}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <FormInput
+                  type="input"
+                  inputType="text"
+                  label="Driving Licence No."
+                  name="dl"
+                  placeholder="e.g. DL-XXXXXXXXXXXXX"
+                  value={form.dl}
+                  onChange={handleChange}
+                  error={errorsRef.current.dl}
+                  inputRef={fieldRefs.dl}
+                />
+                <FormInput
+                  type="date"
+                  label="Licence Expiry"
+                  name="licence_expiry"
+                  value={form.licence_expiry}
+                  onChange={handleChange}
+                  error={errorsRef.current.licence_expiry}
+                  inputRef={fieldRefs.licence_expiry}
+                />
+              </div>
+            </FormSection>
 
-          <FormInput
-            type="text"
-            id="phone"
-            name="phone"
-            label="Phone Number"
-            value={driver.phone}
-            error={errorsRef.current['phone']}
-            placeholder="Phone Number"
-            onChange={handleTextInputChange}
-          />
+            <FormSection title="Additional Notes" icon={<Activity size={18} />}>
+              <FormInput
+                type="textarea"
+                label="Experience & Notes"
+                name="notes"
+                placeholder="Years of experience, previous routes, etc..."
+                value={form.notes}
+                onChange={handleChange}
+                error={errorsRef.current.notes}
+                inputRef={fieldRefs.notes}
+              />
+            </FormSection>
+          </div>
 
-          <FormInput
-            type="text"
-            id="home_phone"
-            name="home_phone"
-            label="Home Phone Number"
-            value={driver.home_phone || ""}
-            placeholder="Home Phone Number"
-            onChange={handleTextInputChange}
-          />
+          <div className="lg:col-span-4 flex flex-col gap-8 sticky top-24">
+            <FormSection title="Driver Photo" icon={<ImageIcon size={18} />}>
+              <FormInputImage
+                id="driver_img"
+                name="driver_img"
+                label="Profile Picture"
+                isEditMode={true}
+                onFileSelect={(file) => setImage(file)}
+              />
+            </FormSection>
 
-          <FormInput
-            type="text"
-            id="adhaar_no"
-            name="adhaar_no"
-            label="Adhaar Number"
-            value={driver.adhaar_no}
-            error={errorsRef.current['adhaar_no']}
-            placeholder="Adhaar Number"
-            onChange={handleTextInputChange}
-          />
-
-          <FormInput
-            type="text"
-            id="dl"
-            name="dl"
-            label="Driving License"
-            value={driver.dl}
-            error={errorsRef.current['dl']}
-            placeholder="Driving License"
-            onChange={handleTextInputChange}
-          />
-
-          <FormInputImage
-            label="Adhaar Front Image"
-            id="adhaar_front_img"
-            name="adhaar_front_img"
-            isEditMode
-            value={
-              typeof driver.adhaar_front_img === "string"
-                ? driver.adhaar_front_img
-                : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "adhaar_front_img")}
-          />
-
-          <FormInputImage
-            label="Adhaar Back Image"
-            id="adhaar_back_img"
-            name="adhaar_back_img"
-            isEditMode
-            value={
-              typeof driver.adhaar_back_img === "string"
-                ? driver.adhaar_back_img
-                : ""
-            }
-            onFileSelect={(file) => handleFileSelect(file, "adhaar_back_img")}
-          />
-
-          <FormInputImage
-            label="Driving License Image"
-            id="dl_front_img"
-            name="dl_front_img"
-            isEditMode
-            value={typeof driver.dl_front_img === "string" ? driver.dl_front_img : ""}
-            onFileSelect={(file) => handleFileSelect(file, "dl_front_img")}
-          />
-
-          <FormInputImage
-            label="Driving License Image"
-            id="dl_back_img"
-            name="dl_back_img"
-            isEditMode
-            value={typeof driver.dl_back_img === "string" ? driver.dl_back_img : ""}
-            onFileSelect={(file) => handleFileSelect(file, "dl_back_img")}
-          />
-
-          <button type="submit" className={styles.addDriverBtn}>
-            Add
-          </button>
-        </FormSection>
+            <FormSection title="Confirm Entry" icon={<FileText size={18} />}>
+              <div className="flex flex-col gap-4">
+                <p className="text-xs text-slate-500 font-medium">Please ensure the driver's phone number and licence details match their official documents.</p>
+                <Button
+                  type="submit"
+                  isLoading={addDriver.isPending}
+                  icon={<Save size={20} />}
+                  className="py-5 shadow-blue-500/30 w-full"
+                >
+                  Register Driver
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/journey/all-driver-entries')}
+                  className="py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  Cancel Entry
+                </button>
+              </div>
+            </FormSection>
+          </div>
+        </div>
       </form>
     </div>
   );
