@@ -180,7 +180,7 @@ const PartyPaymentsWatchlist = () => {
                                     <tbody className="divide-y divide-slate-50 text-xs">
                                         {paginated.map((e: any, idx) => (
                                             <tr key={e._id} className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
-                                                onClick={() => navigate(`/all-entries`)}>
+                                                onClick={() => navigate(`/vehicle-entry/all-vehicle-entries`)}>
                                                 <td className="px-5 py-4 text-[10px] font-black text-slate-300">{(page - 1) * PAGE_SIZE + idx + 1}</td>
                                                 <td className="px-5 py-4 font-black">
                                                     <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ const PartyPaymentsWatchlist = () => {
                                                 <td className="px-5 py-4 font-black text-indigo-600 italic">₹{Number(e.balance || 0).toLocaleString()}</td>
                                                 <td className="px-5 py-4">
                                                     <span className={`text-[9px] font-black px-2.5 py-1.5 rounded-full uppercase ${e.status === "Pending" ? "bg-rose-100 text-rose-700" :
-                                                            "bg-emerald-100 text-emerald-700"
+                                                        "bg-emerald-100 text-emerald-700"
                                                         }`}>
                                                         {e.status}
                                                     </span>

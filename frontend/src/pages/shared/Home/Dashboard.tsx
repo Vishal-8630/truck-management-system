@@ -856,7 +856,7 @@ const Dashboard = () => {
                                     <div className="flex flex-col gap-4">
                                         {pendingPartyPayments.slice(0, 3).map((e: any, i: number) => {
                                             return (
-                                                <div key={i} className="flex flex-col gap-3 p-4 rounded-2xl border bg-white border-indigo-100 shadow-sm relative overflow-hidden group transition-all cursor-pointer hover:border-indigo-400" onClick={() => navigate(`/vehicle-entry/view/${e._id}`)}>
+                                                <div key={i} className="flex flex-col gap-3 p-4 rounded-2xl border bg-white border-indigo-100 shadow-sm relative overflow-hidden group transition-all cursor-pointer hover:border-indigo-400" onClick={() => navigate(`/vehicle-entry/all-vehicle-entries`)}>
                                                     <div className="flex items-center justify-between relative z-10">
                                                         <div className="flex flex-col">
                                                             <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-slate-400">
