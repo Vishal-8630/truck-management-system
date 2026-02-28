@@ -27,6 +27,11 @@ import { initWhatsApp } from './utils/sendWhatsApp.js';
 import { initScheduler } from './utils/whatsappScheduler.js';
 import whatsappRoute from './routes/whatsappRoute.js';
 
+// ⚠️  WhatsApp (whatsapp-web.js + Chrome) is disabled at startup:
+// Chrome uses ~400MB RAM which exceeds Render free tier limits.
+// Enable manually by uncommenting initWhatsApp() below, or upgrade Render plan.
+const WA_ENABLED = process.env.ENABLE_WHATSAPP === 'true';
+
 dotenv.config();
 connectDB();
 
@@ -94,16 +99,16 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 
-  // Only start WhatsApp if AWS credentials are set (needed for S3 session storage)
-  const hasAWS = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET_NAME;
-  if (!hasAWS) {
-    console.warn('⚠️  AWS credentials not set — WhatsApp disabled. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME on Render.');
-  } else {
+  // WhatsApp is OFF by default — Chrome uses ~400MB RAM which crashes Render free tier.
+  // To enable: add ENABLE_WHATSAPP=true in Render environment variables.
+  if (process.env.ENABLE_WHATSAPP === 'true') {
     try {
       initWhatsApp();
       initScheduler();
     } catch (err) {
       console.warn('⚠️  WhatsApp init failed:', err.message);
     }
+  } else {
+    console.log('ℹ️  WhatsApp disabled. Set ENABLE_WHATSAPP=true in Render env to enable.');
   }
 });
