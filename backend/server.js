@@ -30,6 +30,14 @@ import whatsappRoute from './routes/whatsappRoute.js';
 dotenv.config();
 connectDB();
 
+// ✅ Prevent unhandled async errors from crashing the server
+process.on('unhandledRejection', (reason, promise) => {
+  console.warn('⚠️  Unhandled Rejection (server kept alive):', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.warn('⚠️  Uncaught Exception (server kept alive):', err.message);
+});
+
 const app = express();
 
 // ⛔ Use dynamic directory resolution for ES modules
@@ -85,12 +93,17 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  // Initialize WhatsApp — wrapped in try/catch so a missing Chrome binary
-  // does NOT crash the server; other routes will still work fine.
-  try {
-    initWhatsApp();
-    initScheduler();
-  } catch (err) {
-    console.warn('⚠️  WhatsApp init failed (Chrome not found?). Server continues without WA.', err.message);
+
+  // Only start WhatsApp if AWS credentials are set (needed for S3 session storage)
+  const hasAWS = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET_NAME;
+  if (!hasAWS) {
+    console.warn('⚠️  AWS credentials not set — WhatsApp disabled. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME on Render.');
+  } else {
+    try {
+      initWhatsApp();
+      initScheduler();
+    } catch (err) {
+      console.warn('⚠️  WhatsApp init failed:', err.message);
+    }
   }
 });
