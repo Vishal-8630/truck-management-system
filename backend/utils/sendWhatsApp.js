@@ -1,67 +1,127 @@
 /**
  * sendWhatsApp.js
  * ---------------
- * Sends WhatsApp messages via Meta Cloud API (HTTP-only, no Chrome/Puppeteer).
- * Free tier: 1000 messages/month.
- *
- * Required env vars:
- *   WHATSAPP_TOKEN      — Permanent token from Meta Business
- *   WHATSAPP_PHONE_ID   — Phone Number ID from Meta Developer Console
- *   WHATSAPP_RECIPIENTS — Comma-separated numbers e.g. 917983635608,918630836045
+ * IMPLEMENTATION: whatsapp-web.js (Requires Puppeteer/Chrome)
+ * STATUS: COMMENTED OUT (To prevent Render Free Tier crashes)
+ * 
+ * Instructions:
+ * 1. To enable, uncomment the initialization and logic below.
+ * 2. Ensure your Render plan has at least 2GB RAM.
  */
 
-import axios from 'axios';
+/*
+import pkg from 'whatsapp-web.js';
+const { Client, LocalAuth, MessageMedia } = pkg;
+import qrcode from 'qrcode-terminal';
 
-const TOKEN = process.env.WHATSAPP_TOKEN;
-const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
-const RECIPIENTS = (process.env.WHATSAPP_RECIPIENTS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
+let clientReady = false;
+let qrCodeData = null;
 
-const isConfigured = () => TOKEN && PHONE_ID && RECIPIENTS.length > 0;
-
-// ─── Core send function ───────────────────────────────────────────────────────
-
-export const sendWhatsApp = async (message) => {
-    if (!isConfigured()) {
-        console.warn('[WhatsApp] Not configured — set WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, WHATSAPP_RECIPIENTS.');
-        return;
+const client = new Client({
+    authStrategy: new LocalAuth({ clientId: "drl-session" }),
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
+        ],
+        executablePath: process.env.CHROME_PATH || null // For Render/Linux environments
     }
-    for (const phone of RECIPIENTS) {
-        try {
-            await axios.post(
-                `https://graph.facebook.com/v19.0/${PHONE_ID}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    to: phone,
-                    type: 'text',
-                    text: { body: message }
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            console.log(`✅ [WhatsApp] Sent to ${phone}`);
-        } catch (err) {
-            console.warn(`[WhatsApp] Failed to send to ${phone}:`, err.response?.data?.error?.message || err.message);
-        }
-    }
-};
-
-// ─── Status helper (for /api/whatsapp/status route) ──────────────────────────
-
-export const getWhatsAppStatus = () => ({
-    isReady: isConfigured(),
-    provider: 'Meta Cloud API',
-    recipients: RECIPIENTS.length
 });
 
-// ─── Message Builders ─────────────────────────────────────────────────────────
+client.on('qr', (qr) => {
+    qrCodeData = qr;
+    console.log('[WhatsApp] Scan this QR code in the status page or terminal:');
+    qrcode.generate(qr, { small: true });
+});
 
+client.on('ready', () => {
+    clientReady = true;
+    qrCodeData = null;
+    console.log('[WhatsApp] Client is ready!');
+});
+
+client.on('authenticated', () => console.log('[WhatsApp] Authenticated!'));
+client.on('auth_failure', msg => console.error('[WhatsApp] Auth failure:', msg));
+
+// Initialize only if not specifically disabled
+// (Uncomment client.initialize() when ready to use)
+// client.initialize();
+*/
+
+// --- Helper for Recipients ---
+// Supports old JSON format or new comma-separated string
+const getRecipients = () => {
+    const raw = process.env.WHATSAPP_RECIPIENTS || '';
+    if (raw.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(raw);
+            return parsed.map(item => Object.values(item)[0].trim());
+        } catch (e) { return []; }
+    }
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+};
+
+// --- Active (No-Op) Exports to prevent crashes ---
+
+/**
+ * sendWhatsApp
+ * Sends a text message.
+ */
+export const sendWhatsApp = async (message) => {
+    console.log('[WhatsApp-Log Only] Message:', message);
+    /*
+    if (!clientReady) return;
+    const recipients = getRecipients();
+    for (const phone of recipients) {
+        try {
+            const formatted = phone.includes('@c.us') ? phone : `${phone}@c.us`;
+            await client.sendMessage(formatted, message);
+            console.log(`✅ [WhatsApp] Message sent to ${phone}`);
+        } catch (err) {
+            console.error(`❌ [WhatsApp] Failed to send to ${phone}:`, err.message);
+        }
+    }
+    */
+};
+
+/**
+ * sendWhatsAppPDF
+ * Sends a PDF document.
+ */
+export const sendWhatsAppPDF = async (pdfBuffer, fileName, caption) => {
+    console.log('[WhatsApp-Log Only] PDF Document:', fileName);
+    /*
+    if (!clientReady) return;
+    const recipients = getRecipients();
+    const media = new MessageMedia('application/pdf', pdfBuffer.toString('base64'), fileName);
+    
+    for (const phone of recipients) {
+        try {
+            const formatted = phone.includes('@c.us') ? phone : `${phone}@c.us`;
+            await client.sendMessage(formatted, media, { caption });
+            console.log(`✅ [WhatsApp] PDF sent to ${phone}`);
+        } catch (err) {
+            console.error(`❌ [WhatsApp] Failed to send PDF to ${phone}:`, err.message);
+        }
+    }
+    */
+};
+
+/**
+ * getWhatsAppStatus
+ * Used by the status route.
+ */
+export const getWhatsAppStatus = () => ({
+    isReady: false, // clientReady
+    provider: 'whatsapp-web.js (PAUSED)',
+    qr: null, // qrCodeData
+    recipients: getRecipients().length
+});
+
+// --- Constants & Message Builders ---
 const fmt = (n) => Number(n || 0).toLocaleString('en-IN');
 const LINE = '━━━━━━━━━━━━━━━━━━━━━━';
 const FOOTER = `\n${LINE}\n📍 _Divyanshi Road Lines_`;
