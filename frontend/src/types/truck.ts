@@ -19,6 +19,8 @@ export interface TruckType {
         assignedAt: string,
         unassignedAt?: string
     }[],
+    last_service_kms?: number,
+    service_interval?: number,
     createdAt?: string,
     updatedAt?: string
 }
@@ -39,6 +41,8 @@ export const EmptyTruckType: TruckType = {
     pollution_doc: "",
     pollution_doc_expiry: "",
     drivers: [],
+    last_service_kms: 0,
+    service_interval: 10000,
     createdAt: "",
     updatedAt: ""
 }

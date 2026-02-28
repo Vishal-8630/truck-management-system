@@ -10,7 +10,7 @@ const truckSchema = new mongoose.Schema(
     },
     fitness_doc: {
       type: String,
-    }, 
+    },
     fitness_doc_expiry: {
       type: String,
     },
@@ -60,6 +60,15 @@ const truckSchema = new mongoose.Schema(
         },
       ],
       default: [],
+    },
+    // Maintenance Radar Fields
+    last_service_kms: {
+      type: Number,
+      default: 0
+    },
+    service_interval: {
+      type: Number,
+      default: 10000 // Default to 10k km
     }
   },
   { timestamps: true }

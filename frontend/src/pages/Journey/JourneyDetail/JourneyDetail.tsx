@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useJourneys } from "@/hooks/useJourneys";
+import { useBillEntries } from "@/hooks/useLedgers";
 import { useMessageStore } from "@/store/useMessageStore";
 import Loading from "@/components/Loading";
 import { formatDate } from "@/utils/formatDate";
@@ -9,14 +10,18 @@ import ExpenseSection from "./components/ExpenseSection";
 import DetailBlock from "./components/DetailBlock";
 import EditHeader from "@/components/EditHeader";
 import type { Option } from "@/types/form";
-import { ArrowLeft, Milestone, Truck, DollarSign, Activity, FileText, Wallet, Calendar, Clock } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Milestone, Truck, DollarSign, Activity, FileText, Wallet, Calendar, Clock, TrendingUp, TrendingDown, Receipt } from "lucide-react";
 
 const JourneyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useJourneysQuery, useUpdateJourneyMutation, useDeleteJourneyMutation } = useJourneys();
+  const { useBillEntriesQuery } = useBillEntries();
+
   const { data: journies = [], isLoading } = useJourneysQuery();
+  const { data: billEntries = [] } = useBillEntriesQuery();
   const updateJourney = useUpdateJourneyMutation();
   const deleteJourney = useDeleteJourneyMutation();
 
@@ -27,6 +32,36 @@ const JourneyDetail = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const currentDisplay = localJourney ?? journey;
+
+  // --- Profitability Intelligence ---
+  const { revenue, profit, margin, relatedBills } = useMemo(() => {
+    if (!currentDisplay) return { revenue: 0, profit: 0, margin: 0, relatedBills: [] };
+
+    // Normalize truck number for comparison
+    const targetTruck = currentDisplay.truck?.truck_no?.replace(/\s/g, "").toUpperCase();
+    const start = currentDisplay.journey_start_date ? new Date(currentDisplay.journey_start_date) : null;
+    const end = currentDisplay.journey_end_date ? new Date(currentDisplay.journey_end_date) : new Date();
+
+    const matchedBills = billEntries.filter(bill => {
+      const billTruck = bill.vehicle_no?.replace(/\s/g, "").toUpperCase();
+      const billDate = new Date(bill.bill_date);
+      const truckMatch = billTruck === targetTruck;
+      const dateMatch = start ? (billDate >= start && billDate <= end) : true;
+      return truckMatch && dateMatch;
+    });
+
+    const revTotal = matchedBills.reduce((acc, bill) => acc + (Number(bill.grand_total) || 0), 0);
+    const expTotal = Number(currentDisplay.total_expense) || 0;
+    const netProfit = revTotal - expTotal;
+    const netMargin = revTotal > 0 ? (netProfit / revTotal) * 100 : 0;
+
+    return {
+      revenue: revTotal,
+      profit: netProfit,
+      margin: netMargin,
+      relatedBills: matchedBills
+    };
+  }, [billEntries, currentDisplay]);
 
   const emptyFieldValue = "—";
   const status_options: Option[] = [
@@ -250,44 +285,146 @@ const JourneyDetail = () => {
 
         {/* Sidebar */}
         <div className="lg:col-span-4 flex flex-col gap-8">
-          <div className="card-premium p-8 bg-slate-900 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
-            <div className="flex flex-col gap-8 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl"><DollarSign size={18} className="text-emerald-400" /></div>
-                <h3 className="text-sm font-black uppercase tracking-widest italic">Financial Overview</h3>
+          {/* Profitability Scorecard */}
+          <div className="card-premium !p-5 bg-white border-2 border-slate-50 shadow-2xl shadow-indigo-100/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700" />
+
+            <div className="flex flex-col gap-5 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><TrendingUp size={16} /></div>
+                  <h3 className="text-xs font-black uppercase tracking-widest italic text-slate-400">Profitability IQ</h3>
+                </div>
+                {profit > 0 ? (
+                  <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[7px] font-black uppercase flex items-center gap-1">
+                    Strong <TrendingUp size={8} />
+                  </span>
+                ) : profit < 0 ? (
+                  <span className="px-2 py-1 rounded-full bg-rose-50 text-rose-600 text-[7px] font-black uppercase flex items-center gap-1">
+                    Below <TrendingDown size={8} />
+                  </span>
+                ) : null}
               </div>
-              <div className="flex flex-col gap-6">
+
+              <div className="flex flex-col gap-3">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Total Running Expense</span>
-                  <span className="text-2xl font-black italic">₹{currentDisplay.total_driver_expense || 0}</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Net Trip Profit</span>
+                  <div className={`text-3xl font-black italic tracking-tight flex items-baseline gap-2 flex-wrap ${profit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                    ₹{Math.abs(profit).toLocaleString()}
+                    <span className="text-[10px] font-bold not-italic opacity-40 uppercase tracking-widest">{profit >= 0 ? 'Gain' : 'Loss'}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Total Diesel Cost</span>
-                  <span className="text-2xl font-black italic">₹{currentDisplay.total_diesel_expense || 0}</span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 block mb-1">Revenue</span>
+                    <span className="text-sm font-black italic text-slate-900">₹{revenue.toLocaleString()}</span>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 block mb-1">Margin</span>
+                    <span className={`text-sm font-black italic ${margin >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {margin.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-                <div className="pt-6 border-t border-white/10">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Total Trip Investment</span>
-                  <div className="text-4xl font-black italic">₹{currentDisplay.total_expense || 0}</div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expense Ratio</span>
+                  <span className="text-[10px] font-black text-slate-900">{(100 - margin).toFixed(1)}% of Revenue</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (100 - margin))}%` }}
+                    className={`h-full ${margin > 20 ? 'bg-emerald-500' : margin > 0 ? 'bg-indigo-500' : 'bg-rose-500'}`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Financial Sources</span>
+                <div className="flex flex-col gap-2">
+                  {relatedBills.length > 0 ? (
+                    relatedBills.map((bill, bIdx) => (
+                      <div key={bIdx} className="flex items-center justify-between text-[10px] font-bold p-2 bg-slate-50/50 rounded-lg">
+                        <span className="text-slate-600">Bill: {bill.bill_no}</span>
+                        <span className="text-indigo-600">₹{Number(bill.grand_total).toLocaleString()}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-[10px] font-bold text-slate-400 italic py-2 border border-dashed border-slate-200 rounded-xl text-center">
+                      No matching bills found for this travel period.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Automation Action */}
+              {currentDisplay.status === 'Completed' && relatedBills.length === 0 && (
+                <button
+                  onClick={() => navigate("/bill-entry/new-bill-entry", {
+                    state: {
+                      draft: {
+                        vehicle_no: currentDisplay.truck?.truck_no,
+                        billing_party: (currentDisplay.driver as any)?.party || "",
+                        bill_date: new Date().toISOString().split('T')[0],
+                        lr_date: currentDisplay.journey_start_date,
+                        from: currentDisplay.from,
+                        to: currentDisplay.to,
+                        truck_no: currentDisplay.truck?.truck_no,
+                        owner_name: "Divyanshi Road Lines",
+                      }
+                    }
+                  })}
+                  className="mt-2 w-full py-4 rounded-xl bg-indigo-600 text-white flex items-center justify-center gap-3 group/btn hover:bg-indigo-700 transition-all font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-100"
+                >
+                  <Receipt size={16} className="group-hover/btn:rotate-12 transition-transform" />
+                  Convert to Bill
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="card-premium !p-5 bg-slate-900 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
+            <div className="flex flex-col gap-5 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl"><DollarSign size={16} className="text-emerald-400" /></div>
+                <h3 className="text-xs font-black uppercase tracking-widest italic opacity-70">Financial Overview</h3>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-3">
+                  <span className="text-[9px] font-bold uppercase tracking-widest opacity-50">Running Expense</span>
+                  <span className="text-base font-black italic truncate max-w-[150px]">₹{currentDisplay.total_driver_expense || 0}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-3">
+                  <span className="text-[9px] font-bold uppercase tracking-widest opacity-50">Diesel Cost</span>
+                  <span className="text-base font-black italic truncate max-w-[150px]">₹{currentDisplay.total_diesel_expense || 0}</span>
+                </div>
+                <div className="pt-2">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1 block">Total Investment</span>
+                  <div className="text-2xl font-black italic tracking-tighter text-white">₹{currentDisplay.total_expense || 0}</div>
                 </div>
               </div>
 
               {/* Performance Metrics */}
-              <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/10">
+              <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-white/10">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-2">
-                    <Activity size={10} className="text-indigo-400" /> Efficiency
+                  <span className="text-[9px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-1">
+                    <Activity size={10} className="text-indigo-400 shrink-0" /> Efficiency
                   </span>
-                  <span className="text-xl font-black italic">
-                    {currentDisplay.total_diesel_expense ? (Number(currentDisplay.ending_kms || 0) - Number(currentDisplay.starting_kms || 0) / (Number(currentDisplay.total_diesel_expense) / 100 || 1)).toFixed(1) : "0.0"} KMPL
+                  <span className="text-sm font-black italic text-white">
+                    {currentDisplay.total_diesel_expense ? (Number(currentDisplay.ending_kms || 0) - Number(currentDisplay.starting_kms || 0) / (Number(currentDisplay.total_diesel_expense) / 100 || 1)).toFixed(1) : "0.0"} <span className="text-[8px] opacity-40 not-italic">KMPL</span>
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-2">
-                    <Clock size={10} className="text-amber-400" /> Schedule
+                  <span className="text-[9px] font-bold uppercase tracking-widest opacity-50 flex items-center gap-1">
+                    <Clock size={10} className="text-amber-400 shrink-0" /> Schedule
                   </span>
-                  <span className={`text-xl font-black italic ${Number(currentDisplay.journey_days) < (currentDisplay.daily_progress?.length || 0) ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    {currentDisplay.daily_progress?.length || 0} / {currentDisplay.journey_days} Days
+                  <span className={`text-sm font-black italic ${Number(currentDisplay.journey_days) < (currentDisplay.daily_progress?.length || 0) ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {currentDisplay.daily_progress?.length || 0} / {currentDisplay.journey_days} <span className="text-[8px] opacity-40 not-italic uppercase">Days</span>
                   </span>
                 </div>
               </div>

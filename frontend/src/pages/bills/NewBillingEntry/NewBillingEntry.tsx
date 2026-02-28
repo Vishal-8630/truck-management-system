@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Trash2, Save, FileText, CreditCard, Calculator, ArrowLeft, Milestone, Receipt } from "lucide-react";
 import DeleteConfirm from "@/components/DeleteConfirm";
 
@@ -41,8 +41,12 @@ const Entry: React.FC = () => {
   const { useBillingPartiesQuery } = useParties();
   const { data: billingParties = [] } = useBillingPartiesQuery();
   const { addMessage } = useMessageStore();
+  const location = useLocation();
 
-  const [entry, setEntry] = useState<Omit<BillEntryType, "_id">>(EmptyBillEntry);
+  const [entry, setEntry] = useState<Omit<BillEntryType, "_id">>({
+    ...EmptyBillEntry,
+    ...(location.state?.draft || {})
+  });
 
   const errorsRef = useRef<Record<string, string>>({});
   const [, forceRender] = useState({});
