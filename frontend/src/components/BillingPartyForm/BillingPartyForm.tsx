@@ -1,7 +1,7 @@
 import type { BillingPartyType } from "@/types/billingParty";
 import FormSection from "@/components/FormSection";
 import FormInput from "@/components/FormInput";
-import { UserPlus, Save, Building2 } from "lucide-react";
+import { Save, Building2 } from "lucide-react";
 
 interface BillingPartyFormProps {
   handleInputChange: (value: string, name: string) => void;

@@ -1,6 +1,6 @@
 import React from "react";
 import type { JourneyType } from "@/types/journey";
-import { Truck, User, Calendar, CreditCard, ChevronRight, MapPin, Gauge, ShieldCheck, AlertCircle } from "lucide-react";
+import { Truck, User, Calendar, CreditCard, ChevronRight, MapPin } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
 import { motion } from "framer-motion";
 

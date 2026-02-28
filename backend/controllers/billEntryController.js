@@ -2,6 +2,7 @@ import { successResponse } from '../utils/response.js';
 import Entry from '../models/billingEntryModel.js';
 import AppError from '../utils/appError.js';
 import mongoose from 'mongoose';
+import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 
 const addNewBillingEntry = async (req, res, next) => {
     const { extra_charges, billing_party, _id, ...rest } = req.body;
@@ -40,6 +41,10 @@ const addNewBillingEntry = async (req, res, next) => {
     if (!newEntry) {
         return next(new AppError("Failed to create new entry", 400))
     }
+
+    // WhatsApp notification — populate billing_party for the message
+    const populated = await Entry.findById(newEntry._id).populate('billing_party').lean();
+    sendWhatsApp(WA.newBillEntry(populated)); // fire-and-forget
 
     return successResponse(res, "Entry Added Successfully");
 }

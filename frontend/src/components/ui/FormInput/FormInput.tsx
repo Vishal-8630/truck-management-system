@@ -7,7 +7,7 @@ import {
   filterText,
 } from "@/utils/filterInput";
 
-type Option = { label: string; value: string };
+import type { Option } from "@/types/form";
 
 interface FormInputProps {
   type: string;

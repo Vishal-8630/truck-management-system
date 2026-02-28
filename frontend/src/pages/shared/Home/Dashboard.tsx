@@ -5,7 +5,6 @@ import {
     FileText,
     ChevronRight,
     Plus,
-    TrendingUp,
     LayoutDashboard,
     Bell,
     Search,
@@ -124,7 +123,7 @@ const Dashboard = () => {
 
     // Active Settlement Records (In Progress)
     const pendingSettlements = useMemo(() => {
-        return settlements.filter(s => !s.is_settled);
+        return settlements.filter((s: any) => !s.is_settled);
     }, [settlements]);
 
     // Party Payment Alerts (Using Vehicle Logs as requested, status 'Pending')
@@ -188,9 +187,7 @@ const Dashboard = () => {
     }, [documentAlerts]);
 
     // Compute Revenue
-    const totalRevenue = useMemo(() => {
-        return billEntries.reduce((sum, entry) => sum + (Number(entry.grand_total) || 0), 0);
-    }, [billEntries]);
+
 
     // Combined Recent Activity
     const recentActivity = useMemo(() => {

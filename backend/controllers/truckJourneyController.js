@@ -2,6 +2,7 @@ import { successResponse } from '../utils/response.js';
 import Journey from '../models/truckJourneyModel.js';
 import Ledger from '../models/ledgerModel.js';
 import AppError from "../utils/appError.js";
+import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 
 const newJourney = async (req, res) => {
     const { truck, driver, from, to, starting_kms, average_mileage } = req.body;
@@ -15,6 +16,8 @@ const newJourney = async (req, res) => {
     if (Object.keys(errors).length > 0) return res.status(400).json({ status: "fail", errors });
 
     const journey = await Journey.create({ ...req.body });
+    const populated = await Journey.findById(journey._id).populate('truck').populate('driver').lean();
+    sendWhatsApp(WA.newJourney(populated)); // fire-and-forget
     return successResponse(res, "Journey Added Successfully", journey);
 };
 
@@ -145,6 +148,11 @@ const updateJourney = async (req, res, next) => {
                 is_auto_generated: true,
                 category: "Payment Received"
             });
+        }
+
+        // Notify on settle
+        if (populatedJourney.journey_settlement_status === 'Settled' && prevSettlementStatus !== 'Settled') {
+            sendWhatsApp(WA.journeySettled(populatedJourney)); // fire-and-forget
         }
 
         return successResponse(res, "Journey Updated Successfully", populatedJourney);

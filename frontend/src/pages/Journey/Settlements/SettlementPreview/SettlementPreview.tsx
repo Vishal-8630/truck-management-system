@@ -12,7 +12,7 @@ const SettlementPreview = () => {
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useConfirmSettlementMutation } = useSettlements();
   const confirmMutation = useConfirmSettlementMutation();
-  const { data, period, driver, dieselRate, ratePerKm, extraExpense } = location.state || {};
+  const { data, period, driver, dieselRate, extraExpense } = location.state || {};
   const emptyFieldValue = "—";
   const safeDate = (date?: string) => date ? formatDate(new Date(date)) : emptyFieldValue;
 

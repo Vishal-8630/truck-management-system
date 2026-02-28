@@ -1,6 +1,7 @@
 import express from "express";
 import puppeteer from "puppeteer";
 import fs from "fs";
+import { sendWhatsAppPDF } from "../utils/sendWhatsApp.js";
 
 const router = express.Router();
 
@@ -108,6 +109,14 @@ router.post("/generate-pdf", async (req, res) => {
       });
 
       await browser.close();
+
+      // 📲 Send PDF to WhatsApp (fire-and-forget)
+      const docLabel = req.body.docType || 'Document';
+      sendWhatsAppPDF(
+        Buffer.from(pdfBuffer),
+        `${docLabel}_${Date.now()}.pdf`,
+        `📄 ${docLabel} generated from DRL Fleet Management System`
+      );
 
       // 🧱 Send as pure binary
       res.setHeader("Content-Type", "application/pdf");

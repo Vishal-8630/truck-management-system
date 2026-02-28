@@ -79,9 +79,7 @@ const ComplianceAlerts = () => {
     const hasFilters = search || severity !== "All" || docType !== "All" || maxDays;
     const resetFilters = () => { setSearch(""); setSeverity("All"); setDocType("All"); setMaxDays(""); setPage(1); };
 
-    const expiredCount = allAlerts.filter(a => a.severity === "Expired").length;
-    const criticalCount = allAlerts.filter(a => a.severity === "Critical").length;
-    const warningCount = allAlerts.filter(a => a.severity === "Warning").length;
+
 
     const severityStyle = (s: string): string => ({
         Expired: "bg-rose-100 text-rose-700",

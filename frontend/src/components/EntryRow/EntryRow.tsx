@@ -46,7 +46,7 @@ const EntryRow: React.FC<EntryRowProps> = ({ entry }) => {
           if (typeof key === 'string' && key.toLowerCase().includes("date")) {
             return (
               <td key={key} className="px-6 py-4 text-sm font-bold text-slate-500 border-b border-slate-50">
-                {formatDate(new Date(entry[key]))}
+                {entry[key] ? formatDate(new Date(entry[key] as string)) : "—"}
               </td>
             );
           }

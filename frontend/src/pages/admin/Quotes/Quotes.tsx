@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Truck, Calendar, Filter, CheckCircle, Clock, Package, MapPin, Eye, Phone } from "lucide-react";
+import { Truck, Calendar, Filter, CheckCircle, Clock, Package, MapPin, Eye } from "lucide-react";
 import api from "@/api/axios";
 import Loading from "@/components/Loading";
 import { useMessageStore } from "@/store/useMessageStore";
@@ -174,8 +174,8 @@ const Quotes = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${item.status === 'Booked' ? 'bg-emerald-50 text-emerald-600' :
-                                                item.status === 'Quoted' ? 'bg-indigo-50 text-indigo-600' :
-                                                    item.status === 'Cancelled' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
+                                                    item.status === 'Quoted' ? 'bg-indigo-50 text-indigo-600' :
+                                                        item.status === 'Cancelled' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
                                                 }`}>
                                                 {item.status === 'Pending' && <Clock size={10} />}
                                                 {item.status === 'Quoted' && <Eye size={10} />}
