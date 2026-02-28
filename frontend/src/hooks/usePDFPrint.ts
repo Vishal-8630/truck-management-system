@@ -19,7 +19,7 @@ export const usePDFPrint = <T>({
   emptyMessage = "Missing data. Please search or select first.",
   orientation = "p",
   endpoint = "/invoice/generate-pdf",
-  serverMode = true,
+  serverMode = false,
 }: UsePDFPrintOptions<T>) => {
   const { addMessage } = useMessageStore();
   const isLandscape = orientation === "l";

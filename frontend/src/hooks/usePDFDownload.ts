@@ -22,7 +22,7 @@ export const usePDFDownload = <T>({
   filename = "document.pdf",
   orientation = "p",
   endpoint = "/invoice/generate-pdf",
-  serverMode = true,
+  serverMode = false,
 }: UsePDFDownloadOptions<T>) => {
   const { addMessage } = useMessageStore();
 
