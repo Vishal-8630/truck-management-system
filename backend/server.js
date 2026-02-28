@@ -23,7 +23,7 @@ import ledgerRoutes from './routes/ledgerRoute.js';
 import inquiryRoutes from './routes/inquiryRoute.js';
 import quoteRoutes from './routes/quoteRoute.js';
 import trackingRoutes from './routes/trackingRoute.js';
-import { initScheduler } from './utils/whatsappScheduler.js';
+// import { initScheduler } from './utils/whatsappScheduler.js';
 import whatsappRoute from './routes/whatsappRoute.js';
 
 dotenv.config();
@@ -93,5 +93,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   // Start daily 8 AM summary (Meta Cloud API — no Chrome needed)
-  initScheduler();
+  // initScheduler();
 });
