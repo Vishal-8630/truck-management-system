@@ -1,6 +1,6 @@
 import Inquiry from '../models/inquiryModel.js';
 import { successResponse } from '../utils/response.js';
-import sendEmail from '../utils/sendEmail.js';
+
 import AppError from '../utils/appError.js';
 
 export const createInquiry = async (req, res, next) => {
@@ -15,20 +15,7 @@ export const createInquiry = async (req, res, next) => {
             message
         });
 
-        // 2. Prepare Email for Admin
-        const emailOptions = {
-            email: process.env.EMAIL_FROM || 'admin@divyanshiroadlines.com', // For now sending to dummy/configured from email
-            subject: `New Inquiry: ${subject}`,
-            message: `You have received a new inquiry from your website.\n\nDetails:\nName: ${fullName}\nEmail: ${email}\nSubject: ${subject}\nMessage: ${message}\n\nPlease check the admin panel for more details.`
-        };
 
-        // 3. Send Email (Non-blocking or catch error)
-        try {
-            await sendEmail(emailOptions);
-        } catch (emailErr) {
-            console.error('Failed to send inquiry email:', emailErr);
-            // We don't fail the request if email fails, as DB entry is created
-        }
 
         return successResponse(res, 'Inquiry sent successfully. We will get back to you soon!', inquiry);
     } catch (error) {

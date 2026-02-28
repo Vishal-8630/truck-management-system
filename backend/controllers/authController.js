@@ -5,7 +5,6 @@ import generateToken from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import { errorResponse } from '../utils/response.js';
 import crypto from 'crypto';
-import sendEmail from '../utils/sendEmail.js';
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 
@@ -150,27 +149,8 @@ const forgotPassword = async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // 3) Send it to user's email
-    const resetURL = `${req.get('origin')}/reset-password/${resetToken}`;
-    const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
-
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Your password reset token (valid for 10 min)',
-            message
-        });
-
-        successResponse(res, 'Token sent to email!');
-    } catch (err) {
-        user.passwordResetToken = undefined;
-        user.passwordResetExpires = undefined;
-        await user.save({ validateBeforeSave: false });
-
-        return next(
-            new AppError('There was an error sending the email. Try again later!', 500)
-        );
-    }
+    // 3) Respond to client (Email sending removed as per requirements)
+    return successResponse(res, 'Reset token generated successfully (Email disabled)');
 };
 
 const resetPassword = async (req, res, next) => {
