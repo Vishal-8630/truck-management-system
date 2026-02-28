@@ -17,14 +17,15 @@ router.post("/generate-pdf", async (req, res) => {
 
     // 🧠 Launch Puppeteer
     const browser = await puppeteer.launch({
-      headless: true, // Standard headless mode
+      headless: true,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--font-render-hinting=none", // Improves text rendering
       ],
+      // On Render, we usually need to specify the path to the installed Chrome/Chromium
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
     });
 
     // 🧩 Inject CSS to enforce true single-page geometry
