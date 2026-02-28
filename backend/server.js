@@ -23,14 +23,8 @@ import ledgerRoutes from './routes/ledgerRoute.js';
 import inquiryRoutes from './routes/inquiryRoute.js';
 import quoteRoutes from './routes/quoteRoute.js';
 import trackingRoutes from './routes/trackingRoute.js';
-import { initWhatsApp } from './utils/sendWhatsApp.js';
 import { initScheduler } from './utils/whatsappScheduler.js';
 import whatsappRoute from './routes/whatsappRoute.js';
-
-// ⚠️  WhatsApp (whatsapp-web.js + Chrome) is disabled at startup:
-// Chrome uses ~400MB RAM which exceeds Render free tier limits.
-// Enable manually by uncommenting initWhatsApp() below, or upgrade Render plan.
-const WA_ENABLED = process.env.ENABLE_WHATSAPP === 'true';
 
 dotenv.config();
 connectDB();
@@ -98,17 +92,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-
-  // WhatsApp is OFF by default — Chrome uses ~400MB RAM which crashes Render free tier.
-  // To enable: add ENABLE_WHATSAPP=true in Render environment variables.
-  if (process.env.ENABLE_WHATSAPP === 'true') {
-    try {
-      initWhatsApp();
-      initScheduler();
-    } catch (err) {
-      console.warn('⚠️  WhatsApp init failed:', err.message);
-    }
-  } else {
-    console.log('ℹ️  WhatsApp disabled. Set ENABLE_WHATSAPP=true in Render env to enable.');
-  }
+  // Start daily 8 AM summary (Meta Cloud API — no Chrome needed)
+  initScheduler();
 });

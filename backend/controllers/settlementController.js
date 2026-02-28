@@ -236,8 +236,7 @@ export const confirmSettlement = async (req, res, next) => {
         // Ledger entry creation removed from here to prevent duplication with markSettled
         // Only markSettled will handle the official ledger record for the payout.
 
-        // WhatsApp notification
-        sendWhatsApp(WA.newDriverSettlement({ driver, totals, period, journeys }));
+
 
         return successResponse(res, "Settlement Created Successfully", savedSettlement);
     } catch (err) {
@@ -320,8 +319,8 @@ export const markSettled = async (req, res, next) => {
             console.error("Auto-ledger sync failed at markSettled:", ledgerErr.message);
         }
 
-        // WhatsApp notification
-        sendWhatsApp(WA.settlementMarkedSettled(settlement));
+        // WhatsApp notification — settlement paid
+        sendWhatsApp(WA.settlementPaid(settlement));
 
         return successResponse(res, "Settlement marked as settled successfully.", settlement);
     } catch (err) {
@@ -359,8 +358,7 @@ export const unmarkSettled = async (req, res, next) => {
             console.error("Ledger cleanup failed at unmarkSettled:", err.message);
         }
 
-        // WhatsApp notification
-        sendWhatsApp(WA.settlementMarkedUnpaid(settlement));
+
 
         return successResponse(res, "Settlement marked as unsettled.", settlement);
     } catch (err) {

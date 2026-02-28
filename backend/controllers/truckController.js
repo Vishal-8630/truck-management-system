@@ -4,7 +4,7 @@ import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 import safeJSONParse from '../utils/safeJSONParse.js';
-import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
+
 
 const newTruck = async (req, res, next) => {
     try {
@@ -66,7 +66,7 @@ const newTruck = async (req, res, next) => {
 
         const truck = new Truck(truckData);
         await truck.save();
-        sendWhatsApp(WA.newTruck(truckData)); // fire-and-forget
+
 
         return successResponse(res, "Truck Added Successfully");
     } catch (error) {

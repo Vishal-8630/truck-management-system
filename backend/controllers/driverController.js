@@ -4,7 +4,7 @@ import AppError from '../utils/appError.js';
 import { deleteFromS3 } from "../middlewares/uploadMiddleware.js";
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 import safeJSONParse from "../utils/safeJSONParse.js";
-import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
+
 
 const newDriver = async (req, res, next) => {
     try {
@@ -55,7 +55,7 @@ const newDriver = async (req, res, next) => {
         }
 
         const newDriver = await Driver.create(driverData);
-        sendWhatsApp(WA.newDriver(driverData)); // fire-and-forget
+
         return successResponse(res, "Driver Added Successfully", newDriver);
 
     } catch (error) {
