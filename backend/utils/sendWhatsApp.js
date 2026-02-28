@@ -23,15 +23,10 @@ let isReady = false;
 let initCalled = false;
 let latestQR = null;
 
-const RECIPIENTS = (() => {
-    try {
-        return JSON.parse(process.env.WHATSAPP_RECIPIENTS || '[]')
-            .map(r => r.phone)
-            .filter(Boolean);
-    } catch {
-        return [];
-    }
-})();
+const RECIPIENTS = (process.env.WHATSAPP_RECIPIENTS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 
 // ─── Initialise ───────────────────────────────────────────────────────────────
 
