@@ -57,6 +57,7 @@ export const initWhatsApp = () => {
         }),
         puppeteer: {
             headless: true,
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -94,7 +95,7 @@ export const initWhatsApp = () => {
     client.on('disconnected', (reason) => {
         isReady = false;
         console.warn('🔴 [WhatsApp] Client disconnected:', reason);
-        setTimeout(() => client.initialize(), 10000);
+        setTimeout(() => client.initialize().catch(e => console.warn('[WhatsApp] Reconnect failed:', e.message)), 10000);
     });
 
     client.on('auth_failure', (msg) => {
@@ -102,7 +103,11 @@ export const initWhatsApp = () => {
         console.error('❌ [WhatsApp] Auth failure:', msg);
     });
 
-    client.initialize();
+    // Async errors from initialize() must be caught here
+    client.initialize().catch(err => {
+        console.warn('⚠️  [WhatsApp] initialize() failed — Chrome not found or other error. WA disabled.', err.message);
+        isReady = false;
+    });
 };
 
 export const getWhatsAppStatus = () => ({ isReady, latestQR });

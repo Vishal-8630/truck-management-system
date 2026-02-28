@@ -85,8 +85,12 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  // Initialize WhatsApp client (shows QR in terminal on first run)
-  initWhatsApp();
-  // Start daily 8 AM WhatsApp alert scheduler
-  initScheduler();
+  // Initialize WhatsApp — wrapped in try/catch so a missing Chrome binary
+  // does NOT crash the server; other routes will still work fine.
+  try {
+    initWhatsApp();
+    initScheduler();
+  } catch (err) {
+    console.warn('⚠️  WhatsApp init failed (Chrome not found?). Server continues without WA.', err.message);
+  }
 });

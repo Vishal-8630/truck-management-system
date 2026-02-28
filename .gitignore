@@ -32,3 +32,4 @@ uploads/
 
 .wwebjs_auth/
 .wwebjs_cache/
+backend/.cache/
