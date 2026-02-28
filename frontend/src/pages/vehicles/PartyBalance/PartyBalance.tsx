@@ -1,17 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   VEHICLE_ENTRY_LABELS,
   type BalancePartyType,
   type VehicleEntryType,
 } from "@/types/vehicleEntry";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, UserSquare, DollarSign, Calculator, ArrowRight } from "lucide-react";
+import { Search, X, UserSquare, DollarSign, Calculator, ArrowRight, Filter } from "lucide-react";
 import { useParties } from "@/hooks/useParties";
 import { useVehicleEntries } from "@/hooks/useLedgers";
 import ExcelButton from "@/components/ExcelButton";
 import Loading from "@/components/Loading";
+import FilterContainer from "@/components/FilterContainer";
+import type { FilterConfig } from "@/filters/filter";
 
 const DEBOUNCE_DELAY = 500;
+
+export const PartyVehicleFilters: FilterConfig<VehicleEntryType>[] = [
+  {
+    field: "status",
+    type: "select",
+    label: "Status",
+    options: [
+      { label: "Pending", value: "Pending" },
+      { label: "Received", value: "Received" }
+    ]
+  },
+  {
+    field: "movementType",
+    type: "select",
+    label: "Movement Type",
+    options: [
+      { label: "From DRL", value: "From DRL" },
+      { label: "To DRL", value: "To DRL" }
+    ]
+  },
+  { field: "date", type: "greater", label: "Date After" },
+  { field: "date", type: "less", label: "Date Before" },
+  { field: "from", type: "text", label: "From" },
+  { field: "to", type: "text", label: "To" },
+];
 
 const PartyBalance = () => {
   const [search, setSearch] = useState<string>("");
@@ -24,7 +51,10 @@ const PartyBalance = () => {
   const [searchParty, setSearchParty] = useState<BalancePartyType | null>(null);
 
   const { useVehicleEntriesByPartyQuery } = useVehicleEntries();
-  const { data: partyVehicleEntries = [], isLoading: loadingEntries } = useVehicleEntriesByPartyQuery(searchParty?._id || "");
+  const { data: rawPartyVehicleEntries, isLoading: loadingEntries } = useVehicleEntriesByPartyQuery(searchParty?._id || "");
+  const partyVehicleEntries = useMemo(() => rawPartyVehicleEntries || [], [rawPartyVehicleEntries]);
+
+  const [filteredEntries, setFilteredEntries] = useState<VehicleEntryType[]>([]);
 
   // debounce search
   useEffect(() => {
@@ -44,6 +74,10 @@ const PartyBalance = () => {
 
     return () => clearTimeout(handler);
   }, [search, parties, searchParty]);
+
+  useEffect(() => {
+    setFilteredEntries(partyVehicleEntries);
+  }, [partyVehicleEntries]);
 
   const handlePartySearch = (party: BalancePartyType) => {
     setSearchParty(party);
@@ -129,6 +163,19 @@ const PartyBalance = () => {
 
       {searchParty && !loadingEntries && partyVehicleEntries && partyVehicleEntries.length > 0 && (
         <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Advanced Filters */}
+          <div className="flex flex-col gap-6 p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100">
+            <div className="flex items-center gap-3 px-2">
+              <Filter size={18} className="text-indigo-600" />
+              <span className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Narrow Results</span>
+            </div>
+            <FilterContainer
+              data={partyVehicleEntries}
+              filters={PartyVehicleFilters}
+              onFiltered={setFilteredEntries}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="card-premium flex items-center gap-6 group hover:border-red-100 transition-all cursor-default">
               <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
@@ -137,7 +184,7 @@ const PartyBalance = () => {
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Total Pending</span>
                 <span className="text-2xl font-black text-slate-900 italic">
-                  ₹{partyVehicleEntries.reduce((acc: number, curr: any) => acc + (Number(curr.balance) || 0), 0).toLocaleString()}
+                  ₹{filteredEntries.reduce((acc: number, curr: any) => acc + (Number(curr.balance) || 0), 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -149,7 +196,7 @@ const PartyBalance = () => {
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Total Received</span>
                 <span className="text-2xl font-black text-slate-900 italic">
-                  ₹{partyVehicleEntries.reduce((acc: number, curr: any) => acc + (Number(curr.in_ac) || 0), 0).toLocaleString()}
+                  ₹{filteredEntries.reduce((acc: number, curr: any) => acc + (Number(curr.in_ac) || 0), 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -157,10 +204,10 @@ const PartyBalance = () => {
             <div className="card-premium flex items-center gap-4 md:col-span-2 lg:col-span-1 border-indigo-100 bg-indigo-50/20">
               <div className="flex-1 flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-indigo-400">Export Report</span>
-                <span className="text-sm font-bold text-slate-600">Download data in Excel format</span>
+                <span className="text-sm font-bold text-slate-600">Download filtered data</span>
               </div>
               <ExcelButton
-                data={partyVehicleEntries}
+                data={filteredEntries}
                 fileNamePrefix={`${searchParty?.party_name}_balance`}
               />
             </div>
@@ -179,7 +226,7 @@ const PartyBalance = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {partyVehicleEntries.map((entry: any) => (
+                  {filteredEntries.map((entry: any) => (
                     <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors group">
                       {(Object.entries(VEHICLE_ENTRY_LABELS) as [keyof VehicleEntryType, string][]).map(([key]) => {
                         const value = key === "balance_party" ? entry.balance_party?.party_name : entry[key];

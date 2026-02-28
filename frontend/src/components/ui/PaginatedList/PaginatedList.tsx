@@ -5,12 +5,14 @@ type PaginatedListProps<T> = {
   items: T[];
   itemsPerPage?: number;
   renderItem: (item: T) => JSX.Element;
+  className?: string;
 };
 
 const PaginatedList = <T,>({
   items,
   itemsPerPage = 5,
   renderItem,
+  className = "grid gap-4 min-w-[320px]",
 }: PaginatedListProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -25,7 +27,7 @@ const PaginatedList = <T,>({
   return (
     <div className="flex flex-col gap-6">
       <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
-        <div className="grid gap-4 min-w-[320px]">{currentItems.map(renderItem)}</div>
+        <div className={className}>{currentItems.map(renderItem)}</div>
       </div>
 
       {totalPages > 1 && (

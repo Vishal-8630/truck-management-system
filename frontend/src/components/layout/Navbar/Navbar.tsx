@@ -79,7 +79,12 @@ const Navbar = () => {
             {
               to: "/vehicle-entry/balance-party",
               label: "Balance Party",
-              content: "Manage and track party balances.",
+              content: "Manage and track party accounts.",
+            },
+            {
+              to: "/vehicle-entry/party-balance",
+              label: "Party Balance",
+              content: "View vehicle logs by party.",
             },
           ],
         },

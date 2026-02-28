@@ -8,7 +8,7 @@ import { usePDFPrint } from "@/hooks/usePDFPrint";
 import { usePDFDownload } from "@/hooks/usePDFDownload";
 import { useMessageStore } from "@/store/useMessageStore";
 import {
-  FileText, Printer, Download, ArrowLeft, Calendar, User, TrendingUp,
+  FileText, Printer, Download, ArrowLeft, User, TrendingUp,
   Wallet, Scale, Hash, MapPin, Milestone, Fuel, Calculator, CheckCircle2,
   RefreshCcw,
 } from "lucide-react";
@@ -54,20 +54,48 @@ const SettlementDetail = () => {
 
   const driverName = settlement.driver?.name ?? "Driver";
 
+  // Calculation Logic
+  const kmEarnings = Number(settlement.total_distance || 0) * Number(settlement.rate_per_km || 0);
+  const driverExpense = Number(settlement.journeys.reduce((sum: number, j: any) => sum + Number(j.total_driver_expense || 0), 0));
+  const startingCash = Number(settlement.journeys.reduce((sum: number, j: any) => sum + Number(j.journey_starting_cash || 0), 0));
+  const dieselDiff = Number(settlement.diesel_diff || 0);
+  const dieselRate = Number(settlement.diesel_rate || 0);
+
+  const totalDieselGiven = settlement.journeys.reduce((sum: number, j: any) => sum + (j.diesel_expenses?.reduce((t: number, d: any) => t + Number(d.quantity), 0) || 0), 0);
+  const totalDieselUsed = Math.floor(Number(settlement.total_distance || 0) / Number(settlement.avg_mileage || 1));
+
+  // Logic: dieselDiff = Used - Given
+  // If Given > Used (Shortage) -> diff < 0
+  // If Given < Used (Bonus/Efficiency) -> diff > 0
+  const isShortage = dieselDiff > 0;
+  const isBonus = dieselDiff < 0;
+  const dieselAdjustment = Math.abs(dieselDiff) * dieselRate;
+
+  const drlSideTotal = kmEarnings + (isBonus ? dieselAdjustment : 0);
+  const driverSideTotal = driverExpense + startingCash + (isShortage ? dieselAdjustment : 0);
+
+  // Revised Rule: A = Driver Side (Earnings + Bonus), B = DRL Side (Advances + Shortage)
+  // Result = A - B
+  const A = drlSideTotal;
+  const B = driverSideTotal;
+  const finalBalance = A - B;
+  const paymentStatusText = finalBalance > 0 ? "DRL Needs to Pay" : finalBalance < 0 ? "Driver Needs to Pay" : "Balanced";
+
   return (
     <div className="flex flex-col gap-10 pb-20 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 print:hidden">
         <div className="flex flex-col gap-4">
           <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-xs uppercase tracking-widest transition-colors w-fit">
-            <ArrowLeft size={14} /> Back to Settlements
+            <ArrowLeft size={14} /> Back to History
           </button>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-200 text-white">
               <FileText size={24} />
             </div>
             <div>
-              <h1 className="text-3xl font-black italic tracking-tight text-slate-900 uppercase leading-none">Settlement <span className="text-blue-600">Summary</span></h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Driver Payout & Trip Reconciliation</p>
+              <h1 className="text-3xl font-black italic tracking-tight text-slate-900 uppercase leading-none">Settlement <span className="text-blue-600">Detail</span></h1>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">#{settlement.settlement_no} • {formatDate(new Date(settlement.period.from))} - {formatDate(new Date(settlement.period.to))}</p>
             </div>
           </div>
         </div>
@@ -124,7 +152,7 @@ const SettlementDetail = () => {
                 className="flex items-center gap-2 px-5 py-3.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-60"
               >
                 <RefreshCcw size={16} className={recalculateMutation.isPending ? "animate-spin" : ""} />
-                {recalculateMutation.isPending ? "Recalculating…" : "Recalculate Settlement"}
+                {recalculateMutation.isPending ? "Recalculating…" : "Recalculate"}
               </button>
             </div>
           )}
@@ -137,51 +165,44 @@ const SettlementDetail = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="card-premium p-6 flex items-center gap-4 bg-gradient-to-br from-blue-50 to-white border-blue-100">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-100">
-            <User size={20} />
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 print:hidden">
+        <div className="card-premium p-8 flex flex-col gap-4 border-l-4 border-l-blue-600">
+          <div className="p-3 bg-blue-50 rounded-2xl w-fit">
+            <User className="text-blue-600" size={24} />
           </div>
-          <div>
-            <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Driver Name</span>
-            <p className="text-lg font-black text-slate-900 uppercase mt-1">{driverName}</p>
-          </div>
-        </div>
-        <div className="card-premium p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-            <Calendar size={20} />
-          </div>
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Period</span>
-            <p className="text-base font-black text-slate-900 mt-1">
-              {formatDate(new Date(settlement.period.from))} <span className="text-slate-300">→</span> {formatDate(new Date(settlement.period.to))}
-            </p>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Driver</span>
+            <p className="text-2xl font-black text-slate-900 italic truncate">{driverName}</p>
           </div>
         </div>
-        <div className={`card-premium p-6 flex items-center gap-4 border ${settlement.payment_status === "Balanced" ? "bg-emerald-50/50 border-emerald-100" :
-          settlement.payment_status === "Driver needs to pay" ? "bg-amber-50/50 border-amber-100" :
-            "bg-blue-50/50 border-blue-100"
-          }`}>
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${settlement.payment_status === "Balanced" ? "bg-emerald-500 shadow-emerald-100" :
-            settlement.payment_status === "Driver needs to pay" ? "bg-amber-500 shadow-amber-100" :
-              "bg-blue-500 shadow-blue-100"
-            }`}>
-            <TrendingUp size={20} />
+
+        <div className="card-premium p-8 flex flex-col gap-4 border-l-4 border-l-slate-800">
+          <div className="p-3 bg-slate-100 rounded-2xl w-fit">
+            <Scale className="text-slate-900" size={24} />
           </div>
-          <div>
-            <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${settlement.payment_status === "Balanced" ? "text-emerald-600/60" :
-              settlement.payment_status === "Driver needs to pay" ? "text-amber-600/60" :
-                "text-blue-600/60"
-              }`}>Reconciliation</span>
-            <p className={`text-lg font-black uppercase mt-1 italic tracking-tight ${settlement.payment_status === "Balanced" ? "text-emerald-600" :
-              settlement.payment_status === "Driver needs to pay" ? "text-amber-600" :
-                "text-blue-600"
-              }`}>{settlement.payment_status}</p>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Account Balance</span>
+            <p className="text-2xl font-black text-slate-900 italic">₹{Math.abs(finalBalance).toLocaleString()}</p>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${finalBalance > 0 ? "text-indigo-500 font-black italic" : finalBalance < 0 ? "text-rose-500" : "text-slate-500"}`}>
+              {paymentStatusText}
+            </span>
+          </div>
+        </div>
+
+        <div className="card-premium p-8 flex flex-col gap-4 border-l-4 border-l-indigo-600">
+          <div className="p-3 bg-indigo-50 rounded-2xl w-fit">
+            <CheckCircle2 className="text-indigo-600" size={24} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Status</span>
+            <p className="text-2xl font-black text-slate-900 italic uppercase">{paymentStatusText}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Stats row */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 print:hidden">
         {[
           { label: "Rate Per Km", value: `₹${settlement.rate_per_km}`, icon: <Scale size={16} className="text-blue-500" /> },
           { label: "Diesel Rate", value: `₹${settlement.diesel_rate}`, icon: <Fuel size={16} className="text-amber-500" /> },
@@ -198,7 +219,8 @@ const SettlementDetail = () => {
         ))}
       </div>
 
-      <div className="card-premium overflow-hidden border-slate-100 shadow-xl shadow-slate-100/50">
+      {/* Journey Breakdown Table */}
+      <div className="card-premium overflow-hidden border-slate-100 shadow-xl shadow-slate-100/50 print:hidden">
         <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
             <Hash size={14} className="text-blue-500" /> Journey Breakdown
@@ -248,61 +270,133 @@ const SettlementDetail = () => {
             <tfoot className="bg-slate-50/80">
               <tr>
                 <td colSpan={2} className="px-6 py-5 text-right text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Grand Totals</td>
-                <td className="px-6 py-5 text-sm font-black text-slate-900">{Math.floor(settlement.journeys.reduce((sum: number, j: any) => sum + (Number(j.ending_kms) - Number(j.starting_kms)), 0))} <span className="text-[10px] text-slate-400 uppercase ml-1">Km</span></td>
-                <td className="px-6 py-5 text-sm font-black text-amber-600">{Math.ceil(settlement.journeys.reduce((sum: number, j: any) => sum + (j.diesel_expenses?.reduce((t: number, d: any) => t + Number(d.quantity), 0) || 0), 0))}L</td>
-                <td className="px-6 py-5 text-sm font-black text-slate-900 italic">₹{Math.ceil(settlement.journeys.reduce((sum: number, j: any) => sum + Number(j.total_driver_expense || 0), 0))}</td>
-                <td className="px-6 py-5 text-right text-base font-black text-blue-600">₹{Math.ceil(settlement.journeys.reduce((sum: number, j: any) => sum + Number(j.journey_starting_cash || 0), 0))}</td>
+                <td className="px-6 py-5 text-sm font-black text-slate-900">{Math.floor(settlement.total_distance)} <span className="text-[10px] text-slate-400 uppercase ml-1">Km</span></td>
+                <td className="px-6 py-5 text-sm font-black text-amber-600">{Math.ceil(totalDieselGiven)}L</td>
+                <td className="px-6 py-5 text-sm font-black text-slate-900 italic">₹{Math.ceil(driverExpense)}</td>
+                <td className="px-6 py-5 text-right text-base font-black text-blue-600">₹{Math.ceil(startingCash)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="card-premium p-8 flex flex-col gap-6 bg-slate-50/50 border-slate-100">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-            <Calculator size={14} className="text-blue-500" /> Calculation Logic
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Diesel Difference</span>
-              <span className="text-sm font-black text-slate-900 italic">{settlement.diesel_diff} Liters</span>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Kilometer Earnings</span>
-              <span className="text-sm font-black text-blue-600 italic">₹{settlement.journeys.reduce((sum: number, j: any) => sum + (Number(j.ending_kms) - Number(j.starting_kms)), 0) * Number(settlement.rate_per_km || 0)}</span>
-            </div>
-          </div>
+      {/* Calculation Worksheet Section */}
+      <div className="flex flex-col gap-8 print:hidden">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+          <Calculator className="text-blue-600" size={20} />
+          <h2 className="text-xl font-black text-slate-900 italic uppercase">Settlement Calculation Worksheet</h2>
         </div>
 
-        <div className="card-premium p-8 flex flex-col gap-6 bg-slate-900 border-slate-800 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2 relative z-10">
-            <Wallet size={14} className="text-blue-400" /> Net Settlement
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Driver Payout</span>
-              <span className="text-2xl font-black text-blue-400 italic">₹{settlement.driver_total}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Step 01: DRL Side (Payables) */}
+          <div className="card-premium p-8 flex flex-col gap-6 bg-slate-50/50 border-slate-100 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <TrendingUp size={80} />
             </div>
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Owner Share</span>
-              <span className="text-2xl font-black text-slate-300 italic">₹{settlement.owner_total}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Step 01</span>
+              <h3 className="text-lg font-black text-slate-900 uppercase italic">Driver's Side (A)</h3>
             </div>
-            <div className="md:col-span-2 p-6 rounded-2xl bg-blue-600 flex items-center justify-between shadow-xl">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest leading-none">Overall Settlement Amount</span>
-                <span className="text-3xl font-black italic tracking-tighter">₹{settlement.overall_total}</span>
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Base Km Earnings</span>
+                <span className="text-sm font-black text-slate-900 font-mono italic">₹{kmEarnings.toLocaleString()}</span>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
-                <Scale size={28} />
+              {isBonus && (
+                <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm border-b-2 border-b-emerald-200">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase italic">Efficiency Bonus</span>
+                    <span className="text-[8px] font-bold text-emerald-400">Used {totalDieselUsed}L vs Given {totalDieselGiven}L</span>
+                  </div>
+                  <span className="text-sm font-black text-emerald-600 font-mono italic">+ ₹{dieselAdjustment.toLocaleString()}</span>
+                </div>
+              )}
+              {!isBonus && (
+                <div className="flex items-center justify-between p-4 bg-slate-100/50 rounded-2xl border border-slate-100 border-dashed opacity-60">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-[9px]">No Efficiency Bonus</span>
+                  <span className="text-xs font-black text-slate-300 font-mono italic">₹0</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between px-2 pt-2 mt-auto">
+                <span className="text-[10px] font-black text-blue-500 uppercase">Sub-Total (A)</span>
+                <span className="text-lg font-black text-blue-600 italic">₹{drlSideTotal.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 02: Driver Side (Received) */}
+          <div className="card-premium p-8 flex flex-col gap-6 bg-slate-50/50 border-slate-100 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Wallet size={80} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Step 02</span>
+              <h3 className="text-lg font-black text-slate-900 uppercase italic">DRL's Side (B)</h3>
+            </div>
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initial Cash</span>
+                <span className="text-sm font-black text-slate-900 font-mono italic">₹{startingCash.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Driver Expense</span>
+                <span className="text-sm font-black text-slate-900 font-mono italic">₹{driverExpense.toLocaleString()}</span>
+              </div>
+              {isShortage && (
+                <div className="flex items-center justify-between p-4 bg-rose-50 rounded-2xl border border-rose-100 shadow-sm border-b-2 border-b-rose-200">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-rose-600 uppercase italic">Diesel Shortage</span>
+                    <span className="text-[8px] font-bold text-rose-400">Used {totalDieselUsed}L vs Given {totalDieselGiven}L</span>
+                  </div>
+                  <span className="text-sm font-black text-rose-600 font-mono italic">+ ₹{dieselAdjustment.toLocaleString()}</span>
+                </div>
+              )}
+              {!isShortage && (
+                <div className="flex items-center justify-between p-4 bg-slate-100/50 rounded-2xl border border-slate-100 border-dashed opacity-60">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-[9px]">No Diesel Shortage</span>
+                  <span className="text-xs font-black text-slate-300 font-mono italic">₹0</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between px-2 pt-2 mt-auto">
+                <span className="text-[10px] font-black text-rose-500 uppercase">Sub-Total (B)</span>
+                <span className="text-lg font-black text-rose-600 italic">₹{driverSideTotal.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 03: Final Result */}
+          <div className={`card-premium p-8 flex flex-col gap-6 border-2 relative overflow-hidden shadow-2xl group scale-105 origin-center ${finalBalance > 0 ? "bg-slate-900 border-slate-800" : finalBalance < 0 ? "bg-rose-900 border-rose-800" : "bg-slate-500 border-slate-400"} text-white transition-all duration-500`}>
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CheckCircle2 size={100} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Final Balance</span>
+              <h3 className="text-lg font-black text-white uppercase italic">Net Settlement</h3>
+            </div>
+            <div className="space-y-6 relative z-10 my-auto">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <span className="text-[10px] font-black text-blue-300 uppercase tracking-widest print:hidden">Equation: A - B</span>
+                <div className="flex items-center gap-4 text-2xl font-black italic">
+                  <span className="opacity-60 font-mono">₹{drlSideTotal.toLocaleString()}</span>
+                  <span className="text-blue-400 text-3xl font-light">-</span>
+                  <span className="opacity-60 font-mono">₹{driverSideTotal.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="h-px bg-white/20 w-full" />
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] font-black text-blue-100 uppercase tracking-[0.3em] font-mono">
+                  {paymentStatusText.toUpperCase()}
+                </span>
+                <span className="text-5xl font-black italic tracking-tighter drop-shadow-lg text-blue-400">
+                  ₹{Math.abs(finalBalance).toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Hidden print ref */}
+      {/* Hidden print ref (PDF/Report View) */}
       <div className="hidden">
         <div ref={printRef} className="p-10 text-slate-900 bg-white font-serif max-w-[850px] mx-auto border border-slate-300">
           <div className="text-center flex flex-col gap-1 mb-8 border-b-2 border-slate-900 pb-6 uppercase">
@@ -324,7 +418,7 @@ const SettlementDetail = () => {
             <div className="text-right">
               <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Settlement Period</span>
               <p className="text-lg font-black italic">{formatDate(new Date(settlement.period.from))} → {formatDate(new Date(settlement.period.to))}</p>
-              <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest">{settlement.payment_status}</p>
+              <p className="text-[10px] font-bold text-blue-600 mt-1 uppercase tracking-widest">{paymentStatusText}</p>
             </div>
           </div>
 
@@ -372,10 +466,10 @@ const SettlementDetail = () => {
                 <td colSpan={2} className="p-2.5 text-[9px] uppercase text-right">Totals:</td>
                 <td className="p-2.5 text-[10px] text-right border-r border-slate-900">{settlement.total_distance}</td>
                 <td className="p-2.5 text-[10px] text-right border-r border-slate-900">
-                  {Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + (j.diesel_expenses?.reduce((t: number, d: any) => t + Number(d.quantity), 0) || 0), 0))}L
+                  {Math.ceil(totalDieselGiven)}L
                 </td>
-                <td className="p-2.5 text-[10px] text-right border-r border-slate-900">₹{Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + Number(j.journey_starting_cash || 0), 0))}</td>
-                <td className="p-2.5 text-[10px] text-right">₹{Math.ceil(settlement.journeys.reduce((s: number, j: any) => s + Number(j.total_driver_expense || 0), 0))}</td>
+                <td className="p-2.5 text-[10px] text-right border-r border-slate-900">₹{Math.ceil(startingCash)}</td>
+                <td className="p-2.5 text-[10px] text-right">₹{Math.ceil(driverExpense)}</td>
               </tr>
             </tfoot>
           </table>
@@ -385,32 +479,37 @@ const SettlementDetail = () => {
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-200 pb-2">Calculation Breakdown</h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500">Diesel Variance:</span>
-                    <span className={Number(settlement.diesel_diff) < 0 ? "text-red-600" : "text-emerald-600"}>{settlement.diesel_diff} Liters</span>
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-500 uppercase">Step 01: Driver Side (A)</span>
+                    <span className="font-mono">₹{drlSideTotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-500">Km Earnings:</span>
-                    <span>₹{Number(settlement.total_distance) * Number(settlement.rate_per_km)}</span>
+                  <div className="pl-4 space-y-1 opacity-60 italic text-[9px]">
+                    <div className="flex justify-between"><span>Base Km Earnings:</span> <span>₹{kmEarnings.toLocaleString()}</span></div>
+                    {isBonus && <div className="flex justify-between"><span>Efficiency Bonus:</span> <span>+ ₹{dieselAdjustment.toLocaleString()}</span></div>}
                   </div>
-                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-100">
-                    <span className="text-slate-500">Owner Share:</span>
-                    <span>₹{settlement.owner_total}</span>
+
+                  <div className="flex justify-between text-[10px] font-bold pt-2 border-t border-slate-100">
+                    <span className="text-slate-500 uppercase">Step 02: DRL Side (B)</span>
+                    <span className="font-mono">₹{driverSideTotal.toLocaleString()}</span>
+                  </div>
+                  <div className="pl-4 space-y-1 opacity-60 italic text-[9px]">
+                    <div className="flex justify-between"><span>Initial Advances:</span> <span>₹{(startingCash + driverExpense).toLocaleString()}</span></div>
+                    {isShortage && <div className="flex justify-between"><span>Diesel Shortage:</span> <span>+ ₹{dieselAdjustment.toLocaleString()}</span></div>}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="w-[300px] flex flex-col gap-3">
-              <div className="flex justify-between p-4 bg-slate-100 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-black uppercase text-slate-500">Total Driver Payout</span>
-                <span className="text-lg font-black italic">₹{settlement.driver_total}</span>
-              </div>
-              <div className="flex justify-between p-5 bg-slate-900 text-white rounded-2xl shadow-xl">
+
+              <div className={`${finalBalance >= 0 ? "bg-slate-900" : "bg-rose-900"} p-5 text-white rounded-2xl shadow-xl flex items-center justify-between`}>
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">Net Settlement</span>
-                  <span className="text-2xl font-black italic tracking-tighter">₹{settlement.overall_total}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">
+                    {paymentStatusText}
+                  </span>
+                  <span className="text-2xl font-black italic tracking-tighter">₹{Math.abs(finalBalance).toLocaleString()}</span>
                 </div>
+                <CheckCircle2 size={32} className="opacity-20" />
               </div>
             </div>
           </div>

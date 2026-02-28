@@ -10,6 +10,7 @@ import DriverForm from "@/components/DriverForm";
 import FilterContainer from "@/components/FilterContainer";
 import { DriverFilters } from "@/filters/driverFilters";
 import { type DriverType } from "@/types/driver";
+import PaginatedList from "@/components/PaginatedList";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -55,7 +56,10 @@ const AllDriverEntries = () => {
 
   /* -------------------- Effects -------------------- */
   useEffect(() => {
-    setFilteredDrivers(drivers);
+    const sorted = [...drivers].sort((a, b) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    setFilteredDrivers(sorted);
   }, [drivers]);
 
   /* -------------------- Handlers -------------------- */
@@ -183,28 +187,35 @@ const AllDriverEntries = () => {
             exit={{ opacity: 0, y: 20 }}
             className="flex flex-col gap-8"
           >
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              <FilterContainer
-                data={drivers}
-                filters={DriverFilters}
-                onFiltered={setFilteredDrivers}
-              />
+            <FilterContainer
+              data={drivers}
+              filters={DriverFilters}
+              onFiltered={setFilteredDrivers}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                {filteredDrivers.length} {filteredDrivers.length === 1 ? "Driver" : "Drivers"} Found
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredDrivers.length === 0 ? (
-                <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <Contact size={48} className="text-slate-200 mb-4" />
-                  <p className="text-slate-400 font-bold italic">No drivers found matching your criteria.</p>
-                </div>
-              ) : (
-                filteredDrivers.map((driver) => (
+            <div className="flex flex-col gap-2 min-h-[400px]">
+              <PaginatedList
+                items={filteredDrivers}
+                itemsPerPage={12}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                renderItem={(driver) => (
                   <DriverCard
                     key={driver._id}
                     driver={driver}
                     handleClick={(id) => navigate(`/journey/driver-detail/${id}`)}
                   />
-                ))
+                )}
+              />
+              {filteredDrivers.length === 0 && (
+                <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                  <Contact size={48} className="text-slate-200 mb-4" />
+                  <p className="text-slate-400 font-bold italic">No drivers found matching your criteria.</p>
+                </div>
               )}
             </div>
           </motion.div>

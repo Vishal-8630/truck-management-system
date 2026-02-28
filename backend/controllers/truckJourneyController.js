@@ -60,18 +60,8 @@ const updateJourney = async (req, res, next) => {
             }
         });
 
-        // --- Auto-complete journey if marked as Settled, revert to Active if Unsettled ---
-        if (journey.journey_settlement_status === "Settled") {
-            journey.status = "Completed";
-            journey.party_payment_status = "Paid";
-
-            // If payment date isn't set for the party yet, default to settlement date
-            if (!journey.party_payment_received_date) {
-                journey.party_payment_received_date = journey.settlement?.date_paid || new Date();
-            }
-        } else if (prevSettlementStatus === "Settled" && journey.journey_settlement_status === "Unsettled") {
-            journey.status = "Active";
-        }
+        // --- Automation Unlinked ---
+        // (Previously forced status Change here)
 
         const updatedJourney = await journey.save();
         const populatedJourney = await Journey.findById(updatedJourney._id).populate("truck").populate("driver").lean();

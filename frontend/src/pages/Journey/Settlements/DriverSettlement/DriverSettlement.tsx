@@ -34,7 +34,7 @@ const DriverSettlement = () => {
       const data = result?.data;
       if (data && data.journeys?.length > 0) {
         navigate(`/journey/driver-detail/${id}/settlement/preview`, {
-          state: { data, period: { from, to }, driver },
+          state: { data, period: { from, to }, driver, dieselRate, ratePerKm, extraExpense },
         });
       } else {
         addMessage({ type: "error", text: result?.message || "No journeys found for this period." });

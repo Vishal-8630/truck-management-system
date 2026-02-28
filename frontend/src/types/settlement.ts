@@ -32,7 +32,7 @@ export interface SettlementType {
     owner_total: string;
     overall_total: string;
 
-    payment_status: "Balanced" | "Driver needs to pay" | "DRL needs to pay";
+    payment_status: "Balanced" | "Driver Needs to Pay" | "DRL Needs to Pay";
 
     payment_meta: {
         mode: string,

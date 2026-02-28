@@ -9,4 +9,4 @@ export interface InputType {
     icon?: React.ReactNode;
 }
 
-export type Option = { label: string; value: string };
+export type Option = { label: string; value: string | boolean | number };

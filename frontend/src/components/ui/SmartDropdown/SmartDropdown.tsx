@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-type Option = { label: string; value: string };
+import type { Option } from "@/types/form";
 
 interface Props {
   id?: string;
@@ -10,11 +10,11 @@ interface Props {
   label?: string;
   options?: Option[];
   mode?: "select" | "search";
-  value?: string;
+  value?: string | boolean | number;
   placeholder?: string;
   inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | undefined;
   fetchOptions?: (query: string, field: string) => Option[];
-  onChange: (val: string, name: string, mode: "select" | "search") => void;
+  onChange: (val: any, name: string, mode: "select" | "search") => void;
   error?: string;
   noResultsMessage?: string;
 }
@@ -42,16 +42,20 @@ const SmartDropdown = ({
 
   // Sync current selection with prop value
   useEffect(() => {
-    if (value !== (selected?.value ?? "")) {
+    const currentValue = selected?.value ?? "";
+    const incomingValue = value ?? "";
+
+    if (incomingValue !== currentValue) {
       const list = [...data, ...options];
-      const match = list.find((opt) => opt.value === value);
+      const match = list.find((opt) => opt.value === incomingValue);
 
       if (match) {
         setSelected(match);
         setSearch(match.label);
-      } else if (value) {
-        setSelected({ label: value, value });
-        setSearch(value);
+      } else if (incomingValue !== "") {
+        const fallback = { label: String(incomingValue), value: incomingValue as any };
+        setSelected(fallback);
+        setSearch(String(incomingValue));
       } else {
         setSelected(null);
         setSearch("");
@@ -172,7 +176,7 @@ const SmartDropdown = ({
             ) : (
               displayData.map((opt) => (
                 <li
-                  key={opt.value}
+                  key={String(opt.value)}
                   onClick={() => handleSelect(opt, mode)}
                   role="option"
                   tabIndex={0}

@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useJourneys } from "@/hooks/useJourneys";
-import { useBillEntries } from "@/hooks/useLedgers";
+
 import { useMessageStore } from "@/store/useMessageStore";
 import Loading from "@/components/Loading";
 import { formatDate } from "@/utils/formatDate";
@@ -18,10 +18,7 @@ const JourneyDetail = () => {
   const navigate = useNavigate();
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useJourneysQuery, useUpdateJourneyMutation, useDeleteJourneyMutation } = useJourneys();
-  const { useBillEntriesQuery } = useBillEntries();
-
   const { data: journies = [], isLoading } = useJourneysQuery();
-  const { data: billEntries = [] } = useBillEntriesQuery();
   const updateJourney = useUpdateJourneyMutation();
   const deleteJourney = useDeleteJourneyMutation();
 
@@ -34,34 +31,27 @@ const JourneyDetail = () => {
   const currentDisplay = localJourney ?? journey;
 
   // --- Profitability Intelligence ---
-  const { revenue, profit, margin, relatedBills } = useMemo(() => {
-    if (!currentDisplay) return { revenue: 0, profit: 0, margin: 0, relatedBills: [] };
+  const { revenue, profit, margin, expenseRatio } = useMemo(() => {
+    if (!currentDisplay) return { revenue: 0, profit: 0, margin: 0, expenseRatio: 0 };
 
-    // Normalize truck number for comparison
-    const targetTruck = currentDisplay.truck?.truck_no?.replace(/\s/g, "").toUpperCase();
-    const start = currentDisplay.journey_start_date ? new Date(currentDisplay.journey_start_date) : null;
-    const end = currentDisplay.journey_end_date ? new Date(currentDisplay.journey_end_date) : new Date();
-
-    const matchedBills = billEntries.filter(bill => {
-      const billTruck = bill.vehicle_no?.replace(/\s/g, "").toUpperCase();
-      const billDate = new Date(bill.bill_date);
-      const truckMatch = billTruck === targetTruck;
-      const dateMatch = start ? (billDate >= start && billDate <= end) : true;
-      return truckMatch && dateMatch;
-    });
-
-    const revTotal = matchedBills.reduce((acc, bill) => acc + (Number(bill.grand_total) || 0), 0);
-    const expTotal = Number(currentDisplay.total_expense) || 0;
-    const netProfit = revTotal - expTotal;
-    const netMargin = revTotal > 0 ? (netProfit / revTotal) * 100 : 0;
+    // NET TRIP PROFIT = Final Paid Amt - (Running Expense + Diesel Cost)
+    const paidAmt = Number(currentDisplay.settlement?.amount_paid) || 0;
+    const driverExp = Number(currentDisplay.total_driver_expense) || 0;
+    const dieselExp = Number(currentDisplay.total_diesel_expense) || 0;
+    const expTotal = driverExp + dieselExp;
+    const netProfit = paidAmt - expTotal;
+    const rawMargin = paidAmt > 0 ? (netProfit / paidAmt) * 100 : 0;
+    const netMargin = Math.max(-100, Math.min(100, rawMargin));
+    // Expense ratio: what % of paid amount was spent (clamped 0–100 for display)
+    const ratio = paidAmt > 0 ? Math.min(100, (expTotal / paidAmt) * 100) : 0;
 
     return {
-      revenue: revTotal,
+      revenue: paidAmt,
       profit: netProfit,
       margin: netMargin,
-      relatedBills: matchedBills
+      expenseRatio: ratio,
     };
-  }, [billEntries, currentDisplay]);
+  }, [currentDisplay]);
 
   const emptyFieldValue = "—";
   const status_options: Option[] = [
@@ -233,7 +223,7 @@ const JourneyDetail = () => {
                 { label: "Assigned Route", value: currentDisplay.route?.join(", "), key: "route", isEditable: true },
                 { label: "Commencement Date", value: isEditMode ? currentDisplay.journey_start_date : safeDate(currentDisplay.journey_start_date), key: "journey_start_date", isEditable: true },
                 { label: "Completion Date", value: isEditMode ? currentDisplay.journey_end_date : safeDate(currentDisplay.journey_end_date), key: "journey_end_date", isEditable: true },
-                { label: "Update Status", value: currentDisplay.status, isEditable: true, key: "status", options: status_options },
+                { label: "Trip Status", value: currentDisplay.status, isEditable: true, key: "status", options: status_options },
               ]}
             />
           </div>
@@ -286,7 +276,7 @@ const JourneyDetail = () => {
         {/* Sidebar */}
         <div className="lg:col-span-4 flex flex-col gap-8">
           {/* Profitability Scorecard */}
-          <div className="card-premium !p-5 bg-white border-2 border-slate-50 shadow-2xl shadow-indigo-100/20 relative overflow-hidden group">
+          <div className="card-premium !p-5 bg-white border-2 border-slate-50 shadow-2xl shadow-indigo-100/20 relative group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-125 duration-700" />
 
             <div className="flex flex-col gap-5 relative z-10">
@@ -317,7 +307,7 @@ const JourneyDetail = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 block mb-1">Revenue</span>
+                    <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 block mb-1">Final Paid Amt</span>
                     <span className="text-sm font-black italic text-slate-900">₹{revenue.toLocaleString()}</span>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -332,37 +322,21 @@ const JourneyDetail = () => {
               <div className="pt-6 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expense Ratio</span>
-                  <span className="text-[10px] font-black text-slate-900">{(100 - margin).toFixed(1)}% of Revenue</span>
+                  <span className="text-[10px] font-black text-slate-900">
+                    {revenue > 0 ? `${expenseRatio.toFixed(1)}% of Paid Amt` : "No payment recorded"}
+                  </span>
                 </div>
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, (100 - margin))}%` }}
-                    className={`h-full ${margin > 20 ? 'bg-emerald-500' : margin > 0 ? 'bg-indigo-500' : 'bg-rose-500'}`}
+                    animate={{ width: `${expenseRatio}%` }}
+                    className={`h-full ${expenseRatio < 80 ? 'bg-emerald-500' : expenseRatio < 100 ? 'bg-indigo-500' : 'bg-rose-500'}`}
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Financial Sources</span>
-                <div className="flex flex-col gap-2">
-                  {relatedBills.length > 0 ? (
-                    relatedBills.map((bill, bIdx) => (
-                      <div key={bIdx} className="flex items-center justify-between text-[10px] font-bold p-2 bg-slate-50/50 rounded-lg">
-                        <span className="text-slate-600">Bill: {bill.bill_no}</span>
-                        <span className="text-indigo-600">₹{Number(bill.grand_total).toLocaleString()}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-[10px] font-bold text-slate-400 italic py-2 border border-dashed border-slate-200 rounded-xl text-center">
-                      No matching bills found for this travel period.
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Automation Action */}
-              {currentDisplay.status === 'Completed' && relatedBills.length === 0 && (
+              {currentDisplay.status === 'Completed' && !currentDisplay.settlement?.amount_paid && (
                 <button
                   onClick={() => navigate("/bill-entry/new-bill-entry", {
                     state: {
@@ -387,7 +361,7 @@ const JourneyDetail = () => {
             </div>
           </div>
 
-          <div className="card-premium !p-5 bg-slate-900 text-white relative overflow-hidden">
+          <div className="card-premium !p-5 bg-slate-900 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
             <div className="flex flex-col gap-5 relative z-10">
               <div className="flex items-center gap-3">

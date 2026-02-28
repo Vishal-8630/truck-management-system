@@ -1,10 +1,10 @@
 import React from "react";
 import SmartDropdown from "../../../../components/SmartDropdown";
-import type { Option } from "../../../bills/NewBillingEntry/constants";
+import type { Option } from "../../../../types/form";
 
 interface DetailField {
   label: string;
-  value?: string | number | null;
+  value?: string | number | boolean | null;
   key?: string;
   isEditable?: boolean;
   options?: Option[];
@@ -64,7 +64,7 @@ const DetailBlock = ({
                       options={f.options}
                       mode={f.mode || "select"}
                       name={f.key || ""}
-                      value={String(f.value) || ""}
+                      value={f.value ?? ""}
                       fetchOptions={f.fetchOptions || ((query: string) => {
                         return (f.options || []).filter(o => o.label.toLowerCase().includes(query.toLowerCase()));
                       })}
@@ -86,13 +86,13 @@ const DetailBlock = ({
                       value={
                         isDateField(f.label || "")
                           ? (() => {
-                            if (!f.value) return "";
+                            if (!f.value || typeof f.value === "boolean") return "";
                             const date = new Date(f.value);
                             return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
                           })()
                           : f.value === null
                             ? ""
-                            : f.value ?? ""
+                            : String(f.value ?? "")
                       }
                       onChange={(e) => handleChange(f.key, e.target.value)}
                     />
@@ -105,7 +105,9 @@ const DetailBlock = ({
                 )
               ) : (
                 <div className="text-sm font-bold text-slate-700 min-h-[1.25rem] py-1 border-b border-slate-100/50">
-                  {f.value ?? <span className="text-slate-300 font-medium italic">{emptyValue}</span>}
+                  {typeof f.value === "boolean"
+                    ? (f.value ? "Completed" : "Active")
+                    : (f.value ?? <span className="text-slate-300 font-medium italic">{emptyValue}</span>)}
                 </div>
               )}
             </div>

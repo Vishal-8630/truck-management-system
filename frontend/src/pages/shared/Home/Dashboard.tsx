@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import {
     Truck,
     MapPin,
@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTrucks } from "@/hooks/useTrucks";
 import { useJourneys } from "@/hooks/useJourneys";
-import { useBillEntries, useLedgers } from "@/hooks/useLedgers";
+import { useBillEntries, useLedgers, useVehicleEntries } from "@/hooks/useLedgers";
 import { useSettlements } from "@/hooks/useSettlements";
 import { useEffect, useState, useMemo } from "react";
 import api from "@/api/axios";
@@ -38,12 +38,14 @@ const Dashboard = () => {
     const { useBillEntriesQuery } = useBillEntries();
     const { useSettlementsQuery } = useSettlements();
     const { useLedgersQuery } = useLedgers();
+    const { useVehicleEntriesQuery } = useVehicleEntries();
 
     const { data: trucks = [] } = useTrucksQuery();
     const { data: journeys = [] } = useJourneysQuery();
     const { data: billEntries = [] } = useBillEntriesQuery();
     const { data: settlements = [] } = useSettlementsQuery();
     const { data: ledgers = [] } = useLedgersQuery();
+    const { data: vehicleEntries = [] } = useVehicleEntriesQuery();
 
     const [inquiryCount, setInquiryCount] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
@@ -125,17 +127,11 @@ const Dashboard = () => {
         return settlements.filter(s => !s.is_settled);
     }, [settlements]);
 
-    // Party Payment Alerts
+    // Party Payment Alerts (Using Vehicle Logs as requested, status 'Pending')
     const pendingPartyPayments = useMemo(() => {
-        const today = new Date();
-        return journeys.filter(j => {
-            if (j.party_payment_status === 'Paid') return false;
-            if (!j.party_payment_due_date) return false;
-            const dueDate = new Date(j.party_payment_due_date);
-            const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-            return diffDays <= 7; // Show payments due within a week
-        });
-    }, [journeys]);
+        return vehicleEntries.filter((e: any) => e.status === 'Pending')
+            .sort((a: any, b: any) => new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime());
+    }, [vehicleEntries]);
 
     // Missing Progress Updates (Checkpoint Alerts)
     const missedCheckpoints = useMemo(() => {
@@ -401,7 +397,7 @@ const Dashboard = () => {
                                                             <MapPin size={20} />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-black text-slate-900 underline decoration-emerald-100">{j.from} → {j.to}</span>
+                                                            <span className="text-sm font-black text-slate-900 underline decoration-emerald-100">{j.from} â†’ {j.to}</span>
                                                             <span className="text-[10px] font-bold text-slate-400 uppercase">{j.truck?.truck_no || 'Manual Entry'}</span>
                                                         </div>
                                                     </button>
@@ -544,7 +540,7 @@ const Dashboard = () => {
                                                 className="w-3 sm:w-6 lg:w-8 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg relative group-hover:shadow-lg group-hover:shadow-emerald-100 transition-all cursor-pointer"
                                             >
                                                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-black px-2 py-1.5 rounded-lg transition-opacity z-20 shadow-xl pointer-events-none">
-                                                    CR: ₹{m.credit.toLocaleString()}
+                                                    CR: â‚¹{m.credit.toLocaleString()}
                                                 </div>
                                             </motion.div>
                                             {/* Debit Bar */}
@@ -555,7 +551,7 @@ const Dashboard = () => {
                                                 className="w-3 sm:w-6 lg:w-8 bg-gradient-to-t from-rose-500 to-rose-400 rounded-t-lg relative group-hover:shadow-lg group-hover:shadow-rose-100 transition-all cursor-pointer"
                                             >
                                                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] font-black px-2 py-1.5 rounded-lg transition-opacity z-20 shadow-xl pointer-events-none">
-                                                    DR: ₹{m.debit.toLocaleString()}
+                                                    DR: â‚¹{m.debit.toLocaleString()}
                                                 </div>
                                             </motion.div>
                                         </div>
@@ -568,7 +564,7 @@ const Dashboard = () => {
                                 <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Month</span>
                                     <span className={`text-xl font-black italic tracking-tight ${financialSummary[5].credit >= financialSummary[5].debit ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {financialSummary[5].credit >= financialSummary[5].debit ? '+' : '-'} ₹{Math.abs(financialSummary[5].credit - financialSummary[5].debit).toLocaleString()}
+                                        {financialSummary[5].credit >= financialSummary[5].debit ? '+' : '-'} â‚¹{Math.abs(financialSummary[5].credit - financialSummary[5].debit).toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
@@ -596,10 +592,10 @@ const Dashboard = () => {
                                     <span className="ml-2 px-3 py-1 rounded-xl bg-rose-50 text-rose-600 text-[10px] uppercase font-black border border-rose-100">{documentAlerts.length} Issues</span>
                                 </h3>
                                 <button
-                                    onClick={() => navigate("/journey/all-truck-entries")}
-                                    className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 flex items-center gap-2 transition-all"
+                                    onClick={() => navigate("/dashboard/compliance-alerts")}
+                                    className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:tracking-[0.2em] flex items-center gap-2 transition-all group"
                                 >
-                                    Review Fleet <ChevronRight size={14} />
+                                    View All <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                             <div className="grid sm:grid-cols-2 gap-4">
@@ -620,7 +616,7 @@ const Dashboard = () => {
                                                 </span>
                                             </div>
                                             <p className="text-xs text-slate-500 font-bold mt-1">
-                                                {alert.doc} <span className="text-rose-500">•</span> {formatDate(new Date(alert.expiry))}
+                                                {alert.doc} <span className="text-rose-500">â€¢</span> {formatDate(new Date(alert.expiry))}
                                             </p>
                                         </div>
                                         <div className="p-2 rounded-lg bg-white opacity-0 group-hover:opacity-100 transition-opacity">
@@ -641,6 +637,9 @@ const Dashboard = () => {
                                     Journey <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Operations</span>
                                     <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-600 text-[10px] uppercase font-black border border-indigo-100">Live IQ</span>
                                 </h3>
+                                <button onClick={() => navigate("/dashboard/activity-log")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-2 group">
+                                    View All <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-6">
@@ -708,6 +707,9 @@ const Dashboard = () => {
                                     Operational <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Activity</span>
                                     <span className="px-3 py-1 rounded-xl bg-slate-50 text-slate-400 text-[10px] uppercase font-black border border-slate-100">Live Feed</span>
                                 </h3>
+                                <button onClick={() => navigate("/dashboard/activity-log")} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center gap-2 transition-all group">
+                                    Full Log <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
                             </div>
                             <div className="card-premium !p-0 overflow-hidden divide-y divide-slate-50 shadow-2xl shadow-slate-100/50">
                                 {recentActivity.length === 0 ? (
@@ -734,7 +736,7 @@ const Dashboard = () => {
                                                 <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
                                                     {item.type === 'journey'
                                                         ? `Journey Dispatched: Truck ${item.truck?.truck_no || "N/A"}`
-                                                        : `Invoice Created: ₹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
+                                                        : `Invoice Created: â‚¹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
                                                 </p>
                                             </div>
                                             <button
@@ -763,49 +765,34 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-6">
                             <h3 className="text-2xl font-black px-2 italic">Driver <span className="text-amber-600">Settlements</span></h3>
                             <div className="card-premium flex flex-col gap-6 !p-6 border-amber-100 bg-amber-50/10">
-                                <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Required</p>
-                                    <div className="flex flex-col gap-3">
-                                        {/* Pending Settlement Records First */}
-                                        {pendingSettlements.slice(0, 2).map((s: any, i) => (
-                                            <div key={`pending-s-${i}`} className="flex flex-col gap-2 p-4 bg-indigo-700 text-white rounded-2xl shadow-xl relative overflow-hidden group cursor-pointer hover:bg-indigo-800 transition-all border border-indigo-600" onClick={() => navigate(`/journey/driver-detail/${s.driver?._id || s.driver}/settlement/${s._id}`)}>
-                                                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                                    <button onClick={() => navigate("/dashboard/driver-settlements")} className="text-[10px] font-black uppercase tracking-widest text-amber-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
+                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {pendingSettlements.length > 0 ? (
+                                        pendingSettlements.slice(0, 3).map((s: any, i: number) => (
+                                            <div key={`pending-s-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/driver-detail/${s.driver?._id || s.driver}/settlement/${s._id}`)}>
                                                 <div className="flex items-center justify-between relative z-10">
-                                                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Settlement Draft</span>
-                                                    <span className="text-[8px] font-black bg-white/20 px-2 py-0.5 rounded">Awaiting Payout</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Settlement Draft</span>
+                                                        <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-amber-200 underline-offset-4 decoration-2">{s.driver?.name}</span>
+                                                    </div>
+                                                    <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
+                                                        <Wallet size={18} />
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col relative z-10">
-                                                    <span className="text-sm font-black italic uppercase tracking-tight">{s.driver?.name}</span>
-                                                    <span className="text-[10px] font-bold opacity-80 whitespace-nowrap overflow-hidden text-ellipsis">Period: {formatDate(new Date(s.period.from))} - {formatDate(new Date(s.period.to))}</span>
+                                                <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
+                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{formatDate(new Date(s.period.from))} - {formatDate(new Date(s.period.to))}</span>
+                                                    <span className="text-[9px] font-black text-amber-600 uppercase flex items-center gap-1">Awaiting Payout <ArrowRight size={8} /></span>
                                                 </div>
                                             </div>
-                                        ))}
-
-                                        {/* Then Unsettled Journeys */}
-                                        {unsettledJourneys.length > 0 ? (
-                                            unsettledJourneys.slice(0, 3).map((j: any, i) => (
-                                                <div key={`unsettled-j-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
-                                                    <div className="flex items-center justify-between relative z-10">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{j.driver?.name}</span>
-                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase">{j.truck?.truck_no}</span>
-                                                        </div>
-                                                        <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
-                                                            <Scale size={18} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
-                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">Reached {j.to}</span>
-                                                        <span className="text-[9px] font-black text-amber-600 uppercase flex items-center gap-1 font-italic">Settle Now <ArrowRight size={8} /></span>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            pendingSettlements.length === 0 && (
-                                                <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-amber-100 w-full">All completed trips settled.</div>
-                                            )
-                                        )}
-                                    </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-amber-100 w-full">No pending driver payouts.</div>
+                                    )}
                                 </div>
                                 <button
                                     onClick={() => navigate("/journey/all-settlements")}
@@ -816,32 +803,80 @@ const Dashboard = () => {
                             </div>
                         </div>
 
+                        {/* Journey Settlement Group */}
+                        <div className="flex flex-col gap-6">
+                            <h3 className="text-2xl font-black px-2 italic">Journey <span className="text-indigo-600">Settlement</span></h3>
+                            <div className="card-premium flex flex-col gap-6 !p-6 border-indigo-100 bg-indigo-50/10">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Awaiting Final Payment</p>
+                                    <button onClick={() => navigate("/dashboard/unsettled-journeys")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
+                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {unsettledJourneys.length > 0 ? (
+                                        unsettledJourneys.slice(0, 3).map((j: any, i: number) => (
+                                            <div key={`unsettled-j-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden group hover:border-indigo-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
+                                                <div className="flex items-center justify-between relative z-10">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{j.driver?.name}</span>
+                                                        <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">Truck: {j.truck?.truck_no}</span>
+                                                    </div>
+                                                    <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                                                        <Scale size={18} />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
+                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{j.from} â†’ {j.to}</span>
+                                                    <span className="text-[9px] font-black text-indigo-600 uppercase flex items-center gap-1">Settle Now <ArrowRight size={8} /></span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100 w-full">All journeys settled.</div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => navigate("/journey/all-journey-entries")}
+                                    className="w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 hover:shadow-xl transition-all shadow-lg shadow-indigo-100"
+                                >
+                                    Journey Explorer
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Party Payments Watchlist */}
                         <div className="flex flex-col gap-6">
                             <h3 className="text-2xl font-black px-2 italic">Party <span className="text-indigo-600">Payments</span></h3>
                             <div className="card-premium flex flex-col gap-6 !p-6 border-indigo-100 bg-indigo-50/10">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Upcoming Receivables</p>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upcoming Receivables</p>
+                                    <button onClick={() => navigate("/dashboard/party-payments")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
+                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
                                 {pendingPartyPayments.length > 0 ? (
                                     <div className="flex flex-col gap-4">
-                                        {pendingPartyPayments.slice(0, 3).map((j: any, i) => {
-                                            const isOverdue = new Date(j.party_payment_due_date).getTime() < new Date().setHours(0, 0, 0, 0);
+                                        {pendingPartyPayments.slice(0, 3).map((e: any, i: number) => {
                                             return (
-                                                <div key={i} className={`flex flex-col gap-3 p-4 rounded-2xl border shadow-sm relative overflow-hidden group transition-all cursor-pointer ${isOverdue ? 'bg-rose-50 border-rose-200 hover:border-rose-400' : 'bg-white border-indigo-100 hover:border-indigo-400'}`} onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
+                                                <div key={i} className="flex flex-col gap-3 p-4 rounded-2xl border bg-white border-indigo-100 shadow-sm relative overflow-hidden group transition-all cursor-pointer hover:border-indigo-400" onClick={() => navigate(`/vehicle-entry/view/${e._id}`)}>
                                                     <div className="flex items-center justify-between relative z-10">
                                                         <div className="flex flex-col">
-                                                            <span className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isOverdue ? 'text-rose-600' : 'text-slate-400'}`}>
-                                                                {isOverdue ? 'OVERDUE' : 'Due'} {formatDate(new Date(j.party_payment_due_date))}
+                                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-slate-400">
+                                                                {formatDate(new Date(e.date || e.createdAt))}
                                                             </span>
-                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">Truck: {j.truck?.truck_no}</span>
+                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">
+                                                                Party: {e.balance_party?.party_name || "—"}
+                                                            </span>
                                                         </div>
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${isOverdue ? 'bg-rose-100 text-rose-600 border-rose-200' : j.party_payment_status === 'Partially Paid' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center border bg-indigo-50 text-indigo-600 border-indigo-100">
                                                             <Wallet size={18} />
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
-                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">{j.from} → {j.to}</span>
-                                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isOverdue ? 'bg-rose-600 text-white' : j.party_payment_status === 'Partially Paid' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                            {j.party_payment_status}
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">{e.vehicle_no || "No Truck"}</span>
+                                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600">
+                                                            ₹{(Number(e.balance) || 0).toLocaleString()}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -849,7 +884,7 @@ const Dashboard = () => {
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100">No overdue party payments.</div>
+                                    <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100">No pending vehicle log payments.</div>
                                 )}
                             </div>
                         </div>

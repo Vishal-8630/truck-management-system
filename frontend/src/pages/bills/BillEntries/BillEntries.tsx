@@ -273,16 +273,16 @@ const BillEntries = () => {
             exit={{ opacity: 0, y: 20 }}
             className="flex flex-col gap-8"
           >
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              <FilterContainer
-                data={billEntries}
-                filters={BillEntryFilters}
-                onFiltered={setFilteredEntries}
-              />
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-[1px] bg-slate-100 hidden lg:block mx-2"></div>
-                <ExcelButton data={filteredEntries} fileNamePrefix="Bill_Entries_List" />
-              </div>
+            <FilterContainer
+              data={billEntries}
+              filters={BillEntryFilters}
+              onFiltered={setFilteredEntries}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                {filteredEntries.length} {filteredEntries.length === 1 ? "Entry" : "Entries"} Found
+              </span>
+              <ExcelButton data={filteredEntries} fileNamePrefix="Bill_Entries_List" />
             </div>
 
             <div className="flex flex-col gap-2 min-h-[400px]">

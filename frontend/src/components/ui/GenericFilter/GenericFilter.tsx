@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { FilterConfig, AppliedFilters } from "@/filters/filter";
 import SmartDropdown from "@/components/SmartDropdown";
 import type { Option } from "@/pages/bills/NewBillingEntry/constants";
@@ -16,10 +16,10 @@ const MONTHS = [
 
 const GenericFilter = <T,>({ filters, onApply, onCancel }: Props<T>) => {
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
-  const monthOptions: Option[] = MONTHS.map((month) => ({
+  const monthOptions: Option[] = useMemo(() => MONTHS.map((month) => ({
     label: month.charAt(0).toUpperCase() + month.slice(1).toLowerCase(),
     value: month,
-  }));
+  })), []);
 
   const handleChange = (field: string, value: any, type?: string) => {
     const key = type ? `${field}$${type}` : field;

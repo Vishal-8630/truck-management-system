@@ -12,6 +12,7 @@ import JourneyEntryForm from "@/components/JourneyEntryForm";
 import FilterContainer from "@/components/FilterContainer";
 import { JourneyFilters } from "@/filters/journeyFilters";
 import { type JourneyType } from "@/types/journey";
+import PaginatedList from "@/components/PaginatedList";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -60,7 +61,10 @@ const AllJourneyEntries = () => {
   /* -------------------- Effects -------------------- */
 
   useEffect(() => {
-    setFilteredJourneys(journeys);
+    const sorted = [...journeys].sort((a, b) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    setFilteredJourneys(sorted);
   }, [journeys]);
 
   /* -------------------- Handlers -------------------- */
@@ -277,26 +281,33 @@ const AllJourneyEntries = () => {
             exit={{ opacity: 0, y: 20 }}
             className="flex flex-col gap-8"
           >
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              <FilterContainer
-                data={journeys}
-                filters={JourneyFilters}
-                onFiltered={setFilteredJourneys}
-              />
+            <FilterContainer
+              data={journeys}
+              filters={JourneyFilters}
+              onFiltered={setFilteredJourneys}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                {filteredJourneys.length} {filteredJourneys.length === 1 ? "Journey" : "Journeys"} Found
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredJourneys.length === 0 ? (
+            <div className="flex flex-col gap-2 min-h-[400px]">
+              <PaginatedList
+                items={filteredJourneys}
+                itemsPerPage={9}
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                renderItem={(journey) => (
+                  <div key={journey._id} onClick={() => navigate(`/journey/journey-detail/${journey._id}`)}>
+                    <JourneyCard journey={journey} />
+                  </div>
+                )}
+              />
+              {filteredJourneys.length === 0 && (
                 <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-dashed border-slate-200 shadow-sm">
                   <Milestone size={48} className="text-slate-200 mb-4" />
                   <p className="text-slate-400 font-bold italic">No active journeys found matching your criteria.</p>
                 </div>
-              ) : (
-                filteredJourneys.map((journey) => (
-                  <div key={journey._id} onClick={() => navigate(`/journey/journey-detail/${journey._id}`)}>
-                    <JourneyCard journey={journey} />
-                  </div>
-                ))
               )}
             </div>
           </motion.div>

@@ -9,6 +9,7 @@ import TruckForm from "@/components/TruckForm";
 import FilterContainer from "@/components/FilterContainer";
 import { TruckFilters } from "@/filters/truckFilters";
 import { type TruckType } from "@/types/truck";
+import PaginatedList from "@/components/PaginatedList";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -67,7 +68,10 @@ const AllTruckEntries = () => {
 
   /* -------------------- Effects -------------------- */
   useEffect(() => {
-    setFilteredTrucks(trucks);
+    const sorted = [...trucks].sort((a, b) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    setFilteredTrucks(sorted);
   }, [trucks]);
 
   /* -------------------- Handlers -------------------- */
@@ -237,22 +241,23 @@ const AllTruckEntries = () => {
             exit={{ opacity: 0, y: 20 }}
             className="flex flex-col gap-8"
           >
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              <FilterContainer
-                data={trucks}
-                filters={TruckFilters}
-                onFiltered={setFilteredTrucks}
-              />
+            <FilterContainer
+              data={trucks}
+              filters={TruckFilters}
+              onFiltered={setFilteredTrucks}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                {filteredTrucks.length} {filteredTrucks.length === 1 ? "Truck" : "Trucks"} Found
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredTrucks.length === 0 ? (
-                <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <Truck size={40} className="text-slate-200 mb-3" />
-                  <p className="text-slate-400 font-bold italic">No trucks found matching your criteria.</p>
-                </div>
-              ) : (
-                filteredTrucks.map((truck) => (
+            <div className="flex flex-col gap-2 min-h-[400px]">
+              <PaginatedList
+                items={filteredTrucks}
+                itemsPerPage={12}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                renderItem={(truck) => (
                   <div
                     key={truck._id}
                     onClick={() => navigate(`/journey/truck/${truck._id}`)}
@@ -284,7 +289,13 @@ const AllTruckEntries = () => {
                       <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                     </div>
                   </div>
-                ))
+                )}
+              />
+              {filteredTrucks.length === 0 && (
+                <div className="col-span-full py-24 flex flex-col items-center justify-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                  <Truck size={40} className="text-slate-200 mb-3" />
+                  <p className="text-slate-400 font-bold italic">No trucks found matching your criteria.</p>
+                </div>
               )}
             </div>
           </motion.div>

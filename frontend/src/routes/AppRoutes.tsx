@@ -18,6 +18,13 @@ import PrivacyPolicy from "@/pages/shared/Legal/PrivacyPolicy";
 import NotFound from "@/pages/shared/NotFound";
 import PagesOutlet from "@/pages/shared/PagesOutlet";
 
+// Dashboard Views
+import UnsettledJourneys from "@/pages/shared/Home/views/UnsettledJourneys";
+import PendingDriverSettlements from "@/pages/shared/Home/views/PendingDriverSettlements";
+import PartyPaymentsWatchlist from "@/pages/shared/Home/views/PartyPaymentsWatchlist";
+import ComplianceAlerts from "@/pages/shared/Home/views/ComplianceAlerts";
+import OperationalActivity from "@/pages/shared/Home/views/OperationalActivity";
+
 // Bills
 import BillEntries from "@/pages/bills/BillEntries";
 import LRCopy from "@/pages/bills/LRCopy";
@@ -88,6 +95,14 @@ const ledgerEntryRoutes = [
 const adminRoutes = [
   { path: "inquiries", element: <Inquiries /> },
   { path: "quotes", element: <Quotes /> },
+];
+
+const dashboardViewRoutes = [
+  { path: "unsettled-journeys", element: <UnsettledJourneys /> },
+  { path: "driver-settlements", element: <PendingDriverSettlements /> },
+  { path: "party-payments", element: <PartyPaymentsWatchlist /> },
+  { path: "compliance-alerts", element: <ComplianceAlerts /> },
+  { path: "activity-log", element: <OperationalActivity /> },
 ];
 
 const AppRoutes = () => {
@@ -182,6 +197,19 @@ const AppRoutes = () => {
       >
         <Route index element={<Navigate to="inquiries" replace />} />
         {adminRoutes.map(({ path, element }) => (
+          <Route key={path} path={path} element={element} />
+        ))}
+      </Route>
+
+      <Route
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute>
+            <PagesOutlet />
+          </ProtectedRoute>
+        }
+      >
+        {dashboardViewRoutes.map(({ path, element }) => (
           <Route key={path} path={path} element={element} />
         ))}
       </Route>
