@@ -34,81 +34,92 @@ export const initWhatsApp = () => {
     if (initCalled) return;
     initCalled = true;
 
-    // Use existing AWS credentials for WhatsApp Session Storage
-    const s3 = new S3Client({
-        region: process.env.AWS_REGION || 'ap-southeast-1',
-        credentials: {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        },
-    });
+    try {
+        // Use existing AWS credentials for WhatsApp Session Storage
+        const s3 = new S3Client({
+            region: process.env.AWS_REGION || 'ap-southeast-1',
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            },
+        });
 
-    const store = new AwsS3Store({
-        bucketName: process.env.S3_BUCKET_NAME,
-        remoteDataPath: 'whatsapp_session/',
-        s3Client: s3,
-    });
+        const store = new AwsS3Store({
+            bucketName: process.env.S3_BUCKET_NAME,
+            remoteDataPath: 'whatsapp_session/',
+            s3Client: s3,
+        });
 
-    client = new Client({
-        authStrategy: new RemoteAuth({
-            store: store,
-            backupSyncIntervalMs: 600000, // Sync session to S3 every 10 mins
-            clientId: 'DRL_FLEET_SYSTEM'
-        }),
-        puppeteer: {
-            headless: true,
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu'
-            ]
-        }
-    });
+        client = new Client({
+            authStrategy: new RemoteAuth({
+                store: store,
+                backupSyncIntervalMs: 600000,
+                clientId: 'DRL_FLEET_SYSTEM'
+            }),
+            puppeteer: {
+                headless: true,
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu'
+                ]
+            }
+        });
 
-    client.on('qr', (qr) => {
-        latestQR = qr;
-        console.log('\n📱 Render QR Code — Scan in WhatsApp > Linked Devices:\n');
-        qrcode.generate(qr, { small: true });
-        console.log('\n⏳ Waiting for scan (Visit domain/api/whatsapp/qr if needed)...\n');
-    });
+        client.on('qr', (qr) => {
+            latestQR = qr;
+            console.log('\n📱 Render QR Code — Scan in WhatsApp > Linked Devices:\n');
+            qrcode.generate(qr, { small: true });
+            console.log('\n⏳ Waiting for scan (Visit domain/api/whatsapp/qr if needed)...\n');
+        });
 
-    client.on('remote_session_saved', () => {
-        console.log('✅ [WhatsApp] Session backed up to S3 successfully!');
-    });
+        client.on('remote_session_saved', () => {
+            console.log('✅ [WhatsApp] Session backed up to S3 successfully!');
+        });
 
-    client.on('authenticated', () => {
-        latestQR = null;
-        console.log('✅ [WhatsApp] Authenticated!');
-    });
+        client.on('authenticated', () => {
+            latestQR = null;
+            console.log('✅ [WhatsApp] Authenticated!');
+        });
 
-    client.on('ready', () => {
-        isReady = true;
-        latestQR = null;
-        console.log('🟢 [WhatsApp] Client is ready — notifications enabled on Render.');
-    });
+        client.on('ready', () => {
+            isReady = true;
+            latestQR = null;
+            console.log('🟢 [WhatsApp] Client is ready — notifications enabled on Render.');
+        });
 
-    client.on('disconnected', (reason) => {
+        client.on('disconnected', (reason) => {
+            isReady = false;
+            console.warn('🔴 [WhatsApp] Client disconnected:', reason);
+            setTimeout(() => client.initialize().catch(e => console.warn('[WhatsApp] Reconnect failed:', e.message)), 10000);
+        });
+
+        client.on('auth_failure', (msg) => {
+            isReady = false;
+            console.warn('❌ [WhatsApp] Auth failure:', msg);
+        });
+
+        // Catch any error events emitted on the client
+        client.on('error', (err) => {
+            console.warn('⚠️  [WhatsApp] Client error (server kept alive):', err?.message || err);
+        });
+
+        // Async errors from initialize() must be caught here
+        client.initialize().catch(err => {
+            console.warn('⚠️  [WhatsApp] initialize() failed — WA disabled.', err.message);
+            isReady = false;
+        });
+    } catch (err) {
+        console.warn('⚠️  [WhatsApp] Setup failed — WA disabled.', err.message);
         isReady = false;
-        console.warn('🔴 [WhatsApp] Client disconnected:', reason);
-        setTimeout(() => client.initialize().catch(e => console.warn('[WhatsApp] Reconnect failed:', e.message)), 10000);
-    });
-
-    client.on('auth_failure', (msg) => {
-        isReady = false;
-        console.error('❌ [WhatsApp] Auth failure:', msg);
-    });
-
-    // Async errors from initialize() must be caught here
-    client.initialize().catch(err => {
-        console.warn('⚠️  [WhatsApp] initialize() failed — Chrome not found or other error. WA disabled.', err.message);
-        isReady = false;
-    });
+    }
 };
+
 
 export const getWhatsAppStatus = () => ({ isReady, latestQR });
 
