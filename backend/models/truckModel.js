@@ -74,7 +74,6 @@ const truckSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-truckSchema.index({ truck_no: 1 });
 truckSchema.index({ "drivers.driver_id": 1 });
 
 const Truck = mongoose.model("Truck", truckSchema);

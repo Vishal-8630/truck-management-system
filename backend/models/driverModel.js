@@ -20,7 +20,7 @@ const driverSchema = new mongoose.Schema(
     advance_amount: { type: String, default: "0" },
     amount_to_pay: { type: String, default: "0" },       // company owes driver
     amount_to_receive: { type: String, default: "0" },   // driver owes company
-    
+
     vehicles: {
       type: [
         {
@@ -41,8 +41,6 @@ const driverSchema = new mongoose.Schema(
 driverSchema.index({ name: 1 });
 driverSchema.index({ phone: 1 });
 driverSchema.index({ "vehicles.vehicle_id": 1 });
-driverSchema.index({ adhaar_no: 1 }, { unique: true });
-driverSchema.index({ dl: 1 }, { unique: true });
 
 const Driver = mongoose.model("Driver", driverSchema);
 export default Driver;
