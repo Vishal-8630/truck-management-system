@@ -2,7 +2,6 @@ import { MotionConfig } from "framer-motion";
 import BottomBar from "@/components/layout/BottomBar";
 import MessageBar from "@/components/layout/MessageBar";
 import Sidebar from "@/components/layout/Sidebar/Sidebar";
-import Navbar from "@/components/layout/Navbar";
 import AppRoutes from "@/routes/AppRoutes";
 
 import useAuthCheck from "@/hooks/useAuthCheck";
@@ -36,32 +35,26 @@ function App() {
 
   return (
     <MotionConfig transition={{ duration: 0.3, ease: "easeInOut" }}>
-      <div className="flex flex-col lg:flex-row min-h-screen transition-colors duration-300" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+      <div className="flex flex-col min-h-screen transition-all duration-300 ease-in-out" style={{ backgroundColor: 'var(--color-bg-base)' }}>
         <ScrollToTop />
         
-        {/* Sidebar for Desktop */}
-        <Sidebar />
+        {/* Main Content Area with Sticky Sidebar */}
+        <div className="flex flex-1 flex-row min-w-0 transition-all duration-300 items-start">
+          <Sidebar />
 
-        {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-[999] flex justify-center p-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pointer-events-auto">
-          <div className="w-full">
-            <Navbar />
-          </div>
-        </header>
-
-        <div className="flex-1 flex flex-col min-w-0">
-          <main className="flex-1 flex flex-col pt-8 lg:pt-12 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          <main className="flex-1 flex flex-col pt-8 lg:pt-12 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 transition-all duration-300">
             <MessageBar />
             <div className="flex-1">
               <AppRoutes />
             </div>
             <MoveToTopButton />
           </main>
-
-          <footer className="mt-auto">
-            <BottomBar />
-          </footer>
         </div>
+
+        {/* Full-width Footer */}
+        <footer className="mt-auto border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
+          <BottomBar />
+        </footer>
       </div>
     </MotionConfig>
   );

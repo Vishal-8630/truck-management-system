@@ -1,4 +1,4 @@
-﻿import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     Truck,
     MapPin,
@@ -7,11 +7,8 @@ import {
     Plus,
     LayoutDashboard,
     Bell,
-    Search,
     Settings,
-    ArrowUpRight,
     ShieldAlert,
-    Clock,
     Scale,
     ArrowRight,
     Wallet,
@@ -47,8 +44,6 @@ const Dashboard = () => {
     const { data: vehicleEntries = [] } = useVehicleEntriesQuery();
 
     const [inquiryCount, setInquiryCount] = useState(0);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
     useEffect(() => {
         const fetchInquiries = async () => {
@@ -60,20 +55,6 @@ const Dashboard = () => {
             }
         };
         fetchInquiries();
-
-        // Keyboard Shortcuts
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                document.getElementById('universal-search-input')?.focus();
-            }
-            if (e.key === 'Escape') {
-                setSearchQuery("");
-                setIsSearchFocused(false);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     // Compute Expirations
@@ -98,7 +79,7 @@ const Dashboard = () => {
                     const diffTime = expiryDate.getTime() - today.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                    if (diffDays <= 30) { // Show everything expiring within a month
+                    if (diffDays <= 30) {
                         alerts.push({
                             truckId: truck._id,
                             truck: truck.truck_no,
@@ -126,21 +107,19 @@ const Dashboard = () => {
         return settlements.filter((s: any) => !s.is_settled);
     }, [settlements]);
 
-    // Party Payment Alerts (Using Vehicle Logs as requested, status 'Pending')
+    // Party Payment Alerts
     const pendingPartyPayments = useMemo(() => {
         return vehicleEntries.filter((e: any) => e.status === 'Pending')
             .sort((a: any, b: any) => new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime());
     }, [vehicleEntries]);
 
-    // Missing Progress Updates (Checkpoint Alerts)
+    // Missing Progress Updates
     const missedCheckpoints = useMemo(() => {
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
 
         return journeys.filter(j => {
             if (j.status !== 'Active') return false;
-
-            // Check if any progress entry matches today's date
             const todayProgress = j.daily_progress?.find((p: any) => {
                 if (!p.date) return false;
                 try {
@@ -149,17 +128,15 @@ const Dashboard = () => {
                     return false;
                 }
             });
-
             return !todayProgress || !todayProgress.location || todayProgress.location.trim() === "";
         });
     }, [journeys]);
 
-    // Upcoming Checkpoints (Route Intelligence)
+    // Upcoming Checkpoints
     const upcomingCheckpoints = useMemo(() => {
         const todayStr = new Date().toISOString().split('T')[0];
         return journeys.filter(j => j.status === 'Active')
             .map(j => {
-                // Find the first upcoming checkpoint that hasn't been updated yet
                 const nextProgress = j.daily_progress?.find((p: any) => {
                     if (!p.date) return false;
                     try {
@@ -174,21 +151,6 @@ const Dashboard = () => {
             }).filter(Boolean).slice(0, 5);
     }, [journeys]);
 
-    // Upcoming Dates (Renewals + Active Journeys)
-    const upcomingEvents = useMemo(() => {
-        const events = documentAlerts.map(a => ({
-            title: `${a.truck}: ${a.doc} Renewal`,
-            date: a.expiry,
-            type: 'renewal',
-            color: 'rose',
-            link: `/journey/truck/${a.truckId}`
-        }));
-        return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5);
-    }, [documentAlerts]);
-
-    // Compute Revenue
-
-
     // Combined Recent Activity
     const recentActivity = useMemo(() => {
         const act: any[] = [
@@ -198,31 +160,11 @@ const Dashboard = () => {
         return act.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime()).slice(0, 10);
     }, [journeys, billEntries]);
 
-    // Universal Search Results
-    const searchResults = useMemo(() => {
-        if (!searchQuery.trim()) return { trucks: [], journeys: [], bills: [] };
-
-        const query = searchQuery.toLowerCase();
-        return {
-            trucks: trucks.filter(t => t.truck_no.toLowerCase().includes(query)).slice(0, 3),
-            journeys: journeys.filter(j =>
-                (j.truck?.truck_no || "").toLowerCase().includes(query) ||
-                j.from.toLowerCase().includes(query) ||
-                j.to.toLowerCase().includes(query)
-            ).slice(0, 3),
-            bills: billEntries.filter(b =>
-                (b.bill_no || "").toLowerCase().includes(query) ||
-                (b.billing_party?.name || "").toLowerCase().includes(query)
-            ).slice(0, 3)
-        };
-    }, [searchQuery, trucks, journeys, billEntries]);
-
-    // Financial Performance (Monthly Pulse)
+    // Financial Performance
     const financialSummary = useMemo(() => {
         const months: Record<string, { label: string, credit: number, debit: number, rawDate: Date }> = {};
         const today = new Date();
 
-        // Initialize last 6 months
         for (let i = 5; i >= 0; i--) {
             const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
             const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
@@ -248,7 +190,7 @@ const Dashboard = () => {
 
     const maxFinanceValue = useMemo(() => {
         const values = financialSummary.flatMap(m => [m.credit, m.debit]);
-        return Math.max(...values, 1000); // at least 1000 for scale
+        return Math.max(...values, 1000);
     }, [financialSummary]);
 
     const stats = [
@@ -334,94 +276,6 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="relative group hidden lg:block">
-                        <Search className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-indigo-600' : 'text-slate-400'}`} size={18} />
-                        <input
-                            id="universal-search-input"
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                            placeholder="Universal search..."
-                            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-14 pr-16 text-sm font-bold focus:ring-4 focus:ring-indigo-50 outline-none w-80 shadow-sm transition-all"
-                        />
-
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                            {searchQuery ? (
-                                <button onClick={() => setSearchQuery("")} className="p-1 hover:bg-slate-50 rounded-md text-slate-400 hover:text-rose-500 transition-colors">
-                                    <Plus className="rotate-45" size={16} />
-                                </button>
-                            ) : (
-                                <div className="px-1.5 py-0.5 rounded border border-slate-100 bg-slate-50 text-[10px] font-black text-slate-400 flex items-center gap-1 cursor-default opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <kbd className="font-sans">Ctrl</kbd>
-                                    <span className="text-[8px]">K</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Search Results Dropdown */}
-                        {isSearchFocused && searchQuery && (
-                            <div className="absolute top-full mt-4 left-0 w-[400px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-                                {Object.values(searchResults).every(arr => arr.length === 0) ? (
-                                    <div className="py-10 text-center flex flex-col items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
-                                            <Search size={20} />
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-400 italic">No matches found for "{searchQuery}"</p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-6">
-                                        {searchResults.trucks.length > 0 && (
-                                            <div className="flex flex-col gap-3">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Vehicles</p>
-                                                {searchResults.trucks.map(t => (
-                                                    <button key={t._id} onClick={() => navigate(`/journey/truck/${t._id}`)} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-all text-left group">
-                                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                            <Truck size={20} />
-                                                        </div>
-                                                        <span className="text-sm font-black text-slate-900">{t.truck_no}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {searchResults.journeys.length > 0 && (
-                                            <div className="flex flex-col gap-3">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Journeys</p>
-                                                {searchResults.journeys.map(j => (
-                                                    <button key={j._id} onClick={() => navigate(`/journey/journey-detail/${j._id}`)} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-all text-left group">
-                                                        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                            <MapPin size={20} />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-black text-slate-900 underline decoration-emerald-100">{j.from} â†’ {j.to}</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{j.truck?.truck_no || 'Manual Entry'}</span>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {searchResults.bills.length > 0 && (
-                                            <div className="flex flex-col gap-3">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Invoices</p>
-                                                {searchResults.bills.map(b => (
-                                                    <button key={b._id} onClick={() => navigate(`/bill-entry/bill?bill_no=${b.bill_no}`)} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-all text-left group">
-                                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                            <FileText size={20} />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-black text-slate-900 underline decoration-indigo-100 italic">#{b.bill_no}</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{b.billing_party?.name || 'Manual Party'}</span>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
                     <button
                         onClick={() => navigate("/profile")}
                         className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-indigo-600 hover:shadow-lg transition-all shadow-sm group"
@@ -465,11 +319,7 @@ const Dashboard = () => {
 
             {/* Main Grid Content */}
             <div className="grid lg:grid-cols-12 gap-8">
-
-                {/* Left Column: Quick Actions & Alerts */}
                 <div className="lg:col-span-8 flex flex-col gap-10">
-
-                    {/* Quick Actions Grid */}
                     <section className="flex flex-col gap-6">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-2xl font-black flex items-center gap-3 italic">
@@ -496,7 +346,6 @@ const Dashboard = () => {
                         </div>
                     </section>
 
-                    {/* Financial Pulse - Monthly Charts */}
                     <section className="flex flex-col gap-6">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-2xl font-black flex items-center gap-3 italic">
@@ -506,7 +355,6 @@ const Dashboard = () => {
                                 View Full Ledger <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
-
                         <div className="card-premium !p-8 flex flex-col gap-10">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                                 <div className="flex flex-col gap-1">
@@ -524,12 +372,10 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             </div>
-
                             <div className="flex items-end justify-between gap-2 h-44 sm:h-64 pt-4 border-b border-slate-50 relative">
                                 {financialSummary.map((m, idx) => (
                                     <div key={idx} className="flex-1 flex flex-col items-center gap-4 group h-full">
                                         <div className="w-full flex items-end justify-center gap-1 sm:gap-2 h-full">
-                                            {/* Credit Bar */}
                                             <motion.div
                                                 initial={{ height: 0 }}
                                                 animate={{ height: `${(m.credit / (maxFinanceValue || 1)) * 100}%` }}
@@ -540,7 +386,6 @@ const Dashboard = () => {
                                                     CR: â‚¹{m.credit.toLocaleString()}
                                                 </div>
                                             </motion.div>
-                                            {/* Debit Bar */}
                                             <motion.div
                                                 initial={{ height: 0 }}
                                                 animate={{ height: `${(m.debit / (maxFinanceValue || 1)) * 100}%` }}
@@ -556,17 +401,12 @@ const Dashboard = () => {
                                     </div>
                                 ))}
                             </div>
-
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Month</span>
                                     <span className={`text-xl font-black italic tracking-tight ${financialSummary[5].credit >= financialSummary[5].debit ? 'text-emerald-600' : 'text-rose-600'}`}>
                                         {financialSummary[5].credit >= financialSummary[5].debit ? '+' : '-'} â‚¹{Math.abs(financialSummary[5].credit - financialSummary[5].debit).toLocaleString()}
                                     </span>
-                                </div>
-                                <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Change</span>
-                                    <span className="text-xl font-black italic tracking-tight text-indigo-600">Calculated IQ</span>
                                 </div>
                                 <div className="p-5 rounded-2xl border border-slate-50 bg-slate-50/50 flex flex-col gap-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue Impact</span>
@@ -580,7 +420,6 @@ const Dashboard = () => {
                         </div>
                     </section>
 
-                    {/* Compliance Alerts & Critical Renewals */}
                     {documentAlerts.length > 0 && (
                         <section className="flex flex-col gap-6">
                             <div className="flex items-center justify-between px-2">
@@ -588,12 +427,6 @@ const Dashboard = () => {
                                     Compliance <span className="text-rose-600 underline decoration-rose-200 underline-offset-8">Critical</span>
                                     <span className="ml-2 px-3 py-1 rounded-xl bg-rose-50 text-rose-600 text-[10px] uppercase font-black border border-rose-100">{documentAlerts.length} Issues</span>
                                 </h3>
-                                <button
-                                    onClick={() => navigate("/dashboard/compliance-alerts")}
-                                    className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:tracking-[0.2em] flex items-center gap-2 transition-all group"
-                                >
-                                    View All <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
                             </div>
                             <div className="grid sm:grid-cols-2 gap-4">
                                 {documentAlerts.slice(0, 6).map((alert, i) => (
@@ -613,11 +446,8 @@ const Dashboard = () => {
                                                 </span>
                                             </div>
                                             <p className="text-xs text-slate-500 font-bold mt-1">
-                                                {alert.doc} <span className="text-rose-500">â€¢</span> {formatDate(new Date(alert.expiry))}
+                                                {alert.doc} â€¢ {formatDate(new Date(alert.expiry))}
                                             </p>
-                                        </div>
-                                        <div className="p-2 rounded-lg bg-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <ArrowUpRight size={16} className="text-rose-600" />
                                         </div>
                                     </div>
                                 ))}
@@ -625,22 +455,14 @@ const Dashboard = () => {
                         </section>
                     )}
 
-                    {/* Activity Feed */}
                     <div className="flex flex-col gap-10">
-                        {/* Journey Operations Center */}
                         <section className="flex flex-col gap-6">
                             <div className="flex items-center justify-between px-2">
                                 <h3 className="text-2xl font-black flex items-center gap-3 italic">
                                     Journey <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Operations</span>
-                                    <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-600 text-[10px] uppercase font-black border border-indigo-100">Live IQ</span>
                                 </h3>
-                                <button onClick={() => navigate("/dashboard/activity-log")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-2 group">
-                                    View All <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
                             </div>
-
                             <div className="grid md:grid-cols-2 gap-6">
-                                {/* Checkpoint Alerts */}
                                 <div className="card-premium flex flex-col gap-4 !bg-slate-50/50 border-slate-200">
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Checkpoint Alerts</p>
@@ -657,21 +479,19 @@ const Dashboard = () => {
                                                     </div>
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="text-sm font-black text-slate-900 truncate">{j.truck?.truck_no}</span>
-                                                        <span className="text-[10px] font-bold text-rose-500 uppercase">Update Missing for Today</span>
+                                                        <span className="text-[10px] font-bold text-rose-500 uppercase">Update Missing</span>
                                                     </div>
                                                     <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:translate-x-1 transition-all" />
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">All active journey checkpoints updated.</div>
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">All updated.</div>
                                     )}
                                 </div>
-
-                                {/* Upcoming Route Checkpoints */}
                                 <div className="card-premium flex flex-col gap-4 !bg-slate-50/50 border-slate-200">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Coming Up Next</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Coming Up</p>
                                         <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
                                             <ArrowRight size={16} />
                                         </div>
@@ -685,14 +505,14 @@ const Dashboard = () => {
                                                     </div>
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="text-sm font-black text-slate-900 truncate">Day {item.next.day_number}: {item.journey.truck?.truck_no}</span>
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">{formatDate(new Date(item.next.date))} Checkpoint</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">{formatDate(new Date(item.next.date))}</span>
                                                     </div>
                                                     <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:translate-x-1 transition-all" />
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">No scheduled checkpoints found.</div>
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic">None found.</div>
                                     )}
                                 </div>
                             </div>
@@ -701,24 +521,16 @@ const Dashboard = () => {
                         <section className="flex flex-col gap-6">
                             <div className="flex items-center justify-between px-2">
                                 <h3 className="text-2xl font-black flex items-center gap-3 italic">
-                                    Operational <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Activity</span>
-                                    <span className="px-3 py-1 rounded-xl bg-slate-50 text-slate-400 text-[10px] uppercase font-black border border-slate-100">Live Feed</span>
+                                    Recent <span className="text-indigo-600 underline decoration-indigo-200 underline-offset-8">Activity</span>
                                 </h3>
-                                <button onClick={() => navigate("/dashboard/activity-log")} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 flex items-center gap-2 transition-all group">
-                                    Full Log <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
                             </div>
                             <div className="card-premium !p-0 overflow-hidden divide-y divide-slate-50 shadow-2xl shadow-slate-100/50">
                                 {recentActivity.length === 0 ? (
-                                    <div className="p-20 text-center flex flex-col items-center gap-4">
-                                        <Clock size={48} className="text-slate-200" />
-                                        <p className="text-slate-400 font-bold italic">No recent activity detected in the system logs.</p>
-                                    </div>
+                                    <div className="p-20 text-center text-slate-400 font-bold italic">No recent activity.</div>
                                 ) : (
                                     recentActivity.map((item, i) => (
                                         <div key={i} className="p-6 flex items-center gap-6 hover:bg-slate-50/80 transition-all group cursor-default">
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${item.type === 'journey' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
-                                                }`}>
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${item.type === 'journey' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
                                                 {item.type === 'journey' ? <MapPin size={24} /> : <FileText size={24} />}
                                             </div>
                                             <div className="flex flex-col flex-1 gap-1">
@@ -727,13 +539,13 @@ const Dashboard = () => {
                                                         {item.type}
                                                     </span>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                                        {formatDate(new Date(item.createdAt))}
+                                                        {formatDate(new Date(item.sortDate))}
                                                     </p>
                                                 </div>
                                                 <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
                                                     {item.type === 'journey'
-                                                        ? `Journey Dispatched: Truck ${item.truck?.truck_no || "N/A"}`
-                                                        : `Invoice Created: â‚¹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
+                                                        ? `Journey: ${item.truck?.truck_no || "N/A"}`
+                                                        : `Invoice: â‚¹${item.grand_total} for ${item.billing_party?.name || 'Party'}`}
                                                 </p>
                                             </div>
                                             <button
@@ -753,20 +565,13 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Fleet Status & Insights */}
                 <div className="lg:col-span-4 flex flex-col gap-10">
-
-                    {/* Financial Reconciliation Section */}
                     <section className="flex flex-col gap-10">
-                        {/* Driver Settlement Payouts */}
                         <div className="flex flex-col gap-6">
                             <h3 className="text-2xl font-black px-2 italic">Driver <span className="text-amber-600">Settlements</span></h3>
                             <div className="card-premium flex flex-col gap-6 !p-6 border-amber-100 bg-amber-50/10">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Required</p>
-                                    <button onClick={() => navigate("/dashboard/driver-settlements")} className="text-[10px] font-black uppercase tracking-widest text-amber-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
-                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </button>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Required</p>
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     {pendingSettlements.length > 0 ? (
@@ -774,7 +579,7 @@ const Dashboard = () => {
                                             <div key={`pending-s-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/driver-detail/${s.driver?._id || s.driver}/settlement/${s._id}`)}>
                                                 <div className="flex items-center justify-between relative z-10">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Settlement Draft</span>
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Draft</span>
                                                         <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-amber-200 underline-offset-4 decoration-2">{s.driver?.name}</span>
                                                     </div>
                                                     <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100">
@@ -782,13 +587,13 @@ const Dashboard = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
-                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{formatDate(new Date(s.period.from))} - {formatDate(new Date(s.period.to))}</span>
-                                                    <span className="text-[9px] font-black text-amber-600 uppercase flex items-center gap-1">Awaiting Payout <ArrowRight size={8} /></span>
+                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{formatDate(new Date(s.period.from))}</span>
+                                                    <span className="text-[9px] font-black text-amber-600 uppercase flex items-center gap-1">Awaiting <ArrowRight size={8} /></span>
                                                 </div>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-amber-100 w-full">No pending driver payouts.</div>
+                                        <div className="py-6 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-amber-100">None.</div>
                                     )}
                                 </div>
                                 <button
@@ -799,167 +604,7 @@ const Dashboard = () => {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Journey Settlement Group */}
-                        <div className="flex flex-col gap-6">
-                            <h3 className="text-2xl font-black px-2 italic">Journey <span className="text-indigo-600">Settlement</span></h3>
-                            <div className="card-premium flex flex-col gap-6 !p-6 border-indigo-100 bg-indigo-50/10">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Awaiting Final Payment</p>
-                                    <button onClick={() => navigate("/dashboard/unsettled-journeys")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
-                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-3">
-                                    {unsettledJourneys.length > 0 ? (
-                                        unsettledJourneys.slice(0, 3).map((j: any, i: number) => (
-                                            <div key={`unsettled-j-${i}`} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden group hover:border-indigo-400 transition-all cursor-pointer" onClick={() => navigate(`/journey/journey-detail/${j._id}`)}>
-                                                <div className="flex items-center justify-between relative z-10">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{j.driver?.name}</span>
-                                                        <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">Truck: {j.truck?.truck_no}</span>
-                                                    </div>
-                                                    <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                                                        <Scale size={18} />
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
-                                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{j.from} â†’ {j.to}</span>
-                                                    <span className="text-[9px] font-black text-indigo-600 uppercase flex items-center gap-1">Settle Now <ArrowRight size={8} /></span>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100 w-full">All journeys settled.</div>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => navigate("/journey/all-journey-entries")}
-                                    className="w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 hover:shadow-xl transition-all shadow-lg shadow-indigo-100"
-                                >
-                                    Journey Explorer
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Party Payments Watchlist */}
-                        <div className="flex flex-col gap-6">
-                            <h3 className="text-2xl font-black px-2 italic">Party <span className="text-indigo-600">Payments</span></h3>
-                            <div className="card-premium flex flex-col gap-6 !p-6 border-indigo-100 bg-indigo-50/10">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upcoming Receivables</p>
-                                    <button onClick={() => navigate("/dashboard/party-payments")} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:tracking-[0.2em] transition-all flex items-center gap-1.5 group">
-                                        View All <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                </div>
-                                {pendingPartyPayments.length > 0 ? (
-                                    <div className="flex flex-col gap-4">
-                                        {pendingPartyPayments.slice(0, 3).map((e: any, i: number) => {
-                                            return (
-                                                <div key={i} className="flex flex-col gap-3 p-4 rounded-2xl border bg-white border-indigo-100 shadow-sm relative overflow-hidden group transition-all cursor-pointer hover:border-indigo-400" onClick={() => navigate(`/vehicle-entry/all-vehicle-entries`)}>
-                                                    <div className="flex items-center justify-between relative z-10">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-slate-400">
-                                                                {formatDate(new Date(e.date || e.createdAt))}
-                                                            </span>
-                                                            <span className="text-base font-black text-slate-900 italic tracking-tight uppercase underline decoration-indigo-200 underline-offset-4 decoration-2">
-                                                                Party: {e.balance_party?.party_name || "—"}
-                                                            </span>
-                                                        </div>
-                                                        <div className="w-9 h-9 rounded-xl flex items-center justify-center border bg-indigo-50 text-indigo-600 border-indigo-100">
-                                                            <Wallet size={18} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between mt-1 pt-2 border-t border-slate-50">
-                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">{e.vehicle_no || "No Truck"}</span>
-                                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600">
-                                                            ₹{(Number(e.balance) || 0).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="py-10 text-center text-xs font-bold text-slate-400 italic bg-white rounded-2xl border border-indigo-100">No pending vehicle log payments.</div>
-                                )}
-                            </div>
-                        </div>
                     </section>
-
-                    {/* Upcoming Events / Dates */}
-                    <section className="flex flex-col gap-6">
-                        <h3 className="text-2xl font-black px-2 italic">Upcoming <span className="text-indigo-600">Dates</span></h3>
-                        <div className="card-premium !p-0 overflow-hidden flex flex-col divide-y divide-slate-50">
-                            {upcomingEvents.map((event, i) => (
-                                <div
-                                    key={i}
-                                    className="p-5 flex items-center gap-5 hover:bg-slate-50 transition-all cursor-pointer group"
-                                    onClick={() => navigate(event.link)}
-                                >
-                                    <div className={`w-12 h-12 rounded-2xl bg-${event.color}-50 text-${event.color}-600 flex flex-col items-center justify-center shrink-0 border border-${event.color}-100`}>
-                                        <span className="text-[8px] font-black uppercase leading-none">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                                        <span className="text-lg font-black leading-none">{new Date(event.date).getDate()}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{event.title}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Renewal Window</p>
-                                    </div>
-                                    <ChevronRight size={16} className="ml-auto text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-1" />
-                                </div>
-                            ))}
-                            {upcomingEvents.length === 0 && (
-                                <div className="p-10 text-center text-slate-400 font-bold italic">No upcoming events scheduled.</div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* Fleet Utilization Snapshot */}
-                    <section className="flex flex-col gap-6">
-                        <div className="card-premium !p-8 bg-slate-900 border-slate-800 text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-
-                            <div className="relative z-10 flex flex-col gap-8">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none">Utilization Index</p>
-                                        <p className="text-4xl font-black italic tracking-tighter">
-                                            {((journeys.filter(j => j.status === 'Active').length / (trucks.length || 1)) * 100).toFixed(0)}%
-                                        </p>
-                                    </div>
-                                    <div className="w-20 h-20 rounded-full border-4 border-slate-800 flex items-center justify-center relative">
-                                        <div className="w-full h-full rounded-full border-4 border-emerald-500 border-t-transparent animate-spin-slow absolute inset-0 -m-1"></div>
-                                        <Truck className="text-emerald-500" size={32} strokeWidth={2.5} />
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></div>
-                                            <span className="text-xs font-black uppercase tracking-widest">On Road</span>
-                                        </div>
-                                        <span className="text-lg font-black italic">{journeys.filter(j => j.status === 'Active').length} Units</span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Parked / IDLE</span>
-                                        </div>
-                                        <span className="text-lg font-black italic text-slate-400">{trucks.length - journeys.filter(j => j.status === 'Active').length} Units</span>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => navigate("/journey/all-journey-entries")}
-                                    className="w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20"
-                                >
-                                    Real-Time Tracking
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-
                 </div>
             </div>
         </div>
