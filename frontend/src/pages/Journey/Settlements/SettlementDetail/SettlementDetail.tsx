@@ -31,7 +31,7 @@ const SettlementDetail = () => {
     data: settlement,
     emptyMessage: "Please select a settlement first",
     endpoint: "/invoice/generate-pdf",
-    serverMode: false,
+    serverMode: true,
   });
 
   const handleDownloadPDF = usePDFDownload({
@@ -40,7 +40,7 @@ const SettlementDetail = () => {
     emptyMessage: "Please select a settlement first",
     filename: `Settlement-${settlement?.driver?.name || "Driver"}-${new Date().toISOString().split("T")[0]}.pdf`,
     endpoint: "/invoice/generate-pdf",
-    serverMode: false,
+    serverMode: true,
   });
 
   if (isLoading && !settlement) return <Loading />;
@@ -397,8 +397,7 @@ const SettlementDetail = () => {
       </div>
 
       {/* Hidden print ref (PDF/Report View) */}
-      <div className="hidden">
-        <div ref={printRef} className="p-10 text-slate-900 bg-white font-serif w-[200mm] mx-auto border border-slate-300">
+      <div ref={printRef} className="hidden print:block p-10 text-slate-900 bg-white font-serif w-[210mm] min-h-[297mm] mx-auto border border-slate-300">
           <div className="text-center flex flex-col gap-1 mb-8 border-b-2 border-slate-900 pb-6 uppercase">
             <h1 className="text-4xl font-black tracking-tighter italic mb-1">Divyanshi Road Lines</h1>
             <p className="text-[9px] font-bold tracking-[0.4em] text-slate-500 mb-2">Fleet Owner • Transport Contractors • Commission Agent</p>
@@ -530,8 +529,7 @@ const SettlementDetail = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 };
 
 export default SettlementDetail;
