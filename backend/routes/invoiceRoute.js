@@ -129,14 +129,31 @@ router.post("/generate-pdf", async (req, res) => {
       res.end(pdfBuffer);
 
     } catch (pageError) {
-      await browser.close();
+      if (browser) await browser.close();
+      console.error("❌ PDF Generation Page Error:", pageError);
       throw pageError;
     }
 
   } catch (error) {
     console.error("❌ PDF generation error:", error);
-    res.status(500).json({ error: "Failed to generate PDF" });
+    res.status(500).json({ error: error.message || "Failed to generate PDF" });
   }
+});
+
+router.get("/test-browser", async (req, res) => {
+    try {
+        const launchOptions = {
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                           (process.platform === 'linux' ? '/usr/bin/google-chrome' : null),
+        };
+        const browser = await puppeteer.launch(launchOptions);
+        await browser.close();
+        res.json({ success: true, message: "Browser launched successfully", path: launchOptions.executablePath });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 export default router;
