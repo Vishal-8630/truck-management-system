@@ -4,6 +4,7 @@ import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 import safeJSONParse from '../utils/safeJSONParse.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 
 const newTruck = async (req, res, next) => {
@@ -66,6 +67,14 @@ const newTruck = async (req, res, next) => {
 
         const truck = new Truck(truckData);
         await truck.save();
+        await logAuditEvent({
+            req,
+            entityType: "truck",
+            entityId: truck._id,
+            action: "create",
+            before: {},
+            after: truck.toObject(),
+        });
 
 
         return successResponse(res, "Truck Added Successfully");
@@ -108,6 +117,7 @@ const updateTruck = async (req, res, next) => {
             return next(new AppError("Truck not found", 404));
         }
 
+        const beforeSnapshot = truck.toObject();
         const {
             truck_no,
             fitness_doc_expiry,
@@ -122,6 +132,12 @@ const updateTruck = async (req, res, next) => {
         if (!truck_no) {
             if (req.files) await deleteFromS3(req.files);
             return next(new AppError("Truck No is required", 400));
+        }
+
+        const existingTruck = await Truck.findOne({ truck_no: { $regex: new RegExp(`^${truck_no}$`, 'i') } });
+        if (existingTruck && existingTruck._id.toString() !== id) {
+            if (req.files) await deleteFromS3(req.files);
+            return next(new AppError("Truck No already exists in database", 400));
         }
 
         if (!fitness_doc_expiry || !insurance_doc_expiry || !national_permit_doc_expiry || !state_permit_doc_expiry || !tax_doc_expiry || !pollution_doc_expiry) {
@@ -184,6 +200,14 @@ const updateTruck = async (req, res, next) => {
             pollution_doc: await getSignedS3Url(updatedTruck.pollution_doc)
         };
 
+        await logAuditEvent({
+            req,
+            entityType: "truck",
+            entityId: updatedTruck._id,
+            action: "update",
+            before: beforeSnapshot,
+            after: updatedTruck.toObject(),
+        });
         return successResponse(res, "Truck Updated Successfully", signedTruck);
     } catch (error) {
         console.log("Error adding truck", error);
@@ -204,8 +228,17 @@ const deleteTruck = async (req, res, next) => {
         return next(new AppError("Truck not found", 404));
     }
 
+    const beforeSnapshot = truck.toObject();
     truck.is_deleted = true;
     const deletedTruck = await truck.save();
+    await logAuditEvent({
+        req,
+        entityType: "truck",
+        entityId: deletedTruck._id,
+        action: "delete",
+        before: beforeSnapshot,
+        after: deletedTruck.toObject(),
+    });
     return successResponse(res, "Truck Deleted Successfully", deletedTruck);
 }
 

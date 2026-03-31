@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useJourneys } from "@/hooks/useJourneys";
@@ -32,6 +33,7 @@ type LedgerRelationKey = "journey" | "truck" | "driver" | "party" | "settlement"
 const LedgerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const addMessage = useMessageStore((s) => s.addMessage);
 
   const { useJourneysQuery } = useJourneys();
@@ -152,6 +154,7 @@ const LedgerDetail = () => {
   const handleSave = async () => {
     try {
       await updateLedger.mutateAsync(currentDisplay);
+      await queryClient.invalidateQueries({ queryKey: ["history", "ledger", currentDisplay._id] });
       addMessage({ type: "success", text: "Ledger updated successfully" });
     } catch (error: any) {
       const errors = error?.response?.data;
@@ -202,6 +205,8 @@ const LedgerDetail = () => {
           heading={`Transaction detail ${isDebit ? 'Debit' : 'Credit'}`}
           description="Unified Ledger Entry • Financial Record Management"
           isDirty={isDirty}
+          historyEntityType="ledger"
+          historyEntityId={currentDisplay._id}
           onEditClick={() => { setIsEditMode(true); setBackupLedger(currentDisplay); setLocalLedger({ ...currentDisplay }); }}
           onCancelClick={() => { setIsEditMode(false); setLocalLedger(backupLedger); }}
           onDeleteClick={() => setShowDeleteModal(true)}

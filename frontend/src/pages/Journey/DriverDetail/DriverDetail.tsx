@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useSettlements } from "@/hooks/useSettlements";
 import { useMessageStore } from "@/store/useMessageStore";
@@ -18,6 +19,7 @@ import {
 const DriverDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useDriversQuery, useUpdateDriverMutation, useDeleteDriverMutation } = useDrivers();
   const { useSettlementsQuery } = useSettlements();
@@ -68,8 +70,10 @@ const DriverDetail = () => {
       });
       if (changedDocuments.size > 0) fd.append("changedDocuments", JSON.stringify([...changedDocuments]));
       await updateDriver.mutateAsync({ id: src._id, updatedDriver: fd });
+      await queryClient.invalidateQueries({ queryKey: ["history", "driver", src._id] });
       addMessage({ type: "success", text: "Driver updated successfully" });
       setLocalDriver(null);
+      setChangedDocuments(new Set());
     } catch {
       addMessage({ type: "error", text: "Failed to update driver" });
     }
@@ -84,7 +88,9 @@ const DriverDetail = () => {
         <EditHeader
           heading="Driver Portfolio"
           isDirty={isDirty}
-          onEditClick={() => { setIsEditMode(true); setBackupDriver(currentDisplay); setLocalDriver({ ...currentDisplay }); }}
+          historyEntityType="driver"
+          historyEntityId={currentDisplay._id}
+          onEditClick={() => { setIsEditMode(true); setBackupDriver(currentDisplay); setLocalDriver({ ...currentDisplay }); setChangedDocuments(new Set()); }}
           onCancelClick={() => { setLocalDriver(backupDriver); setIsEditMode(false); }}
           onDeleteClick={handleDelete}
           onDiscardClick={() => { setLocalDriver(backupDriver); setIsEditMode(false); }}

@@ -25,6 +25,7 @@ import quoteRoutes from './routes/quoteRoute.js';
 import trackingRoutes from './routes/trackingRoute.js';
 // import { initScheduler } from './utils/whatsappScheduler.js';
 import whatsappRoute from './routes/whatsappRoute.js';
+import historyRoutes from './routes/historyRoute.js';
 
 dotenv.config();
 connectDB();
@@ -75,6 +76,7 @@ app.use("/api/inquiry", inquiryRoutes);
 app.use("/api/quote", quoteRoutes);
 app.use("/api/tracking", trackingRoutes);
 app.use("/api/whatsapp", whatsappRoute);
+app.use("/api/history", historyRoutes);
 
 // ✅ Serve Frontend in Production
 if (process.env.NODE_ENV === "production") {

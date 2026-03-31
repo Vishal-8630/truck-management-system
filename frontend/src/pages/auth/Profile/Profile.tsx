@@ -158,13 +158,16 @@ const Profile = () => {
               className="hidden"
               accept="image/*"
               onChange={handleAvatarUpload}
+              disabled={activeTab !== 'edit'}
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-2 right-2 p-3 bg-indigo-600 text-white rounded-2xl shadow-xl z-20 group-hover/avatar:scale-110 transition-transform hover:bg-slate-900 border-4 border-white"
-            >
-              <Camera size={20} />
-            </button>
+            {activeTab === 'edit' && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-2 right-2 p-3 bg-indigo-600 text-white rounded-2xl shadow-xl z-20 group-hover/avatar:scale-110 transition-transform hover:bg-slate-900 border-4 border-white"
+              >
+                <Camera size={20} />
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col gap-2 pb-4">

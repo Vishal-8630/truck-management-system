@@ -1,8 +1,9 @@
 import type React from "react";
 import { useState } from "react";
 import Overlay from "@/components/Overlay";
-import { Edit3, Save, X, Trash2, AlertCircle } from "lucide-react";
+import { Edit3, Save, X, Trash2, AlertCircle, History } from "lucide-react";
 import DeleteConfirm from "@/components/DeleteConfirm";
+import HistoryDrawer from "@/components/ui/HistoryDrawer/HistoryDrawer";
 
 interface EditHeaderProps {
   heading: string;
@@ -13,6 +14,8 @@ interface EditHeaderProps {
   onSaveClick: () => any;
   onDeleteClick: () => void;
   onDiscardClick: () => void;
+  historyEntityType?: string;
+  historyEntityId?: string;
 }
 
 const EditHeader: React.FC<EditHeaderProps> = ({
@@ -24,10 +27,13 @@ const EditHeader: React.FC<EditHeaderProps> = ({
   onSaveClick,
   onDeleteClick,
   onDiscardClick,
+  historyEntityType,
+  historyEntityId,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-slate-100">
@@ -53,6 +59,15 @@ const EditHeader: React.FC<EditHeaderProps> = ({
       <div className="flex items-center gap-2">
         {!isEditMode ? (
           <>
+            {historyEntityType && historyEntityId && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="px-4 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-indigo-100 transition-all active:scale-95"
+              >
+                <History size={16} />
+                History
+              </button>
+            )}
             <button
               onClick={() => {
                 onEditClick();
@@ -146,6 +161,14 @@ const EditHeader: React.FC<EditHeaderProps> = ({
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={onDeleteClick}
       />
+
+      {showHistory && historyEntityType && historyEntityId && (
+        <HistoryDrawer
+          entityType={historyEntityType}
+          entityId={historyEntityId}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useJourneys } from "@/hooks/useJourneys";
 
 import { useMessageStore } from "@/store/useMessageStore";
@@ -16,6 +17,7 @@ import { ArrowLeft, Milestone, Truck, DollarSign, Activity, FileText, Wallet, Ca
 const JourneyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useJourneysQuery, useUpdateJourneyMutation, useDeleteJourneyMutation } = useJourneys();
   const { data: journies = [], isLoading } = useJourneysQuery();
@@ -100,6 +102,7 @@ const JourneyDetail = () => {
     if (!localJourney) return false;
     try {
       await updateJourney.mutateAsync(localJourney);
+      await queryClient.invalidateQueries({ queryKey: ["history", "journey", localJourney._id] });
       addMessage({ type: "success", text: "Journey updated successfully" });
       setLocalJourney(null);
       setErrors({});
@@ -149,6 +152,8 @@ const JourneyDetail = () => {
         <EditHeader
           heading="Journey Roadmap"
           isDirty={isDirty}
+          historyEntityType="journey"
+          historyEntityId={currentDisplay._id}
           onEditClick={() => { setBackupJourney(currentDisplay); setLocalJourney({ ...currentDisplay }); setIsEditMode(true); }}
           onSaveClick={async () => {
             const success = await handleSave();

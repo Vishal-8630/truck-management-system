@@ -1,5 +1,6 @@
 import Ledger from "../models/ledgerModel.js";
 import { successResponse } from '../utils/response.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 // Helper: extract ObjectId from frontend object { _id: "..." }
 const extractId = (value) => {
@@ -90,6 +91,14 @@ const newLedger = async (req, res) => {
 
         // STEP 5: Save to DB
         const ledgerEntry = await Ledger.create(ledgerData);
+        await logAuditEvent({
+            req,
+            entityType: "ledger",
+            entityId: ledgerEntry._id,
+            action: "create",
+            before: {},
+            after: ledgerEntry.toObject(),
+        });
 
         return res.status(201).json({
             success: true,
@@ -114,6 +123,7 @@ const updateLedger = async (req, res, next) => {
 
         const ledger = await Ledger.findById(id);
         if (!ledger) return res.status(404).json({ success: false, message: "Ledger not found" });
+        const beforeSnapshot = ledger.toObject();
 
         // Extract ObjectIds safely
         const journey_id = extractId(data.journey);
@@ -152,6 +162,14 @@ const updateLedger = async (req, res, next) => {
         };
 
         const updated = await Ledger.findByIdAndUpdate(id, ledgerData, { new: true });
+        await logAuditEvent({
+            req,
+            entityType: "ledger",
+            entityId: updated._id,
+            action: "update",
+            before: beforeSnapshot,
+            after: updated.toObject ? updated.toObject() : updated,
+        });
         return successResponse(res, "Ledger Entry Updated", updated);
     } catch (error) {
         console.error("Error updating ledger:", error);
@@ -162,8 +180,17 @@ const updateLedger = async (req, res, next) => {
 const deleteLedger = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const beforeSnapshot = await Ledger.findById(id).lean();
         const ledger = await Ledger.findByIdAndDelete(id);
         if (!ledger) return res.status(404).json({ success: false, message: "Ledger not found" });
+        await logAuditEvent({
+            req,
+            entityType: "ledger",
+            entityId: ledger._id,
+            action: "delete",
+            before: beforeSnapshot || {},
+            after: {},
+        });
         return successResponse(res, "Ledger Entry Deleted");
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to delete ledger" });

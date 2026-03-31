@@ -2,6 +2,7 @@ import Quote from '../models/quoteModel.js';
 import { successResponse } from '../utils/response.js';
 
 import AppError from '../utils/appError.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 // Removed invalid formatDate import
 
 
@@ -12,6 +13,14 @@ export const createQuote = async (req, res, next) => {
         // 1. Create Quote in DB
         const quote = await Quote.create({
             fullName, email, phoneNumber, pickupLocation, dropLocation, cargoType, weight, truckType, pickupDate, message
+        });
+        await logAuditEvent({
+            req,
+            entityType: "quote",
+            entityId: quote._id,
+            action: "create",
+            before: {},
+            after: quote.toObject(),
         });
 
 
@@ -36,8 +45,17 @@ export const updateQuoteStatus = async (req, res, next) => {
         const { id } = req.params;
         const { status } = req.body;
 
+        const beforeQuote = await Quote.findById(id).lean();
         const quote = await Quote.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
         if (!quote) return next(new AppError('Quote not found', 404));
+        await logAuditEvent({
+            req,
+            entityType: "quote",
+            entityId: quote._id,
+            action: "status_change",
+            before: beforeQuote || {},
+            after: quote.toObject ? quote.toObject() : quote,
+        });
 
         return successResponse(res, 'Status updated successfully', quote);
     } catch (error) {

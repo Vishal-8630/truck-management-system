@@ -1,6 +1,7 @@
 import BillingParty from '../models/billingPartyModel.js';
 import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 const newBillingParty = async (req, res, next) => {
     const { name, address, gst_no } = req.body;
@@ -27,6 +28,14 @@ const newBillingParty = async (req, res, next) => {
         gst_no
     });
     await party.save();
+    await logAuditEvent({
+        req,
+        entityType: "billing_party",
+        entityId: party._id,
+        action: "create",
+        before: {},
+        after: party.toObject(),
+    });
     return successResponse(res, "Billing Party Added", {});
 }
 
@@ -49,6 +58,7 @@ const updateBillingParty = async (req, res, next) => {
             return res.status(400).json({ status: "fail", errors });
         }
 
+        const beforeParty = await BillingParty.findById(partyId).lean();
         const party = await BillingParty.findByIdAndUpdate(partyId, {
             name,
             address,
@@ -58,6 +68,14 @@ const updateBillingParty = async (req, res, next) => {
         if (!party) {
             return next(new AppError("Billing Party not found", 404));
         }
+        await logAuditEvent({
+            req,
+            entityType: "billing_party",
+            entityId: party._id,
+            action: "update",
+            before: beforeParty || {},
+            after: party.toObject ? party.toObject() : party,
+        });
         return successResponse(res, "Billing Party Updated", party);
     } catch (error) {
         return next(new AppError("Failed to update billing party", 500));

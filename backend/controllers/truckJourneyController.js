@@ -3,6 +3,7 @@ import Journey from '../models/truckJourneyModel.js';
 import Ledger from '../models/ledgerModel.js';
 import AppError from "../utils/appError.js";
 import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 const newJourney = async (req, res) => {
     const { truck, driver, from, to, starting_kms, average_mileage } = req.body;
@@ -16,6 +17,14 @@ const newJourney = async (req, res) => {
     if (Object.keys(errors).length > 0) return res.status(400).json({ status: "fail", errors });
 
     const journey = await Journey.create({ ...req.body });
+    await logAuditEvent({
+        req,
+        entityType: "journey",
+        entityId: journey._id,
+        action: "create",
+        before: {},
+        after: journey.toObject(),
+    });
     const populated = await Journey.findById(journey._id).populate('truck').populate('driver').lean();
     sendWhatsApp(WA.newJourney(populated)); // fire-and-forget
     return successResponse(res, "Journey Added Successfully", journey);
@@ -33,6 +42,7 @@ const updateJourney = async (req, res, next) => {
 
         let journey = await Journey.findById(id);
         if (!journey || journey.is_deleted) return next(new AppError("Journey not found", 404));
+        const beforeSnapshot = journey.toObject();
 
         const errors = {};
         // Validation logic
@@ -155,6 +165,15 @@ const updateJourney = async (req, res, next) => {
             sendWhatsApp(WA.journeySettled(populatedJourney)); // fire-and-forget
         }
 
+        await logAuditEvent({
+            req,
+            entityType: "journey",
+            entityId: updatedJourney._id,
+            action: "update",
+            before: beforeSnapshot,
+            after: updatedJourney.toObject(),
+        });
+
         return successResponse(res, "Journey Updated Successfully", populatedJourney);
     } catch (err) {
         next(err);
@@ -166,8 +185,17 @@ const deleteJourney = async (req, res, next) => {
     if (!id) return next(new AppError("Journey ID is required", 400));
     let journey = await Journey.findById(id);
     if (!journey || journey.is_deleted) return next(new AppError("Journey not found", 404));
+    const beforeSnapshot = journey.toObject();
     journey.is_deleted = true;
     const deletedJourney = await journey.save();
+    await logAuditEvent({
+        req,
+        entityType: "journey",
+        entityId: deletedJourney._id,
+        action: "delete",
+        before: beforeSnapshot,
+        after: deletedJourney.toObject(),
+    });
     return successResponse(res, "Journey Deleted Successfully", deletedJourney);
 }
 

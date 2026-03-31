@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTrucks } from "@/hooks/useTrucks";
 import { useMessageStore } from "@/store/useMessageStore";
 import Loading from "@/components/Loading";
@@ -16,6 +17,7 @@ import {
 const TruckDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useTrucksQuery, useUpdateTruckMutation, useDeleteTruckMutation } = useTrucks();
   const { data: trucks = [], isLoading } = useTrucksQuery();
@@ -55,8 +57,10 @@ const TruckDetail = () => {
       });
       if (changedDocuments.size > 0) fd.append("changedDocuments", JSON.stringify([...changedDocuments]));
       await updateTruck.mutateAsync({ id: src._id, updatedTruck: fd });
+      await queryClient.invalidateQueries({ queryKey: ["history", "truck", src._id] });
       addMessage({ type: "success", text: "Truck updated successfully" });
       setLocalTruck(null);
+      setChangedDocuments(new Set());
     } catch {
       addMessage({ type: "error", text: "Failed to update truck" });
     }
@@ -89,7 +93,9 @@ const TruckDetail = () => {
         <EditHeader
           heading="Vehicle Profile"
           isDirty={isDirty}
-          onEditClick={() => { setBackupTruck(currentDisplay); setLocalTruck({ ...currentDisplay }); setIsEditMode(true); }}
+          historyEntityType="truck"
+          historyEntityId={currentDisplay._id}
+          onEditClick={() => { setBackupTruck(currentDisplay); setLocalTruck({ ...currentDisplay }); setIsEditMode(true); setChangedDocuments(new Set()); }}
           onCancelClick={() => { setLocalTruck(backupTruck); setIsEditMode(false); }}
           onSaveClick={() => { setIsEditMode(false); handleSave(); }}
           onDeleteClick={handleDelete}

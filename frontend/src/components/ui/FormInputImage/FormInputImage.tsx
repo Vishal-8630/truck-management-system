@@ -73,15 +73,22 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
           </div>
         ) : (
           <label
-            htmlFor={id}
-            className="flex flex-col items-center justify-center gap-4 aspect-video lg:aspect-square w-full rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 hover:bg-indigo-50/30 hover:border-indigo-200 transition-all cursor-pointer group/label"
+            htmlFor={isEditMode ? id : undefined}
+            className={`
+              flex flex-col items-center justify-center gap-4 aspect-video lg:aspect-square w-full rounded-2xl border-2 border-dashed transition-all
+              ${isEditMode 
+                ? 'border-slate-200 bg-slate-50/50 hover:bg-indigo-50/30 hover:border-indigo-200 cursor-pointer group/label' 
+                : 'border-slate-100 bg-slate-50/30 cursor-default opacity-60'}
+            `}
           >
-            <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-300 group-hover/label:text-indigo-500 group-hover/label:scale-110 transition-all duration-300">
+            <div className={`w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-300 transition-all duration-300 ${isEditMode ? 'group-hover/label:text-indigo-500 group-hover/label:scale-110' : ''}`}>
               <UploadCloud size={28} />
             </div>
             <div className="flex flex-col items-center gap-1">
-              <span className="text-sm font-black text-slate-700 tracking-tight italic">Drop or Click to Upload</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">JPEG, PNG up to 5MB</span>
+              <span className="text-sm font-black text-slate-700 tracking-tight italic">
+                {isEditMode ? 'Drop or Click to Upload' : 'No Document Uploaded'}
+              </span>
+              {isEditMode && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">JPEG, PNG up to 5MB</span>}
             </div>
 
             <input
@@ -90,6 +97,7 @@ const FormInputImage: React.FC<FormInputImageProps> = ({
               type="file"
               accept="image/*"
               onChange={handleFileChange}
+              disabled={!isEditMode}
               className="hidden"
             />
           </label>

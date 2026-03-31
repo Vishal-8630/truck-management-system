@@ -3,6 +3,7 @@ import Entry from '../models/billingEntryModel.js';
 import AppError from '../utils/appError.js';
 import mongoose from 'mongoose';
 import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 const addNewBillingEntry = async (req, res, next) => {
     const { extra_charges, billing_party, _id, ...rest } = req.body;
@@ -37,6 +38,14 @@ const addNewBillingEntry = async (req, res, next) => {
         ...rest,
         billing_party: billingPartyId,
         extra_charges: charges
+    });
+    await logAuditEvent({
+        req,
+        entityType: "bill_entry",
+        entityId: newEntry._id,
+        action: "create",
+        before: {},
+        after: newEntry.toObject(),
     });
     if (!newEntry) {
         return next(new AppError("Failed to create new entry", 400))
@@ -89,12 +98,21 @@ const updateBillingEntry = async (req, res, next) => {
         return next(new AppError("Invalid Entry ID", 400));
     }
 
+    const beforeEntry = await Entry.findById(entryId).lean();
     const entry = await Entry.findByIdAndUpdate(entryId, { ...rest, extra_charges: charges }, { new: true }).populate("billing_party");
 
     if (!entry) {
         return next(new AppError("Entry not found", 404));
     }
 
+    await logAuditEvent({
+        req,
+        entityType: "bill_entry",
+        entityId: entry._id,
+        action: "update",
+        before: beforeEntry || {},
+        after: entry.toObject ? entry.toObject() : entry,
+    });
     return successResponse(res, "Entry Updated Successfully", entry);
 }
 

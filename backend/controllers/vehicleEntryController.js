@@ -3,6 +3,7 @@ import BalanceParty from '../models/balanceParty.js';
 import { successResponse } from "../utils/response.js";
 import AppError from "../utils/appError.js";
 import mongoose from "mongoose";
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 const calculatePartyBalance = (entry) => {
     const totalBalance = Number(entry.freight) - (Number(entry.driver_cash) + Number(entry.dala) + Number(entry.kamisan) + Number(entry.in_ac) + Number(entry.halting));
@@ -30,6 +31,14 @@ const addNewVehicleEntry = async (req, res, next) => {
     const newEntry = await VehicleEntry.create({
         ...rest,
         balance_party: new mongoose.Types.ObjectId(balance_party._id)
+    });
+    await logAuditEvent({
+        req,
+        entityType: "vehicle_entry",
+        entityId: newEntry._id,
+        action: "create",
+        before: {},
+        after: newEntry.toObject(),
     });
     if (!newEntry) {
         return next(new AppError("Failed to create new entry", 400))
@@ -61,6 +70,7 @@ const updateVehicleEntry = async (req, res) => {
         return next(new AppError("Invalid Entry ID", 400));
     }
 
+    const beforeEntry = await VehicleEntry.findById(entryId).lean();
     rest = calculatePartyBalance(rest);
     console.log(rest);
     console.log(entryId);
@@ -69,6 +79,14 @@ const updateVehicleEntry = async (req, res) => {
     if (!entry) {
         return next(new AppError("Entry not found", 404));
     }
+    await logAuditEvent({
+        req,
+        entityType: "vehicle_entry",
+        entityId: entry._id,
+        action: "update",
+        before: beforeEntry || {},
+        after: entry.toObject ? entry.toObject() : entry,
+    });
     return successResponse(res, "Entry Updated Successfully", entry);
 }
 

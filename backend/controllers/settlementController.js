@@ -6,6 +6,7 @@ import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import mongoose from 'mongoose';
 import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 const toNum = v => {
     if (v === undefined || v === null || v === "") return 0;
@@ -200,6 +201,14 @@ export const confirmSettlement = async (req, res, next) => {
             payment_status: totals.overall_total === 0 ? "Balanced" : totals.overall_total > 0 ? "Driver needs to pay" : "DRL needs to pay",
             is_settled: false
         });
+        await logAuditEvent({
+            req,
+            entityType: "settlement",
+            entityId: savedSettlement._id,
+            action: "create",
+            before: {},
+            after: savedSettlement.toObject(),
+        });
 
         // mark journeys settled and link them
         const journeyIdsToUpdate = journeys.map(j => j._id);
@@ -260,6 +269,7 @@ export const markSettled = async (req, res, next) => {
         const { id } = req.params;
         const today = new Date().toISOString().split("T")[0];
 
+        const beforeSettlement = await Settlement.findById(id).lean();
         const settlement = await Settlement.findByIdAndUpdate(
             id,
             {
@@ -274,6 +284,14 @@ export const markSettled = async (req, res, next) => {
         if (!settlement) {
             return next(new AppError("Settlement not found", 404));
         }
+        await logAuditEvent({
+            req,
+            entityType: "settlement",
+            entityId: settlement._id,
+            action: "status_change",
+            before: beforeSettlement || {},
+            after: settlement.toObject ? settlement.toObject() : settlement,
+        });
 
         // --- AUTO-GENERATE/SYNC LEDGER ENTRY on markSettled ---
         try {
@@ -333,6 +351,7 @@ export const unmarkSettled = async (req, res, next) => {
     try {
         const { id } = req.params;
 
+        const beforeSettlement = await Settlement.findById(id).lean();
         const settlement = await Settlement.findByIdAndUpdate(
             id,
             {
@@ -347,6 +366,14 @@ export const unmarkSettled = async (req, res, next) => {
         if (!settlement) {
             return next(new AppError("Settlement not found", 404));
         }
+        await logAuditEvent({
+            req,
+            entityType: "settlement",
+            entityId: settlement._id,
+            action: "status_change",
+            before: beforeSettlement || {},
+            after: settlement.toObject ? settlement.toObject() : settlement,
+        });
 
         // --- Clean up Ledger on Unsettle ---
         try {
@@ -390,6 +417,7 @@ export const recalculateSettlement = async (req, res, next) => {
         );
 
         // update the settlement record with new totals
+        const beforeSettlement = settlement.toObject ? settlement.toObject() : settlement;
         const updatedSettlement = await Settlement.findByIdAndUpdate(
             id,
             {
@@ -412,6 +440,14 @@ export const recalculateSettlement = async (req, res, next) => {
             },
             { new: true }
         );
+        await logAuditEvent({
+            req,
+            entityType: "settlement",
+            entityId: updatedSettlement._id,
+            action: "update",
+            before: beforeSettlement,
+            after: updatedSettlement.toObject ? updatedSettlement.toObject() : updatedSettlement,
+        });
 
         return successResponse(res, "Settlement recalculated successfully", updatedSettlement);
     } catch (err) {

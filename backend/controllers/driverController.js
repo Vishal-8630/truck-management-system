@@ -4,6 +4,7 @@ import AppError from '../utils/appError.js';
 import { deleteFromS3 } from "../middlewares/uploadMiddleware.js";
 import { getSignedS3Url } from "../middlewares/s3Helper.js";
 import safeJSONParse from "../utils/safeJSONParse.js";
+import logAuditEvent from "../utils/audit/logAuditEvent.js";
 
 
 const newDriver = async (req, res, next) => {
@@ -55,6 +56,14 @@ const newDriver = async (req, res, next) => {
         }
 
         const newDriver = await Driver.create(driverData);
+        await logAuditEvent({
+            req,
+            entityType: "driver",
+            entityId: newDriver._id,
+            action: "create",
+            before: {},
+            after: newDriver.toObject(),
+        });
 
         return successResponse(res, "Driver Added Successfully", newDriver);
 
@@ -98,6 +107,7 @@ const updateDriver = async (req, res, next) => {
             return next(new AppError("Driver not found", 404));
         }
 
+        const beforeSnapshot = driver.toObject();
         const { name, address, phone, home_phone, adhaar_no, dl, changedDocuments } = req.body;
 
         if (!name || !phone || !adhaar_no || !dl) {
@@ -114,7 +124,7 @@ const updateDriver = async (req, res, next) => {
             $or: [{ adhaar_no }, { dl }, { phone }],
         });
 
-        if (existingDriver._id.toString() !== id) {
+        if (existingDriver && existingDriver._id.toString() !== id) {
             if (req.files) await deleteFromS3(req.files);
             let field =
                 existingDriver.adhaar_no === adhaar_no
@@ -175,6 +185,14 @@ const updateDriver = async (req, res, next) => {
             dl_back_img: await getSignedS3Url(updatedDriver.dl_back_img),
         }
 
+        await logAuditEvent({
+            req,
+            entityType: "driver",
+            entityId: updatedDriver._id,
+            action: "update",
+            before: beforeSnapshot,
+            after: updatedDriver.toObject(),
+        });
         return successResponse(res, "Driver Updated Successfully", signedDrivers);
     } catch (error) {
         console.error("Error updating driver:", error);
@@ -195,8 +213,17 @@ const deleteDriver = async (req, res, next) => {
         return next(new AppError("Driver not found", 404));
     }
 
+    const beforeSnapshot = driver.toObject();
     driver.is_deleted = true;
     const deletedDriver = await driver.save();
+    await logAuditEvent({
+        req,
+        entityType: "driver",
+        entityId: deletedDriver._id,
+        action: "delete",
+        before: beforeSnapshot,
+        after: deletedDriver.toObject(),
+    });
     return successResponse(res, "Driver Deleted Successfully", deletedDriver);
 }
 
