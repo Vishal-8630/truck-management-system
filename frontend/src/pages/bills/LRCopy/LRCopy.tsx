@@ -67,7 +67,7 @@ const LRCopy = () => {
     emptyMessage: "Please search and select an LR first",
     orientation: "l",
     endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   const handleDownloadInvoice = usePDFDownload({
@@ -77,7 +77,7 @@ const LRCopy = () => {
     filename: `LR-${entry?.lr_no || "Copy"}-${new Date().toISOString().split("T")[0]}.pdf`,
     orientation: "l",
     endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   if (isLoading) return <Loading />;

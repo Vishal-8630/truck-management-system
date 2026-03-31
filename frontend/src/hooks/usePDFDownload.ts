@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { useMessageStore } from "@/store/useMessageStore";
 import api from "@/api/axios";
@@ -112,100 +112,86 @@ export const usePDFDownload = <T>({
       return;
     }
 
-    // ================== DESKTOP / CLIENT FLOW ==================
-    const clone = ref.current.cloneNode(true) as HTMLElement;
+    // ================== DESKTOP / CLIENT FLOW (toPng fallback) ==================
+    if (!ref.current) return;
+    const originalDisplay = ref.current.style.display;
+    const originalPosition = ref.current.style.position;
+    const originalLeft = ref.current.style.left;
+    const originalClasses = ref.current.className;
 
-    // 🧩 Inject same Puppeteer-like CSS
-    const style = document.createElement("style");
-    style.textContent = `
-      @page {
-        size: A4 ${orientation === "l" ? "landscape" : "portrait"} !important;
-        margin: 5mm;
-      }
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: ${orientation === "l" ? "297mm" : "210mm"} !important;
-        height: ${orientation === "l" ? "210mm" : "297mm"} !important;
-        overflow: hidden !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      * {
-        page-break-before: avoid !important;
-        page-break-after: avoid !important;
-        page-break-inside: avoid !important;
-      }
-      body {
-        transform: scale(0.98);
-        transform-origin: top left;
-      }
-      #logo {
-        width: 80px !important;
-        height: 60px !important;
-      }
-      #title {
-        font-size: 2.5rem !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-      }
-      .header {
-        padding: 4mm 0 !important;
-      }
-      body::-webkit-scrollbar {
-        display: none;
-      }
-      body > * {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-    `;
-    clone.prepend(style);
+    try {
+      addMessage({ type: "info", text: "Capturing high-fidelity document..." });
 
-    clone.style.width = orientation === "l" ? "297mm" : "210mm";
-    clone.style.margin = "0 auto";
-    clone.style.background = "#fff";
-    document.body.appendChild(clone);
+      // 👁️ Reveal the hidden printable element temporarily for the capture engine
+      ref.current.style.display = "block";
+      ref.current.style.position = "fixed";
+      ref.current.style.left = "0";
+      ref.current.style.top = "0";
+      ref.current.style.zIndex = "-9999";
+      ref.current.classList.remove('hidden');
 
-    // 🖼️ Render to canvas
-    const canvas = await html2canvas(clone, {
-      scale: 3, // Higher scale for better quality
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-      scrollY: -window.scrollY,
-      windowWidth: clone.scrollWidth,
-      windowHeight: clone.scrollHeight,
-    });
+      // 🖼️ Render to high-quality Image using html-to-image (Supports oklch/modern CSS)
+      const imgData = await toPng(ref.current, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        style: {
+          margin: '0',
+          padding: '0',
+          background: 'white',
+          overflow: 'hidden',
+          width: orientation === "l" ? "297mm" : "210mm",
+          minHeight: orientation === "l" ? "210mm" : "297mm",
+          boxSizing: 'border-box',
+        },
+        filter: (node) => {
+          if (!node || !node.classList) return true;
+          const exclusionKeywords = ['print:hidden', 'btn', 'button', 'nav', 'sidebar'];
+          return !exclusionKeywords.some(keyword => 
+            Array.from(node.classList).some(cls => cls.includes(keyword))
+          );
+        }
+      });
 
-    const imgData = canvas.toDataURL("image/png", 1.0);
-    const pdf = new jsPDF(orientation, "mm", "a4");
+      const pdf = new jsPDF(orientation, "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5;
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 5;
+      const maxRenderWidth = pdfWidth - margin * 2;
+      const maxRenderHeight = pdfHeight - margin * 2;
 
-    const maxRenderWidth = pdfWidth - margin * 2;
-    const maxRenderHeight = pdfHeight - margin * 2;
+      // Natural dimensions check
+      const img = new Image();
+      img.src = imgData;
+      await new Promise((resolve) => (img.onload = resolve));
 
-    let finalWidth = maxRenderWidth;
-    let finalHeight = (canvas.height * finalWidth) / canvas.width;
+      let finalWidth = maxRenderWidth;
+      let finalHeight = (img.height * finalWidth) / img.width;
 
-    // If height exceeds page, scale down to fit height
-    if (finalHeight > maxRenderHeight) {
-      finalHeight = maxRenderHeight;
-      finalWidth = (canvas.width * finalHeight) / canvas.height;
+      if (finalHeight > maxRenderHeight) {
+        finalHeight = maxRenderHeight;
+        finalWidth = (img.width * finalHeight) / img.height;
+      }
+
+      const x = margin + (maxRenderWidth - finalWidth) / 2;
+      const y = margin;
+
+      pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight, undefined, "FAST");
+      pdf.save(filename);
+
+      addMessage({ type: "success", text: "PDF downloaded!" });
+    } catch (err) {
+      console.error("PDF Client Generation error:", err);
+      addMessage({ type: "error", text: "Failed to generate PDF locally" });
+    } finally {
+      if (ref.current) {
+        ref.current.style.display = originalDisplay;
+        ref.current.style.position = originalPosition;
+        ref.current.style.left = originalLeft;
+        ref.current.className = originalClasses;
+      }
     }
-
-    // Center horizontally if scaled down by height
-    const x = margin + (maxRenderWidth - finalWidth) / 2;
-    const y = margin;
-
-    pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight, undefined, "FAST");
-    pdf.save(filename);
-
-    document.body.removeChild(clone);
   };
 
   return handleDownload;

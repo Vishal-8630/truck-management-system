@@ -13,7 +13,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
     lrDate = new Date(entry?.lr_date);
   }
   return (
-    <div className="bg-white text-slate-900 w-[1122px] p-8 mx-auto border-4 border-slate-900 font-serif leading-tight text-[11px]">
+    <div className="bg-white text-slate-900 w-[285mm] p-8 mx-auto border-4 border-slate-900 font-serif leading-tight text-[11px] box-border">
       {/* Header Section */}
       <div className="flex border-b-2 border-slate-900 min-h-[140px]">
         <div className="w-1/4 p-4 flex flex-col items-center justify-center border-r-2 border-slate-900 text-center">
