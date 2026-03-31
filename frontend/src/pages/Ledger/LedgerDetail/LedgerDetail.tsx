@@ -64,9 +64,60 @@ const LedgerDetail = () => {
   const ledger = useMemo(() => ledgers.find((l: LedgerType) => l._id === id), [ledgers, id]);
   const currentDisplay = localLedger ?? ledger;
 
+  const isDirty = useMemo(() => {
+    if (!localLedger || !ledger) return false;
+    
+    // Normalize values for comparison (extract ID from objects, handle null/undefined)
+    const normalize = (val: any) => {
+      if (val === null || val === undefined) return null;
+      if (typeof val === 'object' && val?._id) return val._id;
+      return val;
+    };
+
+    // Fields to check for dirty state
+    const fieldsToCompare: (keyof LedgerType)[] = [
+      'date', 'category', 'transaction_type', 'description', 
+      'debit', 'credit', 'payment_mode', 'reference_no', 
+      'reference_type', 'notes', 'journey', 'truck', 
+      'driver', 'party', 'settlement', 'vehicle_entry', 'meta'
+    ];
+
+    return fieldsToCompare.some(k => {
+      const v1 = (ledger as any)[k];
+      const v2 = (localLedger as any)[k];
+
+      if (k === 'debit' || k === 'credit') {
+        return Number(v1 || 0) !== Number(v2 || 0);
+      }
+      
+      if (k === 'meta') {
+        return JSON.stringify(v1 || {}) !== JSON.stringify(v2 || {});
+      }
+
+      return JSON.stringify(normalize(v1)) !== JSON.stringify(normalize(v2));
+    });
+  }, [localLedger, ledger]);
+
   if (isLoading || !currentDisplay) return <Loading />;
 
-  const isDirty = JSON.stringify(localLedger) !== JSON.stringify(ledger);
+  const getRequiredFields = (category: string) => {
+    const rules: Record<string, string[]> = {
+      "Freight Income": ["party", "truck", "journey"],
+      "Diesel Expense": ["truck"],
+      "Driver Advance": ["driver"],
+      "Driver Settlement": ["driver", "settlement"],
+      "In Account": ["party"],
+      "Driver Expense": ["driver"],
+      "Toll Expense": ["truck"],
+      "Repair Expense": ["truck"],
+      "Maintenance Expense": ["truck"],
+      "Payment Received": ["party", "reference_no"],
+      "Payment Made": ["reference_no"],
+      "Cash Transfer": ["party"],
+      "Bank Transfer": ["party"],
+    };
+    return rules[category] || [];
+  };
 
   const getOptions = (key: string): Option[] => {
     switch (key) {
@@ -131,35 +182,77 @@ const LedgerDetail = () => {
       setLocalLedger((prev) => (prev ? { ...prev, [typedKey]: selected || value } : prev));
       return;
     }
-    setLocalLedger((prev) => (prev ? { ...prev, [key]: value } : prev));
+    
+    // Convert numbers for monetary fields
+    const finalValue = (key === "debit" || key === "credit") ? (parseFloat(value) || 0) : value;
+    setLocalLedger((prev) => (prev ? { ...prev, [key]: finalValue } : prev));
   };
 
   const fetchOptions = (search: string, field: string): Option[] => {
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
+    let candidates: any[] = [];
+
     switch (field) {
-      case "journey": {
-        return journies
-          .filter((j: any) => j.truck?.truck_no?.toLowerCase().includes(s) || (j.driver as any)?.name?.toLowerCase().includes(s) || j.from.toLowerCase().includes(s) || j.to.toLowerCase().includes(s))
-          .map((j: any) => ({ label: `${j.truck?.truck_no} | ${(j.driver as any)?.name} | ${j.from} | ${j.to} | ${formatDate(new Date(j.journey_start_date))}`, value: j._id }));
-      }
-      case "truck": return trucks.filter((t: any) => t.truck_no.toLowerCase().includes(s)).map((t: any) => ({ label: t.truck_no, value: t._id }));
-      case "driver": return drivers.filter((d: any) => d.name?.toLowerCase().includes(s)).map((d: any) => ({ label: d.name, value: d._id }));
-      case "party": return parties.filter((p: any) => p.name.toLowerCase().includes(s)).map((p: any) => ({ label: p.name, value: p._id }));
-      case "settlement": return settlements.filter((s_: any) => (s_.driver as any)?.name?.toLowerCase().includes(s)).map((s_: any) => ({ label: `${(s_.driver as any)?.name} | ${formatDate(new Date(s_.period.from))} | ${formatDate(new Date(s_.period.to))}`, value: s_._id }));
-      case "vehicle_entry": return vehicleEntries.filter((ve: any) => ve.vehicle_no.toLowerCase().includes(s) || ve.from.toLowerCase().includes(s) || ve.to.toLowerCase().includes(s)).map((ve: any) => ({ label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`, value: ve._id }));
-      default: return [];
+      case "journey": candidates = journies; break;
+      case "truck": candidates = trucks; break;
+      case "driver": candidates = drivers; break;
+      case "party": candidates = parties; break;
+      case "settlement": candidates = settlements; break;
+      case "vehicle_entry": candidates = vehicleEntries; break;
     }
+
+    const uniqueOptionsMap = new Map<string, Option>();
+    for (const item of candidates) {
+      let label = "";
+      if (field === "truck") label = item.truck_no;
+      else if (field === "driver") label = `${item.name}${item.phone ? ` | ${item.phone}` : ""}`;
+      else if (field === "party") label = `${item.name}${item.address ? ` | ${item.address}` : ""}`;
+      else if (field === "journey") label = `${item.truck?.truck_no} | ${(item.driver as any)?.name} | ${item.from} | ${item.to} | ${formatDate(new Date(item.journey_start_date))}`;
+      else if (field === "settlement") label = `${(item.driver as any)?.name} | ${formatDate(new Date(item.period.from))} | ${formatDate(new Date(item.period.to))}`;
+      else if (field === "vehicle_entry") label = `${item.vehicle_no} | ${item.from} | ${item.to}`;
+
+      if (!s || label.toLowerCase().includes(s)) {
+        if (label && !uniqueOptionsMap.has(label)) {
+          uniqueOptionsMap.set(label, { label, value: item._id });
+        }
+      }
+      if (s && uniqueOptionsMap.size >= 15) break;
+      if (!s && uniqueOptionsMap.size >= 4) break;
+    }
+
+    return Array.from(uniqueOptionsMap.values());
   };
 
   const handleSave = async () => {
+    errorsRef.current = {};
+    const required = getRequiredFields(currentDisplay.category);
+    const newErrors: Record<string, string> = {};
+    
+    required.forEach(f => {
+      const val = (currentDisplay as any)[f];
+      const id = val?._id || (typeof val === "string" ? val : "");
+      if (!id) newErrors[f] = `${f.toUpperCase()} is required`;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      errorsRef.current = newErrors;
+      forceRender({});
+      addMessage({ type: "error", text: "Please fill required fields" });
+      return;
+    }
+
     try {
       await updateLedger.mutateAsync(currentDisplay);
+      await queryClient.invalidateQueries({ queryKey: ["ledgers"] });
+      // Restore history invalidation to fix automatic refresh
       await queryClient.invalidateQueries({ queryKey: ["history", "ledger", currentDisplay._id] });
       addMessage({ type: "success", text: "Ledger updated successfully" });
+      setIsEditMode(false);
     } catch (error: any) {
-      const errors = error?.response?.data;
-      if (errors && typeof errors === "object") { errorsRef.current = errors; forceRender({}); }
-      addMessage({ type: "error", text: errors?.general || "Failed to save ledger entry" });
+      const data = error?.response?.data;
+      const serverErrors = data?.errors || data;
+      if (serverErrors && typeof serverErrors === "object") { errorsRef.current = serverErrors; forceRender({}); }
+      addMessage({ type: "error", text: serverErrors?.message || serverErrors?.general || "Failed to save ledger entry" });
     }
   };
 
@@ -175,23 +268,32 @@ const LedgerDetail = () => {
   };
 
   const fieldKeys: LedgerRelationKey[] = ["journey", "truck", "driver", "party", "settlement", "vehicle_entry"];
+  const requiredFields = getRequiredFields(currentDisplay.category);
+  
   const fields = fieldKeys.map((key: LedgerRelationKey) => {
     const val = (currentDisplay as any)[key];
     const id = val?._id || (typeof val === "string" ? val : "");
+    const isRequired = requiredFields.includes(key);
 
     return {
-      label: key.replace("_", " ").replace(/^\w/, (c: string) => c.toUpperCase()),
+      label: (
+        <span className="flex items-center gap-1">
+          {key.replace("_", " ").replace(/^\w/, (c: string) => c.toUpperCase())}
+          {isRequired && isEditMode && <span className="text-rose-500 font-bold">*</span>}
+        </span>
+      ) as any,
       key,
       options: optionConfig[key](),
       value: isEditMode ? id : getDisplayLabel(key),
       isEditable: isEditMode,
       mode: "search" as const,
       fetchOptions: (s: string) => fetchOptions(s, key),
+      error: errorsRef.current[key],
     };
   });
 
-  const amount = currentDisplay.transaction_type === "Debit" ? currentDisplay.debit : currentDisplay.credit;
-  const isDebit = currentDisplay.transaction_type === "Debit";
+  const amount = (currentDisplay.debit || 0) > 0 ? currentDisplay.debit : currentDisplay.credit;
+  const isDebit = (currentDisplay.debit || 0) > 0 || currentDisplay.balance_type === "Debit";
 
   return (
     <div className="flex flex-col gap-10 pb-20 max-w-7xl mx-auto">

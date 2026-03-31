@@ -120,27 +120,21 @@ const BillEntries = () => {
   const fetchOptions = (search: string, field: string): any[] => {
     void field;
     const s = search.trim().toLowerCase();
+    const uniqueOptionsMap = new Map<string, any>();
     
-    // If empty, return latest 4
-    if (!s) {
-      return billingParties.slice(0, 4).map((party: BillingPartyType) => ({
-        label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
-        value: party._id,
-      }));
+    for (const party of billingParties) {
+      const label = `${party.name}${party.address ? ` | ${party.address}` : ""}`;
+      
+      if (!s || label.toLowerCase().includes(s)) {
+        if (!uniqueOptionsMap.has(label)) {
+          uniqueOptionsMap.set(label, { label, value: party._id });
+        }
+      }
+      if (s && uniqueOptionsMap.size >= 15) break;
+      if (!s && uniqueOptionsMap.size >= 4) break;
     }
 
-    // Filter and limit to 15 results
-    const filtered = billingParties
-      .filter((party: any) =>
-        party.name.toLowerCase().includes(s) ||
-        (party.address && party.address.toLowerCase().includes(s))
-      )
-      .slice(0, 15);
-
-    return filtered.map((party: BillingPartyType) => ({
-      label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
-      value: party._id,
-    }));
+    return Array.from(uniqueOptionsMap.values());
   };
 
   const handleExtraChargeChange = (

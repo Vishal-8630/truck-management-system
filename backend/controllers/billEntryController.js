@@ -4,6 +4,7 @@ import AppError from '../utils/appError.js';
 import mongoose from 'mongoose';
 import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 import logAuditEvent from "../utils/audit/logAuditEvent.js";
+import { prepareAuditSnapshot } from "../utils/audit/auditHelpers.js";
 
 const addNewBillingEntry = async (req, res, next) => {
     const { extra_charges, billing_party, _id, ...rest } = req.body;
@@ -33,27 +34,26 @@ const addNewBillingEntry = async (req, res, next) => {
     }
 
     const billingPartyId = new mongoose.Types.ObjectId(billing_party._id);
+    const newEntry = await Entry.create({ ...rest, billing_party: billingPartyId, extra_charges: charges });
 
-    const newEntry = await Entry.create({
-        ...rest,
-        billing_party: billingPartyId,
-        extra_charges: charges
-    });
+    // WhatsApp notification — populate billing_party for the message
+    const populatedAfter = await Entry.findById(newEntry._id).populate('billing_party').lean();
+    
+    if (!newEntry) {
+        return next(new AppError("Failed to create new entry", 400))
+    }
+
+    // Reuse populatedAfter for both logging and WhatsApp
     await logAuditEvent({
         req,
         entityType: "bill_entry",
         entityId: newEntry._id,
         action: "create",
         before: {},
-        after: newEntry.toObject(),
+        after: prepareAuditSnapshot(populatedAfter, { billing_party: "billing_party" }),
     });
-    if (!newEntry) {
-        return next(new AppError("Failed to create new entry", 400))
-    }
 
-    // WhatsApp notification — populate billing_party for the message
-    const populated = await Entry.findById(newEntry._id).populate('billing_party').lean();
-    sendWhatsApp(WA.newBillEntry(populated)); // fire-and-forget
+    sendWhatsApp(WA.newBillEntry(populatedAfter)); // fire-and-forget
 
     return successResponse(res, "Entry Added Successfully");
 }
@@ -98,7 +98,7 @@ const updateBillingEntry = async (req, res, next) => {
         return next(new AppError("Invalid Entry ID", 400));
     }
 
-    const beforeEntry = await Entry.findById(entryId).lean();
+    const beforeEntry = await Entry.findById(entryId).populate("billing_party").lean();
     const entry = await Entry.findByIdAndUpdate(entryId, { ...rest, extra_charges: charges }, { new: true }).populate("billing_party");
 
     if (!entry) {
@@ -110,8 +110,8 @@ const updateBillingEntry = async (req, res, next) => {
         entityType: "bill_entry",
         entityId: entry._id,
         action: "update",
-        before: beforeEntry || {},
-        after: entry.toObject ? entry.toObject() : entry,
+        before: prepareAuditSnapshot(beforeEntry, { billing_party: "billing_party" }),
+        after: prepareAuditSnapshot(entry, { billing_party: "billing_party" }),
     });
     return successResponse(res, "Entry Updated Successfully", entry);
 }

@@ -99,26 +99,21 @@ const VehicleEntries = () => {
     void field;
     const s = search.trim().toLowerCase();
     
-    // If empty, return latest 4
-    if (!s) {
-      return balanceParties.slice(0, 4).map((party: any) => ({
-        label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
-        value: party._id,
-      }));
+    const uniqueOptionsMap = new Map<string, any>();
+    
+    for (const party of balanceParties) {
+      const label = party.party_name;
+      
+      if (!s || label.toLowerCase().includes(s)) {
+        if (!uniqueOptionsMap.has(label)) {
+          uniqueOptionsMap.set(label, { label, value: party._id });
+        }
+      }
+      if (s && uniqueOptionsMap.size >= 15) break;
+      if (!s && uniqueOptionsMap.size >= 4) break;
     }
 
-    // Filter and limit to 15 results
-    const filtered = balanceParties
-      .filter((party: any) =>
-        (party.party_name && party.party_name.toLowerCase().includes(s)) ||
-        (party.address && party.address.toLowerCase().includes(s))
-      )
-      .slice(0, 15);
-
-    return filtered.map((party: any) => ({
-      label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
-      value: party._id,
-    }));
+    return Array.from(uniqueOptionsMap.values());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -4,6 +4,7 @@ import Ledger from '../models/ledgerModel.js';
 import AppError from "../utils/appError.js";
 import { sendWhatsApp, WA } from '../utils/sendWhatsApp.js';
 import logAuditEvent from "../utils/audit/logAuditEvent.js";
+import { prepareAuditSnapshot } from "../utils/audit/auditHelpers.js";
 
 const newJourney = async (req, res) => {
     const { truck, driver, from, to, starting_kms, average_mileage } = req.body;
@@ -17,16 +18,17 @@ const newJourney = async (req, res) => {
     if (Object.keys(errors).length > 0) return res.status(400).json({ status: "fail", errors });
 
     const journey = await Journey.create({ ...req.body });
+    const populatedAfter = await Journey.findById(journey._id).populate('truck').populate('driver').lean();
+
     await logAuditEvent({
         req,
         entityType: "journey",
         entityId: journey._id,
         action: "create",
         before: {},
-        after: journey.toObject(),
+        after: prepareAuditSnapshot(populatedAfter, { truck: "truck", driver: "driver" }),
     });
-    const populated = await Journey.findById(journey._id).populate('truck').populate('driver').lean();
-    sendWhatsApp(WA.newJourney(populated)); // fire-and-forget
+    sendWhatsApp(WA.newJourney(populatedAfter)); // fire-and-forget
     return successResponse(res, "Journey Added Successfully", journey);
 };
 
@@ -42,7 +44,12 @@ const updateJourney = async (req, res, next) => {
 
         let journey = await Journey.findById(id);
         if (!journey || journey.is_deleted) return next(new AppError("Journey not found", 404));
-        const beforeSnapshot = journey.toObject();
+        
+        // Capture OLD state (populated for audit log) before any changes
+        const beforeSnapshot = await Journey.findById(id).lean()
+            .populate("truck")
+            .populate("driver")
+            .exec() || journey.toObject();
 
         const errors = {};
         // Validation logic
@@ -170,8 +177,8 @@ const updateJourney = async (req, res, next) => {
             entityType: "journey",
             entityId: updatedJourney._id,
             action: "update",
-            before: beforeSnapshot,
-            after: updatedJourney.toObject(),
+            before: prepareAuditSnapshot(beforeSnapshot, { truck: "truck", driver: "driver" }),
+            after: prepareAuditSnapshot(populatedJourney, { truck: "truck", driver: "driver" }),
         });
 
         return successResponse(res, "Journey Updated Successfully", populatedJourney);

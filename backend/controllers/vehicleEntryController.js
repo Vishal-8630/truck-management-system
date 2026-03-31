@@ -4,6 +4,7 @@ import { successResponse } from "../utils/response.js";
 import AppError from "../utils/appError.js";
 import mongoose from "mongoose";
 import logAuditEvent from "../utils/audit/logAuditEvent.js";
+import { prepareAuditSnapshot } from "../utils/audit/auditHelpers.js";
 
 const calculatePartyBalance = (entry) => {
     const totalBalance = Number(entry.freight) - (Number(entry.driver_cash) + Number(entry.dala) + Number(entry.kamisan) + Number(entry.in_ac) + Number(entry.halting));
@@ -27,18 +28,20 @@ const addNewVehicleEntry = async (req, res, next) => {
     }
 
     rest = calculatePartyBalance(rest);
-
     const newEntry = await VehicleEntry.create({
         ...rest,
         balance_party: new mongoose.Types.ObjectId(balance_party._id)
     });
+
+    const populatedAfter = await VehicleEntry.findById(newEntry._id).populate("balance_party").lean();
+
     await logAuditEvent({
         req,
         entityType: "vehicle_entry",
         entityId: newEntry._id,
         action: "create",
         before: {},
-        after: newEntry.toObject(),
+        after: populatedAfter,
     });
     if (!newEntry) {
         return next(new AppError("Failed to create new entry", 400))
@@ -70,12 +73,10 @@ const updateVehicleEntry = async (req, res) => {
         return next(new AppError("Invalid Entry ID", 400));
     }
 
-    const beforeEntry = await VehicleEntry.findById(entryId).lean();
+    const beforeEntry = await VehicleEntry.findById(entryId).populate("balance_party").lean();
     rest = calculatePartyBalance(rest);
-    console.log(rest);
-    console.log(entryId);
     const entry = await VehicleEntry.findByIdAndUpdate(entryId, { balance_party, ...rest }, { new: true }).populate("balance_party");
-    console.log(entry);
+
     if (!entry) {
         return next(new AppError("Entry not found", 404));
     }
@@ -84,8 +85,8 @@ const updateVehicleEntry = async (req, res) => {
         entityType: "vehicle_entry",
         entityId: entry._id,
         action: "update",
-        before: beforeEntry || {},
-        after: entry.toObject ? entry.toObject() : entry,
+        before: prepareAuditSnapshot(beforeEntry, { balance_party: "balance_party" }),
+        after: prepareAuditSnapshot(entry, { balance_party: "balance_party" }),
     });
     return successResponse(res, "Entry Updated Successfully", entry);
 }

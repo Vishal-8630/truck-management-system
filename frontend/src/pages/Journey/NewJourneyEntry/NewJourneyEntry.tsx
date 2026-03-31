@@ -75,39 +75,33 @@ const NewJourneyEntry = () => {
 
   const fetchOptions = (search: string, field: string) => {
     const s = search.trim().toLowerCase();
+    const uniqueOptionsMap = new Map<string, any>();
+    
     if (field === "truck") {
-      if (!s) {
-        // Return latest 4 added trucks
-        return trucks.slice(0, 4).map((t) => ({ 
-          label: t.truck_no, 
-          value: t._id 
-        }));
+      for (const t of trucks) {
+        const label = t.truck_no;
+        if (!s || label.toLowerCase().includes(s)) {
+          if (!uniqueOptionsMap.has(label)) {
+            uniqueOptionsMap.set(label, { label, value: t._id });
+          }
+        }
+        if (s && uniqueOptionsMap.size >= 15) break;
+        if (!s && uniqueOptionsMap.size >= 4) break;
       }
-      return trucks
-        .filter((t) => t.truck_no.toLowerCase().includes(s))
-        .slice(0, 15)
-        .map((t) => ({ label: t.truck_no, value: t._id }));
-    }
-    if (field === "driver") {
-      if (!s) {
-        // Return latest 4 added drivers
-        return drivers.slice(0, 4).map((d) => ({ 
-          label: `${d.name}${d.phone ? ` | ${d.phone}` : ""}`, 
-          value: d._id 
-        }));
+    } else if (field === "driver") {
+      for (const d of drivers) {
+        const label = `${d.name}${d.phone ? ` | ${d.phone}` : ""}`;
+        if (!s || label.toLowerCase().includes(s)) {
+          if (!uniqueOptionsMap.has(label)) {
+            uniqueOptionsMap.set(label, { label, value: d._id });
+          }
+        }
+        if (s && uniqueOptionsMap.size >= 15) break;
+        if (!s && uniqueOptionsMap.size >= 4) break;
       }
-      return drivers
-        .filter((d) => 
-          d.name.toLowerCase().includes(s) || 
-          (d.phone && d.phone.includes(s))
-        )
-        .slice(0, 15)
-        .map((d) => ({ 
-          label: `${d.name}${d.phone ? ` | ${d.phone}` : ""}`, 
-          value: d._id 
-        }));
     }
-    return [];
+    
+    return Array.from(uniqueOptionsMap.values());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

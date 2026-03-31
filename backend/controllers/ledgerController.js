@@ -1,6 +1,7 @@
 import Ledger from "../models/ledgerModel.js";
 import { successResponse } from '../utils/response.js';
 import logAuditEvent from "../utils/audit/logAuditEvent.js";
+import { prepareAuditSnapshot } from "../utils/audit/auditHelpers.js";
 
 // Helper: extract ObjectId from frontend object { _id: "..." }
 const extractId = (value) => {
@@ -90,14 +91,33 @@ const newLedger = async (req, res) => {
         };
 
         // STEP 5: Save to DB
-        const ledgerEntry = await Ledger.create(ledgerData);
+        let ledgerEntry = await Ledger.create(ledgerData);
+        
+        // Populate for human-readable audit log
+        ledgerEntry = await Ledger.findById(ledgerEntry._id)
+            .populate("journey")
+            .populate("truck")
+            .populate("driver")
+            .populate("party")
+            .populate("settlement")
+            .populate("vehicle_entry");
+
+        const relationMap = {
+            journey: "journey",
+            truck: "truck",
+            driver: "driver",
+            party: "party",
+            settlement: "settlement",
+            vehicle_entry: "vehicle_entry"
+        };
+
         await logAuditEvent({
             req,
             entityType: "ledger",
             entityId: ledgerEntry._id,
             action: "create",
             before: {},
-            after: ledgerEntry.toObject(),
+            after: prepareAuditSnapshot(ledgerEntry, relationMap),
         });
 
         return res.status(201).json({
@@ -161,14 +181,44 @@ const updateLedger = async (req, res, next) => {
             meta: data.meta || {},
         };
 
+        // Capture OLD state (populated for audit log) before updating
+        const populatedBefore = await Ledger.findById(id).lean()
+            .populate("journey")
+            .populate("truck")
+            .populate("driver")
+            .populate("party")
+            .populate("settlement")
+            .populate("vehicle_entry")
+            .exec() || beforeSnapshot;
+
         const updated = await Ledger.findByIdAndUpdate(id, ledgerData, { new: true });
+        
+        // Capture NEW state (populated for audit log)
+        const populatedAfter = await Ledger.findById(id).lean()
+            .populate("journey")
+            .populate("truck")
+            .populate("driver")
+            .populate("party")
+            .populate("settlement")
+            .populate("vehicle_entry")
+            .exec() || updated;
+
+        const relationMap = {
+            journey: "journey",
+            truck: "truck",
+            driver: "driver",
+            party: "party",
+            settlement: "settlement",
+            vehicle_entry: "vehicle_entry"
+        };
+
         await logAuditEvent({
             req,
             entityType: "ledger",
             entityId: updated._id,
             action: "update",
-            before: beforeSnapshot,
-            after: updated.toObject ? updated.toObject() : updated,
+            before: prepareAuditSnapshot(populatedBefore, relationMap),
+            after: prepareAuditSnapshot(populatedAfter, relationMap),
         });
         return successResponse(res, "Ledger Entry Updated", updated);
     } catch (error) {
