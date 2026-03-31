@@ -41,7 +41,7 @@ const addNewVehicleEntry = async (req, res, next) => {
         entityId: newEntry._id,
         action: "create",
         before: {},
-        after: populatedAfter,
+        after: prepareAuditSnapshot(populatedAfter, { balance_party: "balance_party" }),
     });
     if (!newEntry) {
         return next(new AppError("Failed to create new entry", 400))

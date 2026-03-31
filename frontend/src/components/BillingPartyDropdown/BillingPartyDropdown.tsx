@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useParties } from "@/hooks/useParties";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2, Building2 } from "lucide-react";
+import { ChevronDown, Edit3, Check, X, RotateCcw, UserSquare, Save, Trash2, Building2, History } from "lucide-react";
 import DeleteConfirm from "@/components/DeleteConfirm";
+import HistoryDrawer from "@/components/ui/HistoryDrawer/HistoryDrawer";
 
 interface PartyProps {
   billingParty: BillingPartyType;
@@ -52,9 +54,11 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   const { useUpdateBillingPartyMutation, useDeleteBillingPartyMutation } = useParties();
   const updateBillingPartyMutation = useUpdateBillingPartyMutation();
   const deleteBillingPartyMutation = useDeleteBillingPartyMutation();
+  const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [valErrors, setValErrors] = useState<Record<string, string>>({});
+  const [showHistory, setShowHistory] = useState(false);
 
   const confirmDelete = async () => {
     try {
@@ -114,6 +118,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
         id: billingParty._id,
         updatedParty: itemState.localItem,
       });
+      await queryClient.invalidateQueries({ queryKey: ["history", "billing_party", billingParty._id] });
       addMessage({ type: "success", text: "Billing party updated successfully" });
       updateItem(billingParty._id, { hasInteracted: false });
     } catch (err: any) {
@@ -313,7 +318,14 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
               </div>
 
               {!hasChanges && (
-                <div className="flex items-center justify-end pt-4 border-t border-slate-50">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-50">
+                  <button
+                    onClick={() => setShowHistory(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <History size={14} />
+                    View History
+                  </button>
                   <button
                     onClick={handleDelete}
                     disabled={deleteBillingPartyMutation.isPending}
@@ -335,6 +347,13 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
         title="Delete Billing Party?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
       />
+      {showHistory && (
+        <HistoryDrawer
+          entityType="billing_party"
+          entityId={billingParty._id}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 };

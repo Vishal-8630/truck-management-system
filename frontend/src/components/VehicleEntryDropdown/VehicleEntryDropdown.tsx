@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   VEHICLE_ENTRY_LABELS,
   type VehicleEntryType,
@@ -6,9 +7,10 @@ import {
 import { useMessageStore } from "@/store/useMessageStore";
 import { useVehicleEntries } from "@/hooks/useLedgers";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2, Calculator } from "lucide-react";
+import { ChevronDown, Edit3, Check, X, RotateCcw, Truck, MapPin, Calendar, Save, Trash2, Calculator, History } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
 import DeleteConfirm from "@/components/DeleteConfirm";
+import HistoryDrawer from "@/components/ui/HistoryDrawer/HistoryDrawer";
 
 interface VehicleEntryDropdownProps {
   vehicleEntry: VehicleEntryType;
@@ -54,9 +56,11 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   const { useUpdateVehicleEntryMutation, useDeleteVehicleEntryMutation } = useVehicleEntries();
   const updateVehicleEntryMutation = useUpdateVehicleEntryMutation();
   const deleteVehicleEntryMutation = useDeleteVehicleEntryMutation();
+  const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [valErrors, setValErrors] = useState<Record<string, string>>({});
+  const [showHistory, setShowHistory] = useState(false);
 
   const confirmDelete = async () => {
     try {
@@ -121,6 +125,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
     try {
       setValErrors({});
       await updateVehicleEntryMutation.mutateAsync(itemState.localItem);
+      await queryClient.invalidateQueries({ queryKey: ["history", "vehicle_entry", vehicleEntry._id] });
       addMessage({ type: "success", text: "Vehicle entry updated successfully" });
       onVehicleEntryUpdate(itemState.localItem);
       updateItem(vehicleEntry._id, { hasInteracted: false });
@@ -423,7 +428,14 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
               </div>
 
               {!hasChanges && (
-                <div className="flex items-center justify-end pt-4 border-t border-slate-50">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-50">
+                   <button
+                    onClick={() => setShowHistory(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <History size={14} />
+                    View History
+                  </button>
                   <button
                     onClick={handleDelete}
                     disabled={deleteVehicleEntryMutation.isPending}
@@ -445,6 +457,13 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
         title="Delete Vehicle Entry?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
       />
+      {showHistory && (
+        <HistoryDrawer
+          entityType="vehicle_entry"
+          entityId={vehicleEntry._id}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 };

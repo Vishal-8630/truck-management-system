@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ENTRY_LABELS,
   EXTRA_CHARGE_LABELS,
   type BillEntryType,
   type ExtraCharge,
 } from "@/types/billEntry";
-import { ChevronDown, Edit3, Check, X, Trash2, Plus, Save, RotateCcw, Building2, Calculator, ExternalLink } from "lucide-react";
+import { ChevronDown, Edit3, Check, X, Trash2, Plus, Save, RotateCcw, Building2, Calculator, ExternalLink, History } from "lucide-react";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useBillEntries } from "@/hooks/useLedgers";
 import { PARTY_LABELS, type BillingPartyType } from "@/types/billingParty";
@@ -13,6 +14,7 @@ import { formatDate } from "@/utils/formatDate";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import DeleteConfirm from "@/components/DeleteConfirm";
+import HistoryDrawer from "@/components/ui/HistoryDrawer/HistoryDrawer";
 
 interface DropdownViewProps {
   entry: BillEntryType;
@@ -282,10 +284,12 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({
 
   const [hasInteracted, setHasInteracted] = useState(false);
   const [valErrors, setValErrors] = useState<Record<string, string>>({});
+  const [showHistory, setShowHistory] = useState(false);
 
   const { useUpdateBillEntryMutation, useDeleteBillEntryMutation } = useBillEntries();
   const updateBillEntryMutation = useUpdateBillEntryMutation();
   const deleteBillEntryMutation = useDeleteBillEntryMutation();
+  const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
 
   const hasChanges = useMemo(() => hasInteracted && JSON.stringify(localEntry) !== JSON.stringify(entry), [localEntry, entry, hasInteracted]);
@@ -556,6 +560,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({
         consignor: localEntry.consignor_name,
       };
       await updateBillEntryMutation.mutateAsync(dataToSend as any);
+      await queryClient.invalidateQueries({ queryKey: ["history", "bill_entry", entry._id] });
       addMessage({ type: "success", text: "Entry updated successfully" });
       setHasInteracted(false);
     } catch (err: any) {
@@ -665,6 +670,19 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({
                   icon={<Calculator size={18} />}
                   color="text-amber-600 border-amber-100"
                 />
+                
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group text-slate-600"
+                >
+                  <div className="p-2 rounded-lg bg-slate-100 border border-slate-200">
+                    <History size={18} />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Audit Trail</span>
+                    <span className="text-sm font-bold tracking-tight">View History</span>
+                  </div>
+                </button>
               </div>
 
               {hasChanges && (
@@ -857,6 +875,14 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({
         title="Delete Bill Entry?"
         message="This action is permanent and cannot be undone. Are you sure you want to remove this record?"
       />
+
+      {showHistory && (
+        <HistoryDrawer
+          entityType="bill_entry"
+          entityId={entry._id}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
 
       <DeleteConfirm
         isOpen={deleteChargeId !== null}

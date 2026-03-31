@@ -2,6 +2,7 @@ import BillingParty from '../models/billingPartyModel.js';
 import AppError from '../utils/appError.js';
 import { successResponse } from '../utils/response.js';
 import logAuditEvent from "../utils/audit/logAuditEvent.js";
+import { prepareAuditSnapshot } from '../utils/audit/auditHelpers.js';
 
 const newBillingParty = async (req, res, next) => {
     const { name, address, gst_no } = req.body;
@@ -34,7 +35,7 @@ const newBillingParty = async (req, res, next) => {
         entityId: party._id,
         action: "create",
         before: {},
-        after: party.toObject(),
+        after: prepareAuditSnapshot(party, {}),
     });
     return successResponse(res, "Billing Party Added", {});
 }
@@ -73,8 +74,8 @@ const updateBillingParty = async (req, res, next) => {
             entityType: "billing_party",
             entityId: party._id,
             action: "update",
-            before: beforeParty || {},
-            after: party.toObject ? party.toObject() : party,
+            before: prepareAuditSnapshot(beforeParty, {}),
+            after: prepareAuditSnapshot(party, {}),
         });
         return successResponse(res, "Billing Party Updated", party);
     } catch (error) {
