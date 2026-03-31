@@ -25,15 +25,6 @@ export const PartyVehicleFilters: FilterConfig<VehicleEntryType>[] = [
       { label: "Received", value: "Received" }
     ]
   },
-  {
-    field: "movementType",
-    type: "select",
-    label: "Movement Type",
-    options: [
-      { label: "From DRL", value: "From DRL" },
-      { label: "To DRL", value: "To DRL" }
-    ]
-  },
   { field: "date", type: "greater", label: "Date After" },
   { field: "date", type: "less", label: "Date Before" },
   { field: "from", type: "text", label: "From" },

@@ -16,7 +16,6 @@ interface InputType {
 type Option = { label: string; value: string };
 
 const VEHICLE_INPUTS: InputType[] = [
-    { type: "select", label: "Movement", name: "movementType" },
     { type: "date", label: "Log Date", name: "date" },
     { type: "input", label: "Vehicle Registration", name: "vehicle_no" },
     { type: "textarea", label: "Origin City", name: "from" },
@@ -95,14 +94,6 @@ const VehicleEntryForm: React.FC<VehicleEntryFormProps> = ({
                 placeholder = "Select Status";
             }
 
-            if (input.name === "movementType") {
-                options = [
-                    { label: "From DRL", value: "From DRL" },
-                    { label: "To DRL", value: "To DRL" },
-                ];
-                value = vehicleEntry.movementType;
-                placeholder = "Select Type";
-            }
 
             if (input.name === "party_name") {
                 value = vehicleEntry.balance_party?.party_name || "";

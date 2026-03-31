@@ -54,7 +54,7 @@ const Bill = () => {
     emptyMessage: "Please search for a bill first",
     orientation: "p",
     endpoint: "/invoice/generate-pdf",
-    serverMode: false,
+    serverMode: true,
   });
 
   const handleDownloadBill = usePDFDownload({
@@ -65,7 +65,7 @@ const Bill = () => {
       }.pdf`,
     orientation: "p",
     endpoint: "/invoice/generate-pdf",
-    serverMode: false,
+    serverMode: true,
   });
 
   if (isLoading) return <Loading />;

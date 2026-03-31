@@ -11,7 +11,7 @@ import type { Option } from "@/types/form";
 
 interface FormInputProps {
   type: string;
-  label: string;
+  label: React.ReactNode;
   id?: string;
   name: string;
   value: string;

@@ -22,7 +22,6 @@ export interface VehicleEntryType {
     balance_party: BalancePartyType;
     owner: string;
     status: "Pending" | "Received";
-    movementType: "From DRL" | "To DRL";
 }
 
 export const EmptyVehicleEntry: VehicleEntryType = {
@@ -47,7 +46,6 @@ export const EmptyVehicleEntry: VehicleEntryType = {
     },
     owner: "",
     status: "Pending",
-    movementType: "From DRL",
 };
 
 export const VEHICLE_ENTRY_LABELS: Record<string, string> = {
@@ -69,5 +67,4 @@ export const VEHICLE_ENTRY_LABELS: Record<string, string> = {
     balance_party: "Party Name",
     owner: "Owner",
     status: "Status",
-    movementType: "Movement Type",
 };

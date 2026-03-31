@@ -7,7 +7,7 @@ import { useMessageStore } from "@/store/useMessageStore";
 import FormInput from "@/components/FormInput";
 import FormSection from "@/components/FormSection";
 import Button from "@/components/Button";
-import { Milestone, Save, ArrowLeft, Truck, MapPin, Calendar, Zap, FileText, Calculator } from "lucide-react";
+import { Milestone, Save, ArrowLeft, Truck, MapPin, Calendar, Zap, FileText, Calculator, Plus } from "lucide-react";
 
 const NewJourneyEntry = () => {
   const navigate = useNavigate();
@@ -176,7 +176,18 @@ const NewJourneyEntry = () => {
                 <FormInput
                   type="search"
                   selectMode="search"
-                  label="Select Truck"
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <span>Select Truck</span>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/journey/all-truck-entries?tab=form')}
+                        className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline font-bold uppercase tracking-tight flex items-center gap-1"
+                      >
+                        <Plus size={10} /> Create New
+                      </button>
+                    </div>
+                  }
                   name="truck"
                   value={form.truck}
                   onChange={handleChange}
@@ -188,7 +199,18 @@ const NewJourneyEntry = () => {
                 <FormInput
                   type="search"
                   selectMode="search"
-                  label="Assigned Driver"
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <span>Assigned Driver</span>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/journey/all-driver-entries?tab=form')}
+                        className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline font-bold uppercase tracking-tight flex items-center gap-1"
+                      >
+                        <Plus size={10} /> Create New
+                      </button>
+                    </div>
+                  }
                   name="driver"
                   value={form.driver}
                   onChange={handleChange}

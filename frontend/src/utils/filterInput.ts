@@ -1,5 +1,5 @@
 export const filterText = (input: string) => {
-    return input.replace(/[^a-zA-Z ]/g, '');
+    return input.replace(/[^a-zA-Z0-9\s.,/-]/g, '');
 }
 
 export const filterNumber = (input: string) => {

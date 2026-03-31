@@ -177,7 +177,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   const hasChanges = itemState.hasInteracted && JSON.stringify(itemState.localItem) !== JSON.stringify(vehicleEntry);
   const loading = updateVehicleEntryMutation.isPending;
 
-  const tripInfoKeys: (keyof VehicleEntryType)[] = ["date", "vehicle_no", "from", "to", "movementType"];
+  const tripInfoKeys: (keyof VehicleEntryType)[] = ["date", "vehicle_no", "from", "to"];
   const financialKeys: (keyof VehicleEntryType)[] = ["freight", "driver_cash", "dala", "kamisan", "in_ac", "halting", "balance"];
   const otherKeys: (keyof VehicleEntryType)[] = ["balance_party", "owner", "status", "halting_in_date", "halting_out_date", "pod_stock"];
 
@@ -219,24 +219,15 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
 
         {isEditing ? (
           <div className="flex items-center gap-2 mt-1">
-            {key === "status" || key === "movementType" ? (
+            {key === "status" ? (
               <select
                 className={`flex-1 px-3 py-1.5 bg-white border rounded-lg text-sm font-bold focus:outline-none focus:ring-4 transition-all ${error ? 'border-red-300 focus:ring-red-50' : 'border-indigo-200 focus:ring-indigo-50'}`}
                 value={value as string}
                 onChange={(e) => updateDraft(vehicleEntry._id, key, e.target.value)}
                 autoFocus
               >
-                {key === "status" ? (
-                  <>
-                    <option value="Pending">Pending</option>
-                    <option value="Received">Received</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="From DRL">From DRL</option>
-                    <option value="To DRL">To DRL</option>
-                  </>
-                )}
+                <option value="Pending">Pending</option>
+                <option value="Received">Received</option>
               </select>
             ) : (
               <input

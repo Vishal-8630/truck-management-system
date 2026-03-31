@@ -165,7 +165,7 @@ const VehicleEntries = () => {
             <Truck className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" />
             Vehicle <span className="text-blue-600">Logs</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg text-left">Track and manage vehicle movement and entries.</p>
+          <p className="text-slate-500 font-medium text-lg text-left">Track and manage vehicle logs and entries.</p>
         </div>
 
         <div className="flex bg-slate-100/50 p-1.5 rounded-[2rem] w-fit shadow-inner border border-slate-100">

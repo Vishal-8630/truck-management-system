@@ -54,11 +54,6 @@ const vehicleEntrySchema = mongoose.Schema({
         type: String,
         enum: ['Pending', 'Received'],
         default: 'Pending'
-    },
-    movementType: {
-        type: String,
-        enum: ["From DRL", "To DRL"],
-        default: "From DRL"
     }
 }, { timestamps: true });
 

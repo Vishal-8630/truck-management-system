@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTrucks } from "@/hooks/useTrucks";
 import Loading from "@/components/Loading";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Truck, Plus, ChevronRight, Gauge, Sparkles } from "lucide-react";
 import { useMessageStore } from "@/store/useMessageStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,8 +26,11 @@ const AllTruckEntries = () => {
   const { data: trucks = [], isLoading: isTrucksLoading } = useTrucksQuery();
   const addTruck = useAddTruckMutation();
 
+  const [searchParams] = useSearchParams();
   /* -------------------- Local State -------------------- */
-  const [activeTab, setActiveTab] = useState<ActiveTab>(TABS.LIST);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(
+    searchParams.get("tab") === TABS.FORM ? TABS.FORM : TABS.LIST
+  );
   const [filteredTrucks, setFilteredTrucks] = useState<TruckType[]>([]);
   const [form, setForm] = useState({
     truck_no: "",

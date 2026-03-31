@@ -23,7 +23,6 @@ interface InputType {
 type Option = { label: string; value: string };
 
 const VEHICLE_INPUTS: InputType[] = [
-  { type: "select", label: "Movement", name: "movementType" },
   { type: "date", label: "Log Date", name: "date" },
   { type: "input", label: "Vehicle Registration", name: "vehicle_no" },
   { type: "textarea", label: "Origin City", name: "from" },
@@ -207,14 +206,6 @@ const NewVehicleEntry = () => {
         placeholder = "Select Status";
       }
 
-      if (input.name === "movementType") {
-        options = [
-          { label: "From DRL", value: "From DRL" },
-          { label: "To DRL", value: "To DRL" },
-        ];
-        value = vehicleEntry.movementType;
-        placeholder = "Select Type";
-      }
 
       if (input.name === "party_name") {
         value = vehicleEntry.balance_party?.party_name || "";
@@ -259,7 +250,7 @@ const NewVehicleEntry = () => {
             <Milestone className="text-blue-600 w-10 h-10 lg:w-12 lg:h-12" />
             New Vehicle <span className="text-blue-600">Entry</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg">Log a new trip or logistics movement for tracking.</p>
+          <p className="text-slate-500 font-medium text-lg">Log a new trip for tracking.</p>
         </div>
       </div>
 

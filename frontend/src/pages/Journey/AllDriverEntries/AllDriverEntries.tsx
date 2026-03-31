@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useMessageStore } from "@/store/useMessageStore";
 import Loading from "@/components/Loading";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Contact, Plus, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DriverCard from "@/components/DriverCard";
@@ -37,8 +37,11 @@ const AllDriverEntries = () => {
   const { data: drivers = [], isLoading } = useDriversQuery();
   const addDriver = useAddDriverMutation();
 
+  const [searchParams] = useSearchParams();
   /* -------------------- Local State -------------------- */
-  const [activeTab, setActiveTab] = useState<ActiveTab>(TABS.LIST);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(
+    searchParams.get("tab") === TABS.FORM ? TABS.FORM : TABS.LIST
+  );
   const [filteredDrivers, setFilteredDrivers] = useState<DriverType[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [image, setImage] = useState<File | null>(null);

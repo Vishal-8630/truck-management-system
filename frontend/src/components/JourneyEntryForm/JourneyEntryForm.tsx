@@ -1,5 +1,6 @@
 import React from "react";
-import { Save, Truck, MapPin, Calendar, Zap, FileText, Calculator } from "lucide-react";
+import { Save, Truck, MapPin, Calendar, Zap, FileText, Calculator, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import FormInput from "@/components/FormInput";
 import FormSection from "@/components/FormSection";
 import Button from "@/components/Button";
@@ -31,16 +32,28 @@ const JourneyEntryForm: React.FC<JourneyEntryFormProps> = ({
     handleSubmit,
     onDiscard,
 }) => {
+    const navigate = useNavigate();
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="lg:col-span-8 flex flex-col gap-8">
                     <FormSection title="Assignment" icon={<Truck size={18} />}>
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <FormInput
+                             <FormInput
                                 type="search"
                                 selectMode="search"
-                                label="Select Truck"
+                                label={
+                                    <div className="flex items-center justify-between w-full">
+                                        <span>Select Truck</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/journey/all-truck-entries?tab=form')}
+                                            className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline font-bold uppercase tracking-tight flex items-center gap-1"
+                                        >
+                                            <Plus size={10} /> Create New
+                                        </button>
+                                    </div>
+                                }
                                 name="truck"
                                 value={form.truck}
                                 onChange={handleChange}
@@ -52,7 +65,18 @@ const JourneyEntryForm: React.FC<JourneyEntryFormProps> = ({
                             <FormInput
                                 type="search"
                                 selectMode="search"
-                                label="Assigned Driver"
+                                label={
+                                    <div className="flex items-center justify-between w-full">
+                                        <span>Assigned Driver</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/journey/all-driver-entries?tab=form')}
+                                            className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline font-bold uppercase tracking-tight flex items-center gap-1"
+                                        >
+                                            <Plus size={10} /> Create New
+                                        </button>
+                                    </div>
+                                }
                                 name="driver"
                                 value={form.driver}
                                 onChange={handleChange}
