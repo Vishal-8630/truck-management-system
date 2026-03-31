@@ -86,20 +86,19 @@ const SmartDropdown = ({
   }, []);
 
   useEffect(() => {
-    if (mode === "search" && fetchOptions && search.length > 0 && open) {
+    if (mode === "search" && fetchOptions && open) {
+      // If search is empty but input has a selected value, we might NOT want to show everything?
+      // Actually, user wants to see "3 or 4 newly added entries" when they CLICK (open).
       const timeout = setTimeout(() => {
         const fetched = fetchOptions(search, name);
-        // Only update if data is different
         setData((prev) => {
           if (JSON.stringify(prev) === JSON.stringify(fetched)) return prev;
           return fetched;
         });
-      }, 300);
+      }, search.length > 0 ? 300 : 0); // Immediate fetch if empty (on click)
       return () => clearTimeout(timeout);
-    } else if (mode === "search" && search.length === 0 && data.length > 0) {
-      setData([]);
     }
-  }, [search, mode, fetchOptions, name, open, data.length]);
+  }, [search, mode, fetchOptions, name, open]);
 
   const displayData = mode === "select" ? options : data;
 

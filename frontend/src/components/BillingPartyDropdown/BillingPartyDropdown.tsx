@@ -23,6 +23,7 @@ interface PartyProps {
   ) => void;
   toggleEditing: (partyId: string, key: keyof BillingPartyType) => void;
   toggleOpen: (partyId: string) => void;
+  disableToggle?: boolean;
 }
 
 const dropDownVariants: Variants = {
@@ -46,6 +47,7 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
   updateDraft,
   toggleEditing,
   toggleOpen,
+  disableToggle = false,
 }) => {
   const { useUpdateBillingPartyMutation, useDeleteBillingPartyMutation } = useParties();
   const updateBillingPartyMutation = useUpdateBillingPartyMutation();
@@ -220,7 +222,9 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
           ${itemState.isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
-        onClick={() => toggleOpen(billingParty._id)}
+        onClick={() => {
+          if (!disableToggle) toggleOpen(billingParty._id);
+        }}
       >
         <div className="flex items-center gap-6">
           <div className={`
@@ -247,15 +251,17 @@ const BillingPartyDropdown: React.FC<PartyProps> = ({
               <span className="text-[10px] font-bold text-blue-500 uppercase">Unsaved</span>
             </div>
           )}
-          <motion.div
-            animate={{ rotate: itemState.isOpen ? 180 : 0 }}
-            className={`
-              w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
-            `}
-          >
-            <ChevronDown size={20} />
-          </motion.div>
+          {!disableToggle && (
+            <motion.div
+              animate={{ rotate: itemState.isOpen ? 180 : 0 }}
+              className={`
+                w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+                ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
+              `}
+            >
+              <ChevronDown size={20} />
+            </motion.div>
+          )}
         </div>
       </div>
 

@@ -16,6 +16,8 @@ import DeleteConfirm from "@/components/DeleteConfirm";
 
 interface DropdownViewProps {
   entry: BillEntryType;
+  initiallyOpen?: boolean;
+  disableToggle?: boolean;
 }
 
 const dropdownVariants: Variants = {
@@ -163,38 +165,54 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
   onDelete,
   confirmingDelete,
 }) => (
-  <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 mb-4 last:mb-0">
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
+  <div className="bg-white rounded-[2rem] border border-slate-100 p-6 mb-6 last:mb-0 shadow-sm hover:shadow-md transition-all duration-300 relative group/row overflow-hidden">
+    <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 opacity-20 group-hover/row:opacity-100 transition-opacity" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-10">
       {Object.entries(charge)
         .filter(([k]) => k !== "_id")
         .map(([subKey, subValue]) => {
           const editKey = `${charge._id}.${subKey}`;
           const isEditing = editingSet.has(editKey);
           return (
-            <div key={editKey} className="flex flex-col gap-1 group/field">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
-                  {EXTRA_CHARGE_LABELS[subKey]}
-                </span>
-              </div>
+            <div key={editKey} className="flex flex-col gap-1.5 group/field min-w-0">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1 truncate">
+                {EXTRA_CHARGE_LABELS[subKey]}
+              </span>
 
               {isEditing ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                   <input
-                    className="flex-1 px-2 py-1 bg-white border border-blue-200 rounded-md text-xs font-bold focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:bg-white focus:border-blue-300 transition-all min-w-0"
                     value={drafts?.[charge._id]?.[subKey as keyof ExtraCharge] ?? subValue ?? ""}
                     onChange={(e) => setDraft(charge._id, subKey as keyof ExtraCharge, e.target.value)}
                     autoFocus
                   />
-                  <button onClick={() => saveEdit(charge._id, subKey as keyof ExtraCharge)} className="p-1 text-emerald-600"><Check size={14} /></button>
-                  <button onClick={() => cancelEdit(charge._id, subKey as keyof ExtraCharge)} className="p-1 text-slate-400"><X size={14} /></button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button 
+                      onClick={() => saveEdit(charge._id, subKey as keyof ExtraCharge)} 
+                      className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                      title="Confirm"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button 
+                      onClick={() => cancelEdit(charge._id, subKey as keyof ExtraCharge)} 
+                      className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-100 transition-colors"
+                      title="Cancel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between group/field">
-                  <span className="text-sm font-bold text-slate-700">{subValue || "—"}</span>
+                <div className="flex items-center justify-between min-h-[36px] bg-slate-50/50 px-3 rounded-xl border border-transparent hover:border-slate-100 transition-all">
+                  <span className="text-sm font-black text-slate-800 italic uppercase truncate">
+                    {subValue || "—"}
+                  </span>
                   <button
                     onClick={() => startEdit(charge._id, subKey as keyof ExtraCharge)}
-                    className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-all opacity-0 group-hover/field:opacity-100"
+                    className="p-2 text-blue-400 hover:text-blue-600 hover:bg-white hover:shadow-sm rounded-lg transition-all opacity-0 group-hover/field:opacity-100 shrink-0"
+                    title="Edit Field"
                   >
                     <Edit3 size={12} />
                   </button>
@@ -204,13 +222,17 @@ const ExtraChargeRow: React.FC<ExtraChargeRowProps> = ({
           );
         })}
     </div>
-    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+    <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+      <div className="flex items-center gap-2 text-slate-300">
+        <Calculator size={12} />
+        <span className="text-[10px] font-bold uppercase tracking-widest">Extra Item</span>
+      </div>
       <button
         onClick={() => onDelete(charge._id)}
-        className="flex items-center gap-1.5 text-xs font-bold text-red-400 hover:text-red-600 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+        className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-red-300 hover:text-rose-600 transition-colors px-3 py-1.5 rounded-xl hover:bg-rose-50"
       >
-        <Trash2 size={14} />
-        {confirmingDelete ? "Deleting..." : "Remove Charge"}
+        <Trash2 size={12} />
+        {confirmingDelete ? "REMOVING..." : "REMOVE CHARGE"}
       </button>
     </div>
   </div>
@@ -236,9 +258,13 @@ const QuickActionLink: React.FC<{ to: string; label: string; icon: React.ReactNo
 };
 
 // --- Main DropdownView ---
-const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
+const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({
+  entry,
+  initiallyOpen = false,
+  disableToggle = false,
+}) => {
   const [localEntry, setLocalEntry] = useState(entry);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initiallyOpen);
   const [editing, setEditing] = useState<{
     fields: Set<keyof BillEntryType>;
     extra_charges: Set<string>;
@@ -288,6 +314,10 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
     setDrafts({ fields: {}, extra_charges: {} });
     setEditing({ fields: new Set(), extra_charges: new Set() });
   }, [entry]);
+
+  useEffect(() => {
+    if (initiallyOpen) setIsOpen(true);
+  }, [initiallyOpen]);
 
   // --- Calculation Logic ---
   useEffect(() => {
@@ -385,14 +415,24 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       return { ...prev, extra_charges: updated };
     });
   };
+
   const saveCharge = (id: string, key: keyof ExtraCharge) => {
     setLocalEntry((prev) => ({
       ...prev,
-      extra_charges: prev.extra_charges.map((c) =>
-        c._id === id
-          ? { ...c, [key]: drafts.extra_charges?.[id]?.[key] ?? c[key] }
-          : c
-      ),
+      extra_charges: (prev.extra_charges || []).map((c) => {
+        if (c._id !== id) return c;
+        const newVal = drafts.extra_charges?.[id]?.[key] ?? "";
+        const updated = { ...c, [key]: newVal };
+        
+        // Auto-calculate amount if rate or per_amount changes
+        if (key === "rate" || key === "per_amount") {
+          const rate = Number(updated.rate || 0);
+          const perAmount = Number(updated.per_amount || 0);
+          updated.amount = (rate * perAmount).toString();
+        }
+        
+        return updated;
+      }),
     }));
     setHasInteracted(true);
     setEditing((prev) => ({
@@ -411,6 +451,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       return { ...prev, extra_charges: updated };
     });
   };
+
   const cancelCharge = (id: string, key: keyof ExtraCharge) => {
     setEditing((prev) => ({
       ...prev,
@@ -428,6 +469,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       return { ...prev, extra_charges: updated };
     });
   };
+
   const setDraftCharge = (id: string, key: keyof ExtraCharge, val: string) => {
     setDrafts((prev) => ({
       ...prev,
@@ -437,16 +479,18 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
       },
     }));
   };
+
   const confirmDeleteCharge = () => {
     if (deleteChargeId) {
       deleteCharge(deleteChargeId);
       setDeleteChargeId(null);
     }
   };
+
   const deleteCharge = (_id: string) => {
     setLocalEntry((prev) => ({
       ...prev,
-      extra_charges: prev.extra_charges.filter((c) => c._id !== _id),
+      extra_charges: (prev.extra_charges || []).filter((c) => c._id !== _id),
     }));
     setHasInteracted(true);
     setDrafts((prev) => {
@@ -553,7 +597,9 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
           ${isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
-        onClick={() => setIsOpen((s) => !s)}
+        onClick={() => {
+          if (!disableToggle) setIsOpen((s) => !s);
+        }}
       >
         <div className="flex items-center gap-6">
           <div className={`
@@ -581,15 +627,17 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
               <span className="text-[10px] font-bold text-blue-500 uppercase">Pending Changes</span>
             </div>
           )}
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            className={`
-              w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
-            `}
-          >
-            <ChevronDown size={20} />
-          </motion.div>
+          {!disableToggle && (
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              className={`
+                w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+                ${isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
+              `}
+            >
+              <ChevronDown size={20} />
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -724,7 +772,7 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                       <Plus size={18} className="text-blue-600" />
                       Extra Charges
                     </h3>
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-6 p-2">
                       {localEntry.extra_charges?.map((charge) => (
                         <ExtraChargeRow
                           key={charge._id}
@@ -739,12 +787,22 @@ const BillEntriesDropdownView: React.FC<DropdownViewProps> = ({ entry }) => {
                           confirmingDelete={deleteChargeId === charge._id}
                         />
                       ))}
+                      
+                      {(!localEntry.extra_charges || localEntry.extra_charges.length === 0) && (
+                        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50 text-slate-300">
+                           <Plus size={32} strokeWidth={1} className="mb-2 opacity-50" />
+                           <p className="text-xs font-bold uppercase tracking-widest">No extra charges added</p>
+                        </div>
+                      )}
+
                       <button
                         onClick={addNewCharge}
-                        className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-400 font-bold hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200 group"
+                        className="mt-2 w-full flex items-center justify-center gap-3 py-6 border-2 border-dashed border-indigo-100 rounded-[2.5rem] text-indigo-400 font-black text-xs uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 group"
                       >
-                        <Plus size={18} className="group-hover:scale-110 transition-transform" />
-                        Add New Charge
+                        <div className="p-1 px-3 bg-indigo-50 border border-indigo-100 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                          <Plus size={14} />
+                        </div>
+                        Add New Charge Entry
                       </button>
                     </div>
                   </section>

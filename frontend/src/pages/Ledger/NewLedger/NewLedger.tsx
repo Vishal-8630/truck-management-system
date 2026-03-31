@@ -198,18 +198,34 @@ const NewLedger = () => {
   };
 
   const fetchOptions = (search: string, field: string): Option[] => {
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
     switch (field) {
       case "journey": {
+        if (!s) return journies.slice(0, 4).map((j: JourneyType) => ({ label: `${j.truck?.truck_no} | ${(j.driver as any)?.name} | ${j.from} | ${j.to} | ${formatDate(new Date(j.journey_start_date))}`, value: j._id }));
         return journies
           .filter((j: JourneyType) => j.truck?.truck_no?.toLowerCase().includes(s) || (j.driver as any)?.name?.toLowerCase().includes(s) || j.from.toLowerCase().includes(s) || j.to.toLowerCase().includes(s))
           .map((j: JourneyType) => ({ label: `${j.truck?.truck_no} | ${(j.driver as any)?.name} | ${j.from} | ${j.to} | ${formatDate(new Date(j.journey_start_date))}`, value: j._id }));
       }
-      case "truck": return trucks.filter((t: TruckType) => t.truck_no.toLowerCase().includes(s)).map((t: TruckType) => ({ label: t.truck_no, value: t._id }));
-      case "driver": return drivers.filter((d: DriverType) => d.name?.toLowerCase().includes(s)).map((d: DriverType) => ({ label: d.name, value: d._id }));
-      case "party": return parties.filter((p: BillingPartyType) => p.name.toLowerCase().includes(s)).map((p: BillingPartyType) => ({ label: p.name, value: p._id }));
-      case "settlement": return settlements.filter((s_: SettlementType) => (s_.driver as any)?.name?.toLowerCase().includes(s)).map((s_: SettlementType) => ({ label: `${(s_.driver as any)?.name} | ${formatDate(new Date(s_.period.from))} | ${formatDate(new Date(s_.period.to))}`, value: s_._id }));
-      case "vehicle_entry": return vehicleEntries.filter((ve: VehicleEntryType) => ve.vehicle_no.toLowerCase().includes(s) || ve.from.toLowerCase().includes(s) || ve.to.toLowerCase().includes(s)).map((ve: VehicleEntryType) => ({ label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`, value: ve._id }));
+      case "truck": {
+        if (!s) return trucks.slice(0, 4).map((t: TruckType) => ({ label: t.truck_no, value: t._id }));
+        return trucks.filter((t: TruckType) => t.truck_no.toLowerCase().includes(s)).map((t: TruckType) => ({ label: t.truck_no, value: t._id }));
+      }
+      case "driver": {
+        if (!s) return drivers.slice(0, 4).map((d: DriverType) => ({ label: d.name, value: d._id }));
+        return drivers.filter((d: DriverType) => d.name?.toLowerCase().includes(s)).map((d: DriverType) => ({ label: d.name, value: d._id }));
+      }
+      case "party": {
+        if (!s) return parties.slice(0, 4).map((p: BillingPartyType) => ({ label: p.name, value: p._id }));
+        return parties.filter((p: BillingPartyType) => p.name.toLowerCase().includes(s)).map((p: BillingPartyType) => ({ label: p.name, value: p._id }));
+      }
+      case "settlement": {
+        if (!s) return settlements.slice(0, 4).map((s_: SettlementType) => ({ label: `${(s_.driver as any)?.name} | ${formatDate(new Date(s_.period.from))} | ${formatDate(new Date(s_.period.to))}`, value: s_._id }));
+        return settlements.filter((s_: SettlementType) => (s_.driver as any)?.name?.toLowerCase().includes(s)).map((s_: SettlementType) => ({ label: `${(s_.driver as any)?.name} | ${formatDate(new Date(s_.period.from))} | ${formatDate(new Date(s_.period.to))}`, value: s_._id }));
+      }
+      case "vehicle_entry": {
+        if (!s) return vehicleEntries.slice(0, 4).map((ve: VehicleEntryType) => ({ label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`, value: ve._id }));
+        return vehicleEntries.filter((ve: VehicleEntryType) => ve.vehicle_no.toLowerCase().includes(s) || ve.from.toLowerCase().includes(s) || ve.to.toLowerCase().includes(s)).map((ve: VehicleEntryType) => ({ label: `${ve.vehicle_no} | ${ve.from} | ${ve.to}`, value: ve._id }));
+      }
       default: return [];
     }
   };

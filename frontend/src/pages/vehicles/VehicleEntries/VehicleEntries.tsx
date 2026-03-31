@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { EmptyVehicleEntry, type VehicleEntryType } from "@/types/vehicleEntry";
 import Loading from "@/components/Loading";
 import { motion, AnimatePresence } from "framer-motion";
 import { fadeInUp } from "@/animations/animations";
-import VehicleEntryDropdown from "@/components/VehicleEntryDropdown";
 import { VehicleEntryFilters } from "@/filters/vehicleEntryFilters";
 import PaginatedList from "@/components/PaginatedList";
 import FilterContainer from "@/components/FilterContainer";
 import VehicleEntryForm from "@/components/VehicleEntryForm/VehicleEntryForm";
 import { useVehicleEntries } from "@/hooks/useLedgers";
 import { useParties } from "@/hooks/useParties";
-import { useItemStates } from "@/hooks/useItemStates";
 import { useMessageStore } from "@/store/useMessageStore";
 import ExcelButton from "@/components/ExcelButton";
-import { Truck, Plus, Sparkles } from "lucide-react";
+import { Truck, Plus, Sparkles, ChevronRight, Calendar } from "lucide-react";
+import { formatDate } from "@/utils/formatDate";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -24,6 +24,7 @@ export const TABS = {
 type ActiveTab = (typeof TABS)[keyof typeof TABS];
 
 const VehicleEntries = () => {
+  const navigate = useNavigate();
   const { useVehicleEntriesQuery, useAddVehicleEntryMutation } = useVehicleEntries();
   const { data: vehicleEntries = [], isLoading } = useVehicleEntriesQuery();
   const { useBalancePartiesQuery } = useParties();
@@ -37,9 +38,6 @@ const VehicleEntries = () => {
   const [entry, setEntry] = useState<VehicleEntryType>(EmptyVehicleEntry);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const partyRef = useRef<any>(null);
-
-  const { itemStates, updateItem, updateDraft, toggleEditing, toggleOpen } =
-    useItemStates<VehicleEntryType>(vehicleEntries);
 
   /* -------------------- Effects -------------------- */
 
@@ -67,14 +65,6 @@ const VehicleEntries = () => {
 
   /* -------------------- Handlers -------------------- */
 
-  const onVehicleEntryUpdate = (updatedVehicleEntry: VehicleEntryType) => {
-    setFilteredEntries((prev) =>
-      prev.map((v) =>
-        v._id === updatedVehicleEntry._id ? updatedVehicleEntry : v
-      )
-    );
-  };
-
   const handleChange = (value: string, name: string) => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -96,7 +86,7 @@ const VehicleEntries = () => {
           balance_party: { _id: "", party_name: "" },
         }));
       } else {
-        const party = balanceParties.find((p: any) => p.party_name === val);
+        const party = balanceParties.find((p: any) => p._id === val);
         setEntry((prev) => ({
           ...prev,
           balance_party: party || { _id: "", party_name: "" },
@@ -107,16 +97,27 @@ const VehicleEntries = () => {
 
   const fetchOptions = (search: string, field: string): any[] => {
     void field;
-    const filtered = balanceParties.filter(
-      (party: any) =>
-        party.party_name &&
-        party.party_name
-          .toLocaleLowerCase()
-          .includes(search.toLocaleLowerCase())
-    );
+    const s = search.trim().toLowerCase();
+    
+    // If empty, return latest 4
+    if (!s) {
+      return balanceParties.slice(0, 4).map((party: any) => ({
+        label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
+        value: party._id,
+      }));
+    }
+
+    // Filter and limit to 15 results
+    const filtered = balanceParties
+      .filter((party: any) =>
+        (party.party_name && party.party_name.toLowerCase().includes(s)) ||
+        (party.address && party.address.toLowerCase().includes(s))
+      )
+      .slice(0, 15);
+
     return filtered.map((party: any) => ({
-      label: party.party_name,
-      value: party.party_name,
+      label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
+      value: party._id,
     }));
   };
 
@@ -245,15 +246,52 @@ const VehicleEntries = () => {
                     animate="visible"
                     className="mb-4 last:mb-0"
                   >
-                    <VehicleEntryDropdown
-                      vehicleEntry={v}
-                      itemState={itemStates[v._id]}
-                      updateItem={updateItem}
-                      updateDraft={updateDraft}
-                      toggleEditing={toggleEditing}
-                      toggleOpen={toggleOpen}
-                      onVehicleEntryUpdate={onVehicleEntryUpdate}
-                    />
+                    <div
+                      onClick={() => navigate(`/vehicle-entry/vehicle-entry-detail/${v._id}`)}
+                      className="card-premium p-6 cursor-pointer hover:ring-4 hover:ring-blue-50 hover:border-blue-200 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <Truck size={18} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle No.</span>
+                            <h3 className="text-lg font-black italic text-slate-900">{v.vehicle_no || "—"}</h3>
+                          </div>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${v.status === "Received" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
+                          {v.status || "Pending"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Date</span>
+                          <p className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                            <Calendar size={12} className="text-slate-300" />
+                            {v.date ? formatDate(new Date(v.date)) : "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Route</span>
+                          <p className="text-sm font-bold text-slate-700 truncate">{v.from || "—"} → {v.to || "—"}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Freight</span>
+                          <p className="text-sm font-bold text-slate-700">₹{v.freight || "0"}</p>
+                        </div>
+                        <div className="rounded-xl bg-blue-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">Balance</span>
+                          <p className="text-sm font-black text-blue-700">₹{v.balance || "0"}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-end text-slate-400 gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest">View Details</span>
+                        <ChevronRight size={14} />
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               />

@@ -24,6 +24,7 @@ interface VehicleEntryDropdownProps {
   toggleEditing: (id: string, key: keyof VehicleEntryType) => void;
   toggleOpen: (id: string) => void;
   onVehicleEntryUpdate: (updatedVehicleEntry: VehicleEntryType) => void;
+  disableToggle?: boolean;
 }
 
 const dropDownVariants: Variants = {
@@ -48,6 +49,7 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
   toggleEditing,
   toggleOpen,
   onVehicleEntryUpdate,
+  disableToggle = false,
 }) => {
   const { useUpdateVehicleEntryMutation, useDeleteVehicleEntryMutation } = useVehicleEntries();
   const updateVehicleEntryMutation = useUpdateVehicleEntryMutation();
@@ -268,7 +270,9 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
           ${itemState.isOpen ? 'bg-blue-50/50' : 'bg-white hover:bg-slate-50/80'}
           transition-colors duration-200
         `}
-        onClick={() => toggleOpen(vehicleEntry._id)}
+        onClick={() => {
+          if (!disableToggle) toggleOpen(vehicleEntry._id);
+        }}
       >
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <div className={`
@@ -311,15 +315,17 @@ const VehicleEntryDropdown: React.FC<VehicleEntryDropdownProps> = ({
               <span className="text-[10px] font-bold text-blue-500 uppercase">Unsaved</span>
             </div>
           )}
-          <motion.div
-            animate={{ rotate: itemState.isOpen ? 180 : 0 }}
-            className={`
-              w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-              ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
-            `}
-          >
-            <ChevronDown size={20} />
-          </motion.div>
+          {!disableToggle && (
+            <motion.div
+              animate={{ rotate: itemState.isOpen ? 180 : 0 }}
+              className={`
+                w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+                ${itemState.isOpen ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-300'}
+              `}
+            >
+              <ChevronDown size={20} />
+            </motion.div>
+          )}
         </div>
       </div>
 

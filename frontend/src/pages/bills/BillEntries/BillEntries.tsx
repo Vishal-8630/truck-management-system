@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Loading from "@/components/Loading";
-import BillEntriesDropdownView from "@/components/BillEntriesDropdownView";
 import { motion, AnimatePresence } from "framer-motion";
 import { fadeInUp } from "@/animations/animations";
 import PaginatedList from "@/components/PaginatedList";
@@ -16,7 +15,9 @@ import { BillEntryFilters } from "@/filters/billEntryFilters";
 import FilterContainer from "@/components/FilterContainer";
 import BillEntryForm from "@/components/BillEntryForm/BillEntryForm";
 import DeleteConfirm from "@/components/DeleteConfirm";
-import { FileText, Plus, Sparkles } from "lucide-react";
+import { FileText, Plus, Sparkles, ChevronRight, Calendar, IndianRupee } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { formatDate } from "@/utils/formatDate";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -27,6 +28,7 @@ export const TABS = {
 type ActiveTab = (typeof TABS)[keyof typeof TABS];
 
 const BillEntries = () => {
+  const navigate = useNavigate();
   const { useBillEntriesQuery, useAddBillEntryMutation } = useBillEntries();
   const { data: billEntries = [], isLoading } = useBillEntriesQuery();
   const { useBillingPartiesQuery } = useParties();
@@ -106,7 +108,7 @@ const BillEntries = () => {
         setSelectedParty({ _id: "", name: "", address: "", gst_no: "" });
         setPartyError("Please select a Billing Party");
       } else {
-        const found = billingParties.find((p: any) => p.name === val);
+        const found = billingParties.find((p: any) => p._id === val);
         if (found) {
           setSelectedParty(found);
           setPartyError("");
@@ -117,12 +119,27 @@ const BillEntries = () => {
 
   const fetchOptions = (search: string, field: string): any[] => {
     void field;
-    const filtered = billingParties.filter((party: any) =>
-      party.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const s = search.trim().toLowerCase();
+    
+    // If empty, return latest 4
+    if (!s) {
+      return billingParties.slice(0, 4).map((party: BillingPartyType) => ({
+        label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
+        value: party._id,
+      }));
+    }
+
+    // Filter and limit to 15 results
+    const filtered = billingParties
+      .filter((party: any) =>
+        party.name.toLowerCase().includes(s) ||
+        (party.address && party.address.toLowerCase().includes(s))
+      )
+      .slice(0, 15);
+
     return filtered.map((party: BillingPartyType) => ({
-      label: party.name,
-      value: party.name,
+      label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
+      value: party._id,
     }));
   };
 
@@ -297,7 +314,51 @@ const BillEntries = () => {
                     animate="visible"
                     className="mb-4 last:mb-0"
                   >
-                    <BillEntriesDropdownView entry={entry} />
+                    <div
+                      onClick={() => navigate(`/bill-entry/bill-entry-detail/${entry._id}`)}
+                      className="card-premium p-6 cursor-pointer hover:ring-4 hover:ring-indigo-50 hover:border-indigo-200 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bill Number</span>
+                          <h3 className="text-xl font-black italic text-slate-900">{entry.bill_no || "—"}</h3>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
+                          <FileText size={12} />
+                          Bill
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Party</span>
+                          <p className="text-sm font-bold text-slate-700 truncate">{entry.billing_party?.name || "—"}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">LR No.</span>
+                          <p className="text-sm font-bold text-slate-700">{entry.lr_no || "—"}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Bill Date</span>
+                          <p className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                            <Calendar size={12} className="text-slate-300" />
+                            {entry.bill_date ? formatDate(new Date(entry.bill_date)) : "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-indigo-50 p-3">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Grand Total</span>
+                          <p className="text-sm font-black text-indigo-700 flex items-center gap-1">
+                            <IndianRupee size={12} />
+                            {entry.grand_total || "0"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-end text-slate-400 gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest">View Details</span>
+                        <ChevronRight size={14} />
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               />

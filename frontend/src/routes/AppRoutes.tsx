@@ -27,12 +27,15 @@ import OperationalActivity from "@/pages/shared/Home/views/OperationalActivity";
 
 // Bills
 import BillEntries from "@/pages/bills/BillEntries";
+import BillEntryDetail from "@/pages/bills/BillEntries/BillEntryDetail";
 import LRCopy from "@/pages/bills/LRCopy";
 import Bill from "@/pages/bills/Bill";
 import BillingParty from "@/pages/bills/BillingParty";
+import BillingPartyDetail from "@/pages/bills/BillingParty/BillingPartyDetail";
 
 // Vehicles
 import VehicleEntries from "@/pages/vehicles/VehicleEntries";
+import VehicleEntryDetail from "@/pages/vehicles/VehicleEntries/VehicleEntryDetail";
 import BalanceParties from "@/pages/vehicles/BalanceParties";
 import PartyBalance from "@/pages/vehicles/PartyBalance";
 
@@ -62,13 +65,16 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 const billEntryRoutes = [
   { path: "all-bill-entries", element: <BillEntries /> },
+  { path: "bill-entry-detail/:id", element: <BillEntryDetail /> },
   { path: "lrcopy", element: <LRCopy /> },
   { path: "bill", element: <Bill /> },
   { path: "billing-party", element: <BillingParty /> },
+  { path: "billing-party-detail/:id", element: <BillingPartyDetail /> },
 ];
 
 const vehicleEntryRoutes = [
   { path: "all-vehicle-entries", element: <VehicleEntries /> },
+  { path: "vehicle-entry-detail/:id", element: <VehicleEntryDetail /> },
   { path: "balance-party", element: <BalanceParties /> },
   { path: "party-balance", element: <PartyBalance /> },
 ];

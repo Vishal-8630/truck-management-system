@@ -74,16 +74,38 @@ const NewJourneyEntry = () => {
   };
 
   const fetchOptions = (search: string, field: string) => {
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
     if (field === "truck") {
+      if (!s) {
+        // Return latest 4 added trucks
+        return trucks.slice(0, 4).map((t) => ({ 
+          label: t.truck_no, 
+          value: t._id 
+        }));
+      }
       return trucks
         .filter((t) => t.truck_no.toLowerCase().includes(s))
+        .slice(0, 15)
         .map((t) => ({ label: t.truck_no, value: t._id }));
     }
     if (field === "driver") {
+      if (!s) {
+        // Return latest 4 added drivers
+        return drivers.slice(0, 4).map((d) => ({ 
+          label: `${d.name}${d.phone ? ` | ${d.phone}` : ""}`, 
+          value: d._id 
+        }));
+      }
       return drivers
-        .filter((d) => d.name.toLowerCase().includes(s))
-        .map((d) => ({ label: d.name, value: d._id }));
+        .filter((d) => 
+          d.name.toLowerCase().includes(s) || 
+          (d.phone && d.phone.includes(s))
+        )
+        .slice(0, 15)
+        .map((d) => ({ 
+          label: `${d.name}${d.phone ? ` | ${d.phone}` : ""}`, 
+          value: d._id 
+        }));
     }
     return [];
   };

@@ -131,7 +131,7 @@ const NewVehicleEntry = () => {
           balance_party: { _id: "", party_name: "" },
         }));
       } else {
-        const party = balanceParties.find((p: any) => p.party_name === val);
+        const party = balanceParties.find((p: any) => p._id === val);
         setVehicleEntry((prev) => ({
           ...prev,
           balance_party: party || { _id: "", party_name: "" },
@@ -142,20 +142,28 @@ const NewVehicleEntry = () => {
 
   const fetchOptions = (search: string, field: string): Option[] => {
     void field;
-    const fetchedBalanceParties = balanceParties.filter(
-      (party: any) =>
-        party.party_name &&
-        party.party_name
-          .toLocaleLowerCase()
-          .includes(search.toLocaleLowerCase())
-    );
-    if (fetchedBalanceParties.length > 0) {
-      const options: Option[] = fetchedBalanceParties.map((party: any) => ({
-        label: party.party_name,
-        value: party.party_name,
+    const s = search.trim().toLowerCase();
+    
+    // If empty, return latest 4
+    if (!s) {
+      return balanceParties.slice(0, 4).map((party: any) => ({
+        label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
+        value: party._id,
       }));
-      return options;
-    } else return [];
+    }
+
+    // Filter and limit to 15 results
+    const filtered = balanceParties
+      .filter((party: any) =>
+        (party.party_name && party.party_name.toLowerCase().includes(s)) ||
+        (party.address && party.address.toLowerCase().includes(s))
+      )
+      .slice(0, 15);
+
+    return filtered.map((party: any) => ({
+      label: `${party.party_name}${party.address ? ` | ${party.address}` : ""}`,
+      value: party._id,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

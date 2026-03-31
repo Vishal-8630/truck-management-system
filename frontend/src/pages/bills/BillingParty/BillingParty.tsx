@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import BillingPartyForm from "@/components/BillingPartyForm";
 import Loading from "@/components/Loading";
 import {
@@ -10,11 +11,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import PaginatedList from "@/components/PaginatedList";
 import { BillingPartyFilters } from "@/filters/billingPartyFilters";
 import FilterContainer from "@/components/FilterContainer";
-import BillingPartyDropdown from "@/components/BillingPartyDropdown";
 import { useParties } from "@/hooks/useParties";
-import { useItemStates } from "@/hooks/useItemStates";
 import ExcelButton from "@/components/ExcelButton";
-import { Users, Sparkles, Plus } from "lucide-react";
+import { Users, Sparkles, Plus, Building2, ChevronRight } from "lucide-react";
 
 /* -------------------- Constants -------------------- */
 export const TABS = {
@@ -25,6 +24,7 @@ export const TABS = {
 type ActiveTab = (typeof TABS)[keyof typeof TABS];
 
 const BillingParty = () => {
+  const navigate = useNavigate();
   const { useBillingPartiesQuery, useAddBillingPartyMutation } = useParties();
   const { data: billingParties = [], isLoading } = useBillingPartiesQuery();
   const addBillingPartyMutation = useAddBillingPartyMutation();
@@ -42,9 +42,6 @@ const BillingParty = () => {
   const [filteredParties, setFilteredParties] = useState<BillingPartyType[]>(
     []
   );
-
-  const { itemStates, updateItem, updateDraft, toggleEditing, toggleOpen } =
-    useItemStates<BillingPartyType>(billingParties);
 
   /* -------------------- Effects -------------------- */
 
@@ -159,15 +156,39 @@ const BillingParty = () => {
                 items={filteredParties}
                 itemsPerPage={8}
                 renderItem={(p) => (
-                  <BillingPartyDropdown
+                  <div
                     key={p._id}
-                    billingParty={p}
-                    itemState={itemStates[p._id]}
-                    updateItem={updateItem}
-                    updateDraft={updateDraft}
-                    toggleEditing={toggleEditing}
-                    toggleOpen={toggleOpen}
-                  />
+                    onClick={() => navigate(`/bill-entry/billing-party-detail/${p._id}`)}
+                    className="card-premium p-6 mb-4 cursor-pointer hover:ring-4 hover:ring-blue-50 hover:border-blue-200 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                          <Building2 size={18} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Billing Party</span>
+                          <h3 className="text-lg font-black italic text-slate-900">{p.name || "—"}</h3>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-slate-50 p-3">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">GST Number</span>
+                        <p className="text-sm font-bold text-slate-700">{p.gst_no || "—"}</p>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 p-3">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Address</span>
+                        <p className="text-sm font-bold text-slate-700 truncate">{p.address || "—"}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-end text-slate-400 gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest">View Details</span>
+                      <ChevronRight size={14} />
+                    </div>
+                  </div>
                 )}
               />
               {filteredParties.length === 0 && (

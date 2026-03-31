@@ -121,7 +121,7 @@ const Entry: React.FC = () => {
           forceRender({});
         }
       } else {
-        const found = billingParties.find((p: any) => p.name === val);
+        const found = billingParties.find((p: any) => p._id === val);
         if (found) {
           setSelectedParty(found);
           setPartyError("");
@@ -137,15 +137,28 @@ const Entry: React.FC = () => {
   const fetchOptions = (search: string, field: string): Option[] => {
     void field;
     try {
-      const filteredBillingParties = billingParties.filter((party: any) => party.name.toLowerCase().includes(search.toLowerCase()));
-      if (filteredBillingParties.length > 0) {
-        return filteredBillingParties.map((party: BillingPartyType) => ({
-          label: party.name,
-          value: party.name,
+      const s = search.trim().toLowerCase();
+      
+      // If empty, return latest 4
+      if (!s) {
+        return billingParties.slice(0, 4).map((party: BillingPartyType) => ({
+          label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
+          value: party._id,
         }));
-      } else {
-        return [];
       }
+
+      // Filter and limit to 15 results
+      const filtered = billingParties
+        .filter((party: any) => 
+          party.name.toLowerCase().includes(s) || 
+          (party.address && party.address.toLowerCase().includes(s))
+        )
+        .slice(0, 15);
+
+      return filtered.map((party: BillingPartyType) => ({
+        label: `${party.name}${party.address ? ` | ${party.address}` : ""}`,
+        value: party._id,
+      }));
     } catch (error: any) {
       addMessage({ type: "error", text: error.message || "Failed to fetch options" });
       return [];
@@ -350,25 +363,29 @@ const Entry: React.FC = () => {
             <FormSection title="Extra Charges" icon={<Plus size={18} />}>
               <div className="flex flex-col gap-4">
                 {entry.extra_charges.map((ec) => (
-                  <div key={ec._id} className="grid grid-cols-2 lg:grid-cols-5 gap-4 items-end bg-slate-50/50 p-6 rounded-3xl border border-slate-100 relative group/charge">
+                  <div key={ec._id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end bg-white p-8 rounded-[2.5rem] border border-slate-100 relative group/charge shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 opacity-20 group-hover/charge:opacity-100 transition-opacity" />
                     {(Object.entries(EXTRA_CHARGE_LABELS) as [keyof ExtraCharge, string][]).map(([field, label]) => (
-                      <div key={field} className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{label}</label>
+                      <div key={field} className="flex flex-col gap-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">{label}</label>
                         <input
-                          className="input-field py-2 px-4 rounded-xl text-sm"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-300 transition-all placeholder:text-slate-300"
                           value={ec[field as keyof typeof ec]}
                           onChange={(e) => handleExtraChargeChange(ec._id, field, e.target.value)}
                           placeholder={label}
                         />
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => setDeleteChargeId(ec._id)}
-                      className="p-3 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all duration-200 w-fit lg:ml-auto"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <div className="flex justify-end lg:justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteChargeId(ec._id)}
+                        className="p-4 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all duration-200"
+                        title="Remove Charge"
+                      >
+                        <Trash2 size={22} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button
