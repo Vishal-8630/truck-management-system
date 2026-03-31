@@ -16,17 +16,20 @@ router.post("/generate-pdf", async (req, res) => {
     }
 
     // 🧠 Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-      // On Render, we usually need to specify the path to the installed Chrome/Chromium
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
-    });
+    const launchOptions = {
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                       (process.platform === 'linux' ? '/usr/bin/google-chrome' : null),
+    };
+    
+    console.log(`[PDF] Launching browser at: ${launchOptions.executablePath || 'bundled/default'}`);
+    const browser = await puppeteer.launch(launchOptions);
 
     // 🧩 Inject CSS to enforce true single-page geometry
     const htmlWithStyle = `
