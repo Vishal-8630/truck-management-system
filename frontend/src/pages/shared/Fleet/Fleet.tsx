@@ -8,32 +8,18 @@ const Fleet = () => {
 
     const vehicles = [
         {
-            type: "32 Ft. Single Axle",
-            capacity: "7 to 9 Tons",
-            dimensions: "32' x 8' x 8'",
-            bestFor: "Ideal for FMCG, white goods, and industrial components.",
-            features: ["Waterproof Container", "GPS Tracking", "Side-opening options"]
+            type: "34 Ft. Single Axle",
+            capacity: "7 to 9.5 Tons",
+            dimensions: "34' x 8.6' x 10.3'",
+            bestFor: "Ideal for FMCG, e-commerce shipments, and high-volume light goods.",
+            features: ["Waterproof Container", "GPS Tracking", "Single Axle Stability"]
         },
         {
-            type: "32 Ft. Multi Axle",
-            capacity: "14 to 17 Tons",
-            dimensions: "32' x 8' x 8'",
-            bestFor: "Heavy machinery, construction materials, and bulk cargo.",
-            features: ["High Load Capacity", "Air Suspension", "Safe for delicate heavy loads"]
-        },
-        {
-            type: "20 Ft. Container truck",
-            capacity: "6 to 8 Tons",
-            dimensions: "20' x 8' x 8'",
-            bestFor: "Intermediate volume consignments and express deliveries.",
-            features: ["Secure Seal", "Express Transit", "Optimized Fuel Efficiency"]
-        },
-        {
-            type: "14 Ft. Open/Closed Truck",
-            capacity: "3 to 4.5 Tons",
-            dimensions: "14' x 7' x 7'",
-            bestFor: "Intra-city and localized distribution for retail goods.",
-            features: ["Easy Maneuverability", "Fast Loading", "Doorstep Delivery"]
+            type: "22 Ft. Container Truck",
+            capacity: "6.5 Tons",
+            dimensions: "22' x 8' x 7.6'",
+            bestFor: "Optimized for medium-sized logistics, industrial shipments, and retail distribution.",
+            features: ["Secure Seal", "Express Transit", "High Security Lock"]
         }
     ];
 

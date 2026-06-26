@@ -25,7 +25,6 @@ export const useSettlements = () => {
                 to: string;
                 ratePerKm: string;
                 dieselRate: string;
-                extraExpense: string;
             }) => {
                 const res = await api.get("/settlements/preview", { params });
                 return res.data;

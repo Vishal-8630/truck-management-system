@@ -21,7 +21,6 @@ const DriverSettlement = () => {
   const [to, setTo] = useState("");
   const [ratePerKm, setRatePerKm] = useState("");
   const [dieselRate, setDieselRate] = useState("");
-  const [extraExpense, setExtraExpense] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!id) return <Loading />;
@@ -30,11 +29,11 @@ const DriverSettlement = () => {
   const handleClick = async () => {
     setErrors({});
     try {
-      const result = await previewMutation.mutateAsync({ driverId: id, from, to, ratePerKm, dieselRate, extraExpense });
+      const result = await previewMutation.mutateAsync({ driverId: id, from, to, ratePerKm, dieselRate });
       const data = result?.data;
       if (data && data.journeys?.length > 0) {
         navigate(`/journey/driver-detail/${id}/settlement/preview`, {
-          state: { data, period: { from, to }, driver, dieselRate, ratePerKm, extraExpense },
+          state: { data, period: { from, to }, driver, dieselRate, ratePerKm },
         });
       } else {
         addMessage({ type: "error", text: result?.message || "No journeys found for this period." });
@@ -74,10 +73,9 @@ const DriverSettlement = () => {
         </FormSection>
 
         <FormSection title="Settlement Rates" icon={<Wallet size={18} />}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormInput type="number" id="ratePerKm" name="ratePerKm" label="Rate Per Km" value={ratePerKm} placeholder="e.g. 5.50" onChange={(val) => { setRatePerKm(val); setErrors(p => ({ ...p, ratePerKm: "" })) }} error={errors.ratePerKm} />
             <FormInput type="number" id="dieselRate" name="dieselRate" label="Diesel Rate (₹/L)" value={dieselRate} placeholder="e.g. 90.00" onChange={(val) => { setDieselRate(val); setErrors(p => ({ ...p, dieselRate: "" })) }} error={errors.dieselRate} />
-            <FormInput type="number" id="extraExpense" name="extraExpense" label="Extra Deductions" value={extraExpense} placeholder="0.00" onChange={(val) => setExtraExpense(val)} />
           </div>
         </FormSection>
 

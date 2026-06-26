@@ -17,7 +17,7 @@ const FAQ = () => {
         },
         {
             q: "What types of trucks are available in your fleet?",
-            a: "Our fleet includes a variety of vehicles tailored to different load requirements, including 32 Ft. Single/Multi Axle trucks, 20 Ft. Container trucks, and 14 Ft. carriers for local distribution."
+            a: "Our fleet includes a variety of vehicles tailored to different load requirements, including 34 Ft. Single Axle trucks and 22 Ft. Container trucks."
         },
         {
             q: "Do you handle Part Truck Load (PTL) shipments?",

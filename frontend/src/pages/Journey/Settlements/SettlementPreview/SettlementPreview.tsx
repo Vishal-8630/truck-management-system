@@ -12,7 +12,7 @@ const SettlementPreview = () => {
   const addMessage = useMessageStore((s) => s.addMessage);
   const { useConfirmSettlementMutation } = useSettlements();
   const confirmMutation = useConfirmSettlementMutation();
-  const { data, period, driver, dieselRate, extraExpense } = location.state || {};
+  const { data, period, driver, dieselRate } = location.state || {};
   const emptyFieldValue = "—";
   const safeDate = (date?: string) => date ? formatDate(new Date(date)) : emptyFieldValue;
 
@@ -20,7 +20,6 @@ const SettlementPreview = () => {
   const kmEarnings = Number(data?.totals?.total_rate_per_km || 0);
   const driverExpense = Number(data?.totals?.total_driver_expense || 0);
   const startingCash = Number(data?.totals?.total_journey_starting_cash || 0);
-  const extraDeductions = Number(extraExpense || 0);
   const dieselDiff = Number(data?.totals?.diesel_diff || 0);
   const dieselRateVal = Number(dieselRate || data?.totals?.diesel_rate || 0);
 
@@ -32,7 +31,7 @@ const SettlementPreview = () => {
   const dieselAdjustment = Math.abs(dieselDiff) * dieselRateVal;
 
   const drlSideTotal = kmEarnings + (isBonus ? dieselAdjustment : 0);
-  const driverSideTotal = driverExpense + startingCash + extraDeductions + (isShortage ? dieselAdjustment : 0);
+  const driverSideTotal = driverExpense + startingCash + (isShortage ? dieselAdjustment : 0);
 
   // Revised Rule: A = Driver Side (Earnings + Bonus), B = DRL Side (Advances + Shortage)
   // Result = A - B
@@ -168,12 +167,6 @@ const SettlementPreview = () => {
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Driver Expense</span>
                 <span className="text-sm font-black text-slate-900 font-mono italic">₹{driverExpense.toLocaleString()}</span>
               </div>
-              {extraDeductions > 0 && (
-                <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Extra Deductions</span>
-                  <span className="text-sm font-black text-rose-600 font-mono italic">₹{extraDeductions.toLocaleString()}</span>
-                </div>
-              )}
               {isShortage && (
                 <div className="flex items-center justify-between p-4 bg-rose-50 rounded-2xl border border-rose-100 shadow-sm border-b-2 border-b-rose-200 animate-in slide-in-from-right duration-300">
                   <div className="flex flex-col">

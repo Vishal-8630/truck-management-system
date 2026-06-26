@@ -3,7 +3,8 @@ import { useEffect } from "react";
 import api from "@/api/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMessageStore } from "@/store/useMessageStore";
-import { useThemeStore } from "@/store/useThemeStore";
+// COMMENTED OUT FOR FUTURE USE: Theme store import
+// import { useThemeStore } from "@/store/useThemeStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import UniversalSearch from "../UniversalSearch/UniversalSearch";
 import { 
@@ -26,7 +27,8 @@ const Sidebar = () => {
   const { pathname } = useLocation();
   const { user, logout: authLogout } = useAuthStore();
   const { addMessage } = useMessageStore();
-  const { theme, toggleTheme } = useThemeStore();
+  // COMMENTED OUT FOR FUTURE USE: Theme hook query
+  // const { theme, toggleTheme } = useThemeStore();
   const { isCollapsed, toggleSidebar, setCollapsed } = useSidebarStore();
 
   const getInitialLabel = (label: string) => {
@@ -155,9 +157,11 @@ const Sidebar = () => {
             </button>
           </div>
 
-          <div className="mb-8 px-1">
-            <UniversalSearch isCollapsed={isCollapsed} />
-          </div>
+          {user && (
+            <div className="mb-8 px-1">
+              <UniversalSearch isCollapsed={isCollapsed} />
+            </div>
+          )}
 
           <nav className="flex-1 flex flex-col gap-8 overflow-y-auto custom-scrollbar pr-2 overflow-x-hidden">
             {sidebarLinks.map((group, idx) => (
@@ -211,6 +215,7 @@ const Sidebar = () => {
         </div>
 
         <div className={`mt-auto flex flex-col gap-3 border-t border-slate-100 dark:border-slate-800 ${isCollapsed ? 'p-2 items-center' : 'p-6 pt-4'}`}>
+          {/* COMMENTED OUT FOR FUTURE USE: Theme Toggle Button for Dark Mode
           <button
             onClick={toggleTheme}
             title={isCollapsed ? (theme === "light" ? "Dark Mode" : "Light Mode") : ""}
@@ -219,6 +224,7 @@ const Sidebar = () => {
             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
             {!isCollapsed && (theme === "light" ? "Dark Mode" : "Light Mode")}
           </button>
+          */}
 
           {user ? (
             <>
@@ -249,6 +255,10 @@ const Sidebar = () => {
               {!isCollapsed && "Staff Login"}
             </button>
           )}
+
+          <div className="flex justify-center items-center text-slate-300 dark:text-slate-700 tracking-[0.3em] text-xs pt-4 font-bold select-none shrink-0">
+            •••
+          </div>
         </div>
       </aside>
     </>

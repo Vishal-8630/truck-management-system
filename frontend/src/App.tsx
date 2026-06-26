@@ -2,6 +2,7 @@ import { MotionConfig } from "framer-motion";
 import BottomBar from "@/components/layout/BottomBar";
 import MessageBar from "@/components/layout/MessageBar";
 import Sidebar from "@/components/layout/Sidebar/Sidebar";
+import Navbar from "@/components/layout/Navbar/Navbar";
 import AppRoutes from "@/routes/AppRoutes";
 
 import useAuthCheck from "@/hooks/useAuthCheck";
@@ -9,6 +10,7 @@ import Loading from "@/components/ui/Loading";
 import MoveToTopButton from "@/components/layout/MoveToTopButton";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import { useThemeStore } from "@/store/useThemeStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect } from "react";
 
 import "@syncfusion/ej2-base/styles/material.css";
@@ -21,15 +23,23 @@ registerLicense(
 
 function App() {
   const checking = useAuthCheck();
-  const { theme } = useThemeStore();
+  // COMMENTED OUT FOR FUTURE USE: Theme store query for dark mode
+  // const { theme } = useThemeStore();
+  const { user } = useAuthStore();
 
+  // COMMENTED OUT FOR FUTURE USE: Dynamic classList dark mode applier
+  // useEffect(() => {
+  //   if (theme === "dark") {
+  //     document.documentElement.classList.add("dark");
+  //   } else {
+  //     document.documentElement.classList.remove("dark");
+  //   }
+  // }, [theme]);
+
+  // Force light mode on initial load
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
+    document.documentElement.classList.remove("dark");
+  }, []);
 
   if (checking) return <Loading />;
 
@@ -38,9 +48,17 @@ function App() {
       <div className="flex flex-col min-h-screen transition-all duration-300 ease-in-out" style={{ backgroundColor: 'var(--color-bg-base)' }}>
         <ScrollToTop />
         
+        {/* Render top navbar only when logged out */}
+        {!user && (
+          <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pt-6 shrink-0 z-[1001]">
+            <Navbar />
+          </header>
+        )}
+
         {/* Main Content Area with Sticky Sidebar */}
         <div className="flex flex-1 flex-row min-w-0 transition-all duration-300 items-start">
-          <Sidebar />
+          {/* Render sidebar only when logged in */}
+          {user && <Sidebar />}
 
           <main className="flex-1 flex flex-col pt-8 lg:pt-12 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 transition-all duration-300">
             <MessageBar />

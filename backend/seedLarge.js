@@ -407,7 +407,6 @@ for (let i = 0; i < 25; i++) {
         avg_mileage: parseFloat((rand(35, 55) / 10).toFixed(1)),
         rate_per_km: rand(18, 28),
         diesel_rate: rand(90, 105),
-        extra_expense: rand(0, 5000),
         driver_total: rand(2000, 25000),
         owner_total: rand(10000, 80000),
         overall_total: rand(12000, 100000),

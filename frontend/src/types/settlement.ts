@@ -26,7 +26,6 @@ export interface SettlementType {
 
     rate_per_km: string;
     diesel_rate: string;
-    extra_expense: string;
 
     driver_total: string;
     owner_total: string;
@@ -76,7 +75,6 @@ export const EmptySettlementType: SettlementType = {
 
     rate_per_km: "",
     diesel_rate: "",
-    extra_expense: "",
 
     payment_status: "Balanced",
 

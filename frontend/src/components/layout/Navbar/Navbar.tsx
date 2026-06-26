@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import NavButton from "@/components/NavButton/NavButton";
 import { ChevronDown, Menu, X, Sun, Moon, LogIn, User } from "lucide-react";
 import DRL from "@/assets/drl.png";
-import { useThemeStore } from "@/store/useThemeStore";
+// COMMENTED OUT FOR FUTURE USE: Theme store import
+// import { useThemeStore } from "@/store/useThemeStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
@@ -14,7 +15,8 @@ const Navbar = () => {
   const { pathname } = useLocation();
   const { user, logout: authLogout } = useAuthStore();
   const { addMessage } = useMessageStore();
-  const { theme, toggleTheme } = useThemeStore();
+  // COMMENTED OUT FOR FUTURE USE: Theme hook query
+  // const { theme, toggleTheme } = useThemeStore();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
@@ -193,6 +195,7 @@ const Navbar = () => {
       </ul>
 
       <div className="flex items-center gap-3">
+        {/* COMMENTED OUT FOR FUTURE USE: Theme Toggle Button for Dark Mode
         <button
           onClick={toggleTheme}
           className="p-2.5 rounded-xl transition-all border shadow-sm relative overflow-hidden"
@@ -215,6 +218,7 @@ const Navbar = () => {
             </motion.div>
           </AnimatePresence>
         </button>
+        */}
 
         {!user ? (
           <button

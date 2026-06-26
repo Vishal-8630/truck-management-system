@@ -27,7 +27,6 @@ const settlementSchema = new mongoose.Schema({
 
   rate_per_km: { type: Number, default: 0 },
   diesel_rate: { type: Number, default: 0 },
-  extra_expense: { type: Number, default: 0 },
 
   payment_status: {
     type: String,

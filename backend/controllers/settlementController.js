@@ -14,7 +14,7 @@ const toNum = v => {
     return Number.isFinite(n) ? n : 0;
 }
 
-const calculateTotals = (journeys, ratePerKm, dieselRate, extraExpense, defaultMileage = 1) => {
+const calculateTotals = (journeys, ratePerKm, dieselRate, defaultMileage = 1) => {
     let totalDriverExpense = 0;
     let totalDieselExpense = 0;
     let totalDieselQty = 0;
@@ -62,12 +62,6 @@ const calculateTotals = (journeys, ratePerKm, dieselRate, extraExpense, defaultM
         ownerTotal += (-dieselValue);
     }
 
-    if (extraExpense > 0) {
-        ownerTotal += extraExpense;
-    } else {
-        driverTotal += extraExpense;
-    }
-
     const overallTotal = ownerTotal - driverTotal;
 
     return {
@@ -85,7 +79,6 @@ const calculateTotals = (journeys, ratePerKm, dieselRate, extraExpense, defaultM
         owner_total: Number(ownerTotal.toFixed(2)),
         overall_total: Number(overallTotal.toFixed(2)),
         fuelMoneyAdjustment: Number(fuelMoneyAdjustment.toFixed(2)),
-        extra_expense: extraExpense,
         rate_per_km: ratePerKm,
         diesel_rate: dieselRate,
     };
@@ -111,7 +104,6 @@ export const previewSettlement = async (req, res, next) => {
 
         const RATE_PER_KM = toNum(req.query.ratePerKm) || 3;
         const DIESEL_RATE = toNum(req.query.dieselRate) || 86;
-        const EXTRA_EXPENSE = toNum(req.query.extraExpense) || 0;
 
         const q = {
             driver: driverId,
@@ -142,7 +134,7 @@ export const previewSettlement = async (req, res, next) => {
             });
         }
 
-        const totals = calculateTotals(journeys, RATE_PER_KM, DIESEL_RATE, EXTRA_EXPENSE, req.query.defaultMileage);
+        const totals = calculateTotals(journeys, RATE_PER_KM, DIESEL_RATE, req.query.defaultMileage);
 
         const result = {
             journeys: journeys.map(j => ({ ...j })),
@@ -194,7 +186,6 @@ export const confirmSettlement = async (req, res, next) => {
             owner_total: Number(totals.owner_total.toFixed(2)),
             overall_total: Number(totals.overall_total.toFixed(2)),
 
-            extra_expense: Number(totals.extra_expense.toFixed(2)),
             rate_per_km: Number(totals.rate_per_km.toFixed(2)),
             diesel_rate: Number(totals.diesel_rate.toFixed(2)),
 
@@ -412,7 +403,6 @@ export const recalculateSettlement = async (req, res, next) => {
             settlement.journeys,
             settlement.rate_per_km,
             settlement.diesel_rate,
-            settlement.extra_expense,
             settlement.avg_mileage
         );
 
