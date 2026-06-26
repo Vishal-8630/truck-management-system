@@ -4,11 +4,11 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useMessageStore } from "@/store/useMessageStore";
 import { useEffect, useState } from "react";
 import NavButton from "@/components/NavButton/NavButton";
-import { ChevronDown, Menu, X, Sun, Moon, LogIn, User } from "lucide-react";
+import { ChevronDown, Menu, X, LogIn, User } from "lucide-react";
 import DRL from "@/assets/drl.png";
 // COMMENTED OUT FOR FUTURE USE: Theme store import
 // import { useThemeStore } from "@/store/useThemeStore";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 const Navbar = () => {
   const navigate = useNavigate();
