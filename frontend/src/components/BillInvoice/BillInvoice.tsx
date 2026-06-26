@@ -119,7 +119,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
 
       {/* Main Table */}
       <div className="border border-slate-200 rounded-[2rem] overflow-hidden mb-10 shadow-sm mx-4">
-        <div className="overflow-x-auto">
+        <div className="w-full">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">

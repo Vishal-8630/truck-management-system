@@ -29,6 +29,7 @@ import OperationalActivity from "@/pages/shared/Home/views/OperationalActivity";
 import BillEntries from "@/pages/bills/BillEntries";
 import BillEntryDetail from "@/pages/bills/BillEntries/BillEntryDetail";
 import LRCopy from "@/pages/bills/LRCopy";
+import EmptyLR from "@/pages/bills/EmptyLR";
 import Bill from "@/pages/bills/Bill";
 import BillingParty from "@/pages/bills/BillingParty";
 import BillingPartyDetail from "@/pages/bills/BillingParty/BillingPartyDetail";
@@ -67,6 +68,7 @@ const billEntryRoutes = [
   { path: "all-bill-entries", element: <BillEntries /> },
   { path: "bill-entry-detail/:id", element: <BillEntryDetail /> },
   { path: "lrcopy", element: <LRCopy /> },
+  { path: "empty-lr", element: <EmptyLR /> },
   { path: "bill", element: <Bill /> },
   { path: "billing-party", element: <BillingParty /> },
   { path: "billing-party-detail/:id", element: <BillingPartyDetail /> },

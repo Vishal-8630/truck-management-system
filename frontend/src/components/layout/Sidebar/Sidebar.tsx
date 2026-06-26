@@ -72,6 +72,7 @@ const Sidebar = () => {
         { to: "/bill-entry/all-bill-entries", label: "Bill Entries" },
         { to: "/bill-entry/billing-party", label: "Billing Party" },
         { to: "/bill-entry/lrcopy", label: "LR Copy" },
+        { to: "/bill-entry/empty-lr", label: "Empty LR" },
         { to: "/bill-entry/bill", label: "Invoice Search" },
         { to: "/vehicle-entry/all-vehicle-entries", label: "Vehicle Logs" },
         { to: "/vehicle-entry/balance-party", label: "Balance Party" },

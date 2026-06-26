@@ -20,7 +20,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <img src={Logo} alt="Logo" className="max-w-[120px] h-auto mb-4" />
           <div className="mt-2">
             <p className="font-bold underline text-[9px] uppercase tracking-tighter">Address of Delivery Office:</p>
-            <p className="font-black text-sm tracking-widest italic">GURUGRAM</p>
+            <p className="font-black text-sm tracking-widest italic uppercase">{entry?.to || "—"}</p>
           </div>
         </div>
 
@@ -168,27 +168,27 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <table className="w-full h-full border-collapse">
             <thead className="bg-slate-50">
               <tr className="border-b-2 border-slate-900 font-black uppercase text-[10px] tracking-tighter">
-                <th className="p-3 border-r-2 border-slate-900 text-left w-[100px]">Packages</th>
-                <th className="p-3 border-r-2 border-slate-900 text-center">Description (Said to contain)</th>
-                <th className="p-3 border-r-2 border-slate-900 text-right w-[120px]">Weight (Actual)</th>
+                <th className="p-3 text-left w-[100px]">Packages</th>
+                <th className="p-3 text-center">Description (Said to contain)</th>
+                <th className="p-3 text-right w-[120px]">Weight (Actual)</th>
                 <th className="p-3 text-right w-[120px]">Weight (Charged)</th>
               </tr>
             </thead>
             <tbody className="h-full">
               <tr className="font-black text-xl italic align-top">
-                <td className="p-4 border-r-2 border-slate-200 align-middle text-center border-b border-dotted text-3xl font-black text-indigo-700">{entry?.pkg}</td>
-                <td className="p-6 border-r-2 border-slate-200">
+                <td className="p-4 align-middle text-center text-3xl font-black text-indigo-700">{entry?.pkg}</td>
+                <td className="p-6">
                   <div className="flex flex-col gap-4 text-slate-900">
                     <div className="flex items-center gap-4">
                       <span className="font-black underline scale-90">Container No.:</span>
                       <span className="flex-1 border-b border-dotted border-slate-300"></span>
                     </div>
-                    <div className="mt-8 text-[9px] text-slate-400 leading-tight border-l-2 border-indigo-200 pl-4 font-bold tracking-tight max-w-[320px]">
+                    <div className="mt-8 text-[9px] text-slate-400 leading-tight pl-4 font-bold tracking-tight max-w-[320px]">
                       The Consignment is booked subject to Specific Terms & conditions Printed overleaf & accepted by the consignor.
                     </div>
                   </div>
                 </td>
-                <td className="p-4 border-r-2 border-slate-200"></td>
+                <td className="p-4"></td>
                 <td className="p-4"></td>
               </tr>
             </tbody>
@@ -253,7 +253,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
         <div className="w-[300px]">
           <div className="flex items-center gap-4 mb-8">
             <span className="font-black text-xl italic uppercase text-slate-900">Value Rs.</span>
-            <span className="text-3xl font-black text-indigo-800 bg-indigo-50 px-6 py-2 rounded-xl border-2 border-indigo-100 flex-1 text-center font-mono">₹{entry?.value}</span>
+            <span className="text-xl font-black text-indigo-800 bg-indigo-50 px-6 py-2 rounded-xl border-2 border-indigo-100 flex-1 text-center uppercase tracking-tight">AS PER INVOICE</span>
           </div>
           <div className="mt-12 text-center">
             <div className="border-t-2 border-slate-800 w-full mb-2"></div>
