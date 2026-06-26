@@ -126,8 +126,10 @@ const Bill = () => {
           >
             <div className="card-premium p-0 overflow-hidden bg-white shadow-2xl relative">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
-              <div ref={billRef} className="p-8 lg:p-12 bg-white">
-                <BillInvoice entry={entry as BillEntryType} />
+              <div className="p-6 bg-white">
+                <div ref={billRef} className="bg-white w-full">
+                  <BillInvoice entry={entry as BillEntryType} />
+                </div>
               </div>
             </div>
 

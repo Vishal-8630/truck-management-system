@@ -135,9 +135,11 @@ const LRCopy = () => {
 
       <div className="flex flex-col lg:flex-row gap-10 items-start">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <div ref={invoiceRef} className="card-premium bg-white p-2 min-h-[600px] flex items-center justify-center overflow-auto shadow-2xl scale-[0.98] origin-top lg:scale-100">
+          <div className="card-premium bg-white min-h-[600px] flex items-center justify-center overflow-auto shadow-2xl scale-[0.98] origin-top lg:scale-100">
             {entry ? (
-              <Invoice entry={entry} />
+              <div ref={invoiceRef} className="w-full bg-white">
+                <Invoice entry={entry} />
+              </div>
             ) : (
               <div className="flex flex-col items-center gap-4 text-slate-300 py-40">
                 <FileSearch size={80} strokeWidth={1} />

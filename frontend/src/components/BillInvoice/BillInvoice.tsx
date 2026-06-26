@@ -66,12 +66,12 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
     <div className="flex flex-col text-slate-800 font-sans w-full mx-auto bg-white box-border">
       {/* Header */}
       <div className="flex flex-col items-center text-center py-6 border-b-2 border-indigo-600 mb-8 bg-indigo-50/50 rounded-t-xl">
-        <h1 className="text-4xl font-black text-indigo-900 italic tracking-tighter mb-1 uppercase">Divyanshi Road Lines</h1>
-        <p className="text-sm font-bold text-slate-600 max-w-md leading-relaxed">
+        <h1 className="text-3xl font-black text-indigo-900 italic tracking-tight mb-1 uppercase whitespace-nowrap">Divyanshi Road Lines</h1>
+        <p className="text-xs font-bold text-slate-600 max-w-md leading-relaxed">
           Head Office: Yamuna Vihar, Near Essar Fuel Pump, Lohvan Bhagichi,
           Laxmi Nagar, Mathura - 281001
         </p>
-        <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs font-bold text-indigo-600 uppercase tracking-widest">
+        <div className="flex flex-wrap justify-center gap-4 mt-3 text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
           <span>Mob: 8630836045, 7983635608</span>
           <span className="text-slate-300">|</span>
           <span>GST: 09FPZPM8447C1Z1</span>

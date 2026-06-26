@@ -81,8 +81,10 @@ const EmptyLR = () => {
 
       <div className="flex flex-col lg:flex-row gap-10 items-start">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <div ref={invoiceRef} className="card-premium bg-white p-2 min-h-[600px] flex items-center justify-center overflow-auto shadow-2xl scale-[0.98] origin-top lg:scale-100">
-            <Invoice entry={emptyEntry as BillEntryType} />
+          <div className="card-premium bg-white min-h-[600px] flex items-center justify-center overflow-auto shadow-2xl scale-[0.98] origin-top lg:scale-100">
+            <div ref={invoiceRef} className="w-full bg-white">
+              <Invoice entry={emptyEntry as BillEntryType} />
+            </div>
           </div>
         </div>
 
