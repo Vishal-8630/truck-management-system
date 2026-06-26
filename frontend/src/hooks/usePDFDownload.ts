@@ -112,56 +112,47 @@ export const usePDFDownload = <T>({
       return;
     }
 
-    // ================== DESKTOP / CLIENT FLOW (toPng fallback) ==================
+    // ================== DESKTOP / CLIENT FLOW (toPng) ==================
     if (!ref.current) return;
-    const originalDisplay = ref.current.style.display;
-    const originalPosition = ref.current.style.position;
-    const originalLeft = ref.current.style.left;
-    const originalClasses = ref.current.className;
+
+    // Save ONLY the width we will temporarily override
+    const savedWidth = ref.current.style.width;
 
     try {
-      addMessage({ type: "info", text: "Capturing high-fidelity document..." });
+      addMessage({ type: "info", text: "Capturing document..." });
 
-      // 👁️ Reveal the hidden printable element temporarily for the capture engine
-      ref.current.style.display = "block";
-      ref.current.style.position = "fixed";
-      ref.current.style.left = "0";
-      ref.current.style.top = "0";
-      ref.current.style.zIndex = "-9999";
-      ref.current.classList.remove('hidden');
+      // Temporarily force the element to A4 width in pixels so the capture
+      // matches A4 proportions. Portrait = 794px, Landscape = 1122px.
+      const captureWidthPx = orientation === "l" ? 1122 : 794;
+      ref.current.style.width = `${captureWidthPx}px`;
 
-      // 🖼️ Render to high-quality Image using html-to-image (Supports oklch/modern CSS)
+      // Give the browser one animation frame to reflow at the new width
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => setTimeout(r, 50));
+
       const imgData = await toPng(ref.current, {
         quality: 1.0,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
-        style: {
-          margin: '0',
-          padding: '0',
-          background: 'white',
-          overflow: 'hidden',
-          width: orientation === "l" ? "297mm" : "210mm",
-          minHeight: orientation === "l" ? "210mm" : "297mm",
-          boxSizing: 'border-box',
-        },
         filter: (node) => {
           if (!node || !node.classList) return true;
-          const exclusionKeywords = ['print:hidden', 'btn', 'button', 'nav', 'sidebar'];
-          return !exclusionKeywords.some(keyword => 
+          const exclusionKeywords = ['print:hidden', 'nav', 'sidebar'];
+          return !exclusionKeywords.some(keyword =>
             Array.from(node.classList).some(cls => cls.includes(keyword))
           );
         }
       });
 
+      // Restore width immediately after capture so the UI is not disrupted
+      ref.current.style.width = savedWidth;
+
       const pdf = new jsPDF(orientation, "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const margin = 5;
-
       const maxRenderWidth = pdfWidth - margin * 2;
       const maxRenderHeight = pdfHeight - margin * 2;
 
-      // Natural dimensions check
       const img = new Image();
       img.src = imgData;
       await new Promise((resolve) => (img.onload = resolve));
@@ -185,11 +176,9 @@ export const usePDFDownload = <T>({
       console.error("PDF Client Generation error:", err);
       addMessage({ type: "error", text: "Failed to generate PDF locally" });
     } finally {
+      // Always restore the width even if capture throws
       if (ref.current) {
-        ref.current.style.display = originalDisplay;
-        ref.current.style.position = originalPosition;
-        ref.current.style.left = originalLeft;
-        ref.current.className = originalClasses;
+        ref.current.style.width = savedWidth;
       }
     }
   };

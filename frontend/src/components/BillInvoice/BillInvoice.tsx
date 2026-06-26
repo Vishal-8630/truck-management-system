@@ -63,7 +63,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
   }, [grossBill, entry?.advance]);
 
   return (
-    <div className="flex flex-col text-slate-800 font-sans w-full min-w-[800px] mx-auto bg-white box-border">
+    <div className="flex flex-col text-slate-800 font-sans w-full mx-auto bg-white box-border">
       {/* Header */}
       <div className="flex flex-col items-center text-center py-6 border-b-2 border-indigo-600 mb-8 bg-indigo-50/50 rounded-t-xl">
         <h1 className="text-4xl font-black text-indigo-900 italic tracking-tighter mb-1 uppercase">Divyanshi Road Lines</h1>
@@ -124,7 +124,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 {Object.values(BILL_INVOICE_MAPPING).map((label) => (
-                  <th key={label} className="px-4 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
+                  <th key={label} className="px-2 py-3 text-[8px] font-black text-slate-400 uppercase tracking-tight text-left">
                     {label}
                   </th>
                 ))}
@@ -144,7 +144,7 @@ const BillInvoice: React.FC<BillInvoiceProps> = ({ entry }) => {
                   }
 
                   return (
-                    <td key={key} className="px-4 py-6 text-sm font-black text-slate-700">
+                    <td key={key} className="px-2 py-4 text-xs font-black text-slate-700">
                       {displayValue}
                     </td>
                   );
