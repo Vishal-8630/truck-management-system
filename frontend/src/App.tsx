@@ -9,7 +9,8 @@ import useAuthCheck from "@/hooks/useAuthCheck";
 import Loading from "@/components/ui/Loading";
 import MoveToTopButton from "@/components/layout/MoveToTopButton";
 import ScrollToTop from "@/components/layout/ScrollToTop";
-import { useThemeStore } from "@/store/useThemeStore";
+// COMMENTED OUT FOR FUTURE USE: Theme store import
+// import { useThemeStore } from "@/store/useThemeStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect } from "react";
 

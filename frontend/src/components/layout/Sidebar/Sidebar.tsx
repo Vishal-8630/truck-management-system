@@ -9,7 +9,7 @@ import { useSidebarStore } from "@/store/useSidebarStore";
 import UniversalSearch from "../UniversalSearch/UniversalSearch";
 import { 
   Home, Info, Truck, Phone,
-  FileText, Users, LogOut, Sun, Moon, 
+  FileText, Users, LogOut, 
   User, Milestone, Receipt, Activity,
   LayoutDashboard, Menu, X, ChevronLeft
 } from "lucide-react";

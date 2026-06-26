@@ -242,6 +242,7 @@ const clientLogos = [
 const LandingHome = () => {
     const navigate = useNavigate();
     const { hash } = useLocation();
+    const { addMessage } = useMessageStore();
     const iconSize = 28;
     const [isQuoteOpen, setIsQuoteOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<typeof clientLogos[0] | null>(null);
