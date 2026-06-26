@@ -30,8 +30,7 @@ const SettlementDetail = () => {
     ref: printRef,
     data: settlement,
     emptyMessage: "Please select a settlement first",
-    endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   const handleDownloadPDF = usePDFDownload({
@@ -39,8 +38,7 @@ const SettlementDetail = () => {
     data: settlement,
     emptyMessage: "Please select a settlement first",
     filename: `Settlement-${settlement?.driver?.name || "Driver"}-${new Date().toISOString().split("T")[0]}.pdf`,
-    endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   if (isLoading && !settlement) return <Loading />;

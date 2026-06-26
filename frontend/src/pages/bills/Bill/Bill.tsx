@@ -53,8 +53,7 @@ const Bill = () => {
     data: entry,
     emptyMessage: "Please search for a bill first",
     orientation: "p",
-    endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   const handleDownloadBill = usePDFDownload({
@@ -64,8 +63,7 @@ const Bill = () => {
     filename: `bill-${(entry as BillEntryType).bill_no || 'unknown'}-${new Date().toISOString().split("T")[0]
       }.pdf`,
     orientation: "p",
-    endpoint: "/invoice/generate-pdf",
-    serverMode: true,
+    serverMode: false,
   });
 
   if (isLoading) return <Loading />;
