@@ -82,7 +82,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <div className="h-px bg-slate-900 my-1"></div>
           <div className="flex-1">
             <p className="mb-0.5">SCHEDULE OF DEMURRAGE CHARGES</p>
-            <div className="text-[8px] space-y-0.5 text-slate-500 font-bold italic">
+            <div className="text-[8px] space-y-0.5 text-slate-900 font-bold italic">
               <p>Charges after ___ days from today</p>
               <p>@Rs _____ per days Qtl,</p>
               <p>on weight charged.</p>
@@ -92,21 +92,21 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <p className="text-[8px] mt-1 text-center font-black">NOT RESPONSIBLE FOR LEAKAGE & BREAKAGE DELIVERY AGAINST PAYMENT</p>
         </div>
 
-        <div className="w-[200px] flex flex-col text-[10px]">
+        <div className="flex-1 flex flex-col text-[10px]">
           <div className="p-2 border-b border-slate-200 flex flex-col gap-0.5">
-            <span className="font-black uppercase text-[8px] text-slate-400">Mode of Packing</span>
+            <span className="font-black uppercase text-[8px] text-slate-900">Mode of Packing</span>
             <span className="font-black italic text-sm">{entry?.mode_of_packing || "—"}</span>
           </div>
           <div className="p-2 border-b border-slate-200 flex flex-col gap-0.5">
-            <span className="font-black uppercase text-[8px] text-slate-400">Invoice No</span>
+            <span className="font-black uppercase text-[8px] text-slate-900">Invoice No</span>
             <span className="font-black italic text-sm">{entry?.invoice_no || "—"}</span>
           </div>
           <div className="p-2 border-b border-slate-200 flex flex-col gap-0.5">
-            <span className="font-black uppercase text-[8px] text-slate-400">Consignee GST No</span>
+            <span className="font-black uppercase text-[8px] text-slate-900">Consignee GST No</span>
             <span className="font-black text-xs font-mono">{entry?.consignor_gst_no || "—"}</span>
           </div>
           <div className="p-2 flex flex-col gap-0.5">
-            <span className="font-black uppercase text-[8px] text-slate-400">Consignor GST No</span>
+            <span className="font-black uppercase text-[8px] text-slate-900">Consignor GST No</span>
             <span className="font-black text-xs font-mono">{entry?.consignor_gst_no || "—"}</span>
           </div>
         </div>
@@ -115,40 +115,40 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
       {/* Section 2: Consignor/Consignee Info */}
       <div className="flex border-b-2 border-slate-900 min-h-[140px]">
         <div className="flex-1 border-r-2 border-slate-900 flex flex-col">
-          <div className="flex-1 p-4 border-b border-slate-200 bg-indigo-50/20">
-            <span className="font-black uppercase text-[9px] mb-2 block tracking-widest text-indigo-400">Consignor Name & Address</span>
+          <div className="flex-1 p-4 border-b border-slate-200">
+            <span className="font-black uppercase text-[9px] mb-2 block tracking-widest text-slate-900">Consignor Name & Address</span>
             <div className="pl-4 border-l-2 border-slate-800">
               <p className="font-black text-lg text-slate-900 leading-none">{entry?.consignor_name}</p>
-              <p className="font-bold text-slate-600 mt-2 italic text-[11px] leading-tight max-w-[400px]">{entry?.consignor_from_address}</p>
+              <p className="font-bold text-slate-900 mt-2 italic text-[11px] leading-tight max-w-[400px]">{entry?.consignor_from_address}</p>
             </div>
           </div>
           <div className="flex-1 p-4">
-            <span className="font-black uppercase text-[9px] mb-2 block tracking-widest text-slate-400">Consignee Name & Address</span>
+            <span className="font-black uppercase text-[9px] mb-2 block tracking-widest text-slate-900">Consignee Name & Address</span>
             <div className="pl-4 border-l-2 border-slate-200">
               <p className="font-black text-lg text-slate-900 leading-none">{entry?.consignee}</p>
-              <p className="font-bold text-slate-600 mt-2 italic text-[11px] leading-tight max-w-[400px]">{entry?.consignor_to_address}</p>
+              <p className="font-bold text-slate-900 mt-2 italic text-[11px] leading-tight max-w-[400px]">{entry?.consignor_to_address}</p>
             </div>
           </div>
         </div>
 
-        <div className="w-[220px] border-r-2 border-slate-900 flex flex-col">
+        <div className="w-[18%] border-r-2 border-slate-900 flex flex-col">
           <div className="p-4 border-b-2 border-slate-900 bg-slate-900 text-white">
             <span className="font-black uppercase text-[8px] block opacity-60 tracking-widest">Vehicle No.</span>
             <span className="text-2xl font-black italic tracking-tighter mt-1 block">{entry?.vehicle_no}</span>
           </div>
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b border-slate-200 flex-1">
-              <span className="font-black uppercase text-[8px] block text-slate-400 tracking-widest">From</span>
+              <span className="font-black uppercase text-[8px] block text-slate-900 tracking-widest">From</span>
               <span className="text-xl font-black text-slate-900 tracking-tight block uppercase">{entry?.from}</span>
             </div>
             <div className="p-4 flex-1">
-              <span className="font-black uppercase text-[8px] block text-slate-400 tracking-widest">To</span>
+              <span className="font-black uppercase text-[8px] block text-slate-900 tracking-widest">To</span>
               <span className="text-xl font-black text-slate-900 tracking-tight block uppercase">{entry?.to}</span>
             </div>
           </div>
         </div>
 
-        <div className="w-[180px] p-4 flex flex-col gap-6 font-black uppercase text-[9px] tracking-tighter">
+        <div className="w-[15%] p-4 flex flex-col gap-6 font-black uppercase text-[9px] tracking-tighter">
           <div>
             <p className="mb-2 underline">Excise Gate Pass No.</p>
             <div className="h-6 border border-slate-200 rounded-sm"></div>
@@ -176,14 +176,14 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
             </thead>
             <tbody className="h-full">
               <tr className="font-black text-xl italic align-top">
-                <td className="p-4 align-middle text-center text-3xl font-black text-indigo-700">{entry?.pkg}</td>
+                <td className="p-4 align-middle text-center text-3xl font-black text-slate-900">{entry?.pkg}</td>
                 <td className="p-6">
                   <div className="flex flex-col gap-4 text-slate-900">
                     <div className="flex items-center gap-4">
                       <span className="font-black underline scale-90">Container No.:</span>
                       <span className="flex-1 border-b border-dotted border-slate-300"></span>
                     </div>
-                    <div className="mt-8 text-[9px] text-slate-400 leading-tight pl-4 font-bold tracking-tight max-w-[320px]">
+                    <div className="mt-8 text-[9px] text-slate-900 leading-tight pl-4 font-bold tracking-tight max-w-[320px]">
                       The Consignment is booked subject to Specific Terms & conditions Printed overleaf & accepted by the consignor.
                     </div>
                   </div>
@@ -202,7 +202,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
                 <tr className="border-b-2 border-slate-900 font-black text-[10px] uppercase text-center">
                   <th className="p-3 border-r-2 border-slate-900 w-[60%]">Rate Details</th>
                   <th className="p-3 flex flex-col">
-                    <span className="text-[8px] opacity-40">Amount To Pay / TBB</span>
+                    <span className="text-[8px] text-slate-900">Amount To Pay / TBB</span>
                     <div className="flex justify-between px-2 pt-1">
                       <span>Rs.</span>
                       <span>Ps.</span>
@@ -219,7 +219,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
                   { label: "Risk Ch.", value: "" },
                 ].map((item, i) => (
                   <tr key={i} className="border-b border-slate-100 last:border-0 h-10">
-                    <td className="p-3 border-r-2 border-slate-900 text-slate-500 font-bold">{item.label}</td>
+                    <td className="p-3 border-r-2 border-slate-900 text-slate-900 font-bold">{item.label}</td>
                     <td className="p-3 bg-slate-50/30"></td>
                   </tr>
                 ))}
@@ -227,21 +227,21 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
             </table>
           </div>
 
-          <div className="w-[180px] p-4 flex flex-col gap-4 font-black uppercase text-[9px] tracking-tighter border-l-2 border-slate-900">
+          <div className="w-[15%] p-4 flex flex-col gap-4 font-black uppercase text-[9px] tracking-tighter border-l-2 border-slate-900">
             <div>
-              <p className="mb-1 text-slate-400">Sales Bill No.</p>
+              <p className="mb-1 text-slate-900">Sales Bill No.</p>
               <div className="h-6 border-b-2 border-slate-900"></div>
             </div>
             <div>
-              <p className="mb-1 text-slate-400">Eway Bill No.</p>
-              <div className="h-8 font-black text-sm text-indigo-700 py-1">{entry?.eway_bill_no || "_______"}</div>
+              <p className="mb-1 text-slate-900">Eway Bill No.</p>
+              <div className="h-8 font-black text-sm text-slate-900 py-1">{entry?.eway_bill_no || "_______"}</div>
             </div>
             <div>
-              <p className="mb-1 text-slate-400">Empty Yard Name</p>
+              <p className="mb-1 text-slate-900">Empty Yard Name</p>
               <div className="h-6 border-b-2 border-slate-900"></div>
             </div>
             <div>
-              <p className="mb-1 text-slate-400">TO PAY / PAID / TBB</p>
+              <p className="mb-1 text-slate-900">TO PAY / PAID / TBB</p>
               <div className="h-6 border-b-2 border-slate-900"></div>
             </div>
           </div>
@@ -257,7 +257,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           </div>
           <div className="mt-12 text-center">
             <div className="border-t-2 border-slate-800 w-full mb-2"></div>
-            <p className="font-black uppercase text-[10px] tracking-widest text-slate-500">Sign of Booking Clerk</p>
+            <p className="font-black uppercase text-[10px] tracking-widest text-slate-900">Sign of Booking Clerk</p>
           </div>
         </div>
 
@@ -269,7 +269,7 @@ const Invoice: React.FC<InvoiceProps> = ({ entry }) => {
           <div className="text-center group">
             <h3 className="text-3xl font-black text-indigo-900 italic tracking-tighter uppercase mb-2 group-hover:scale-105 transition-transform origin-center">Divyanshi Road Lines</h3>
             <div className="border-t-2 border-slate-800 w-full mb-2"></div>
-            <p className="font-black uppercase text-[10px] tracking-widest text-slate-500 italic">Auth. Representative Signature</p>
+            <p className="font-black uppercase text-[10px] tracking-widest text-slate-900 italic">Auth. Representative Signature</p>
           </div>
         </div>
       </div>

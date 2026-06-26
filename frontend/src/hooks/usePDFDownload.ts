@@ -115,8 +115,14 @@ export const usePDFDownload = <T>({
     // ================== DESKTOP / CLIENT FLOW (toPng) ==================
     if (!ref.current) return;
 
-    // Save ONLY the width we will temporarily override
-    const savedWidth = ref.current.style.width;
+    // Save original styles we will temporarily override
+    const originalStyles = {
+      width: ref.current.style.width,
+      minWidth: ref.current.style.minWidth,
+      maxWidth: ref.current.style.maxWidth,
+      flex: ref.current.style.flex,
+      display: ref.current.style.display,
+    };
 
     try {
       addMessage({ type: "info", text: "Capturing document..." });
@@ -125,10 +131,14 @@ export const usePDFDownload = <T>({
       // matches A4 proportions. Portrait = 794px, Landscape = 1122px.
       const captureWidthPx = orientation === "l" ? 1122 : 794;
       ref.current.style.width = `${captureWidthPx}px`;
+      ref.current.style.minWidth = `${captureWidthPx}px`;
+      ref.current.style.maxWidth = `${captureWidthPx}px`;
+      ref.current.style.flex = "none";
+      ref.current.style.display = "block";
 
       // Give the browser one animation frame to reflow at the new width
       await new Promise((r) => requestAnimationFrame(r));
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 100));
 
       const imgData = await toPng(ref.current, {
         quality: 1.0,
@@ -143,8 +153,12 @@ export const usePDFDownload = <T>({
         }
       });
 
-      // Restore width immediately after capture so the UI is not disrupted
-      ref.current.style.width = savedWidth;
+      // Restore styles immediately after capture so the UI is not disrupted
+      ref.current.style.width = originalStyles.width;
+      ref.current.style.minWidth = originalStyles.minWidth;
+      ref.current.style.maxWidth = originalStyles.maxWidth;
+      ref.current.style.flex = originalStyles.flex;
+      ref.current.style.display = originalStyles.display;
 
       const pdf = new jsPDF(orientation, "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -176,9 +190,13 @@ export const usePDFDownload = <T>({
       console.error("PDF Client Generation error:", err);
       addMessage({ type: "error", text: "Failed to generate PDF locally" });
     } finally {
-      // Always restore the width even if capture throws
+      // Always restore the styles even if capture throws
       if (ref.current) {
-        ref.current.style.width = savedWidth;
+        ref.current.style.width = originalStyles.width;
+        ref.current.style.minWidth = originalStyles.minWidth;
+        ref.current.style.maxWidth = originalStyles.maxWidth;
+        ref.current.style.flex = originalStyles.flex;
+        ref.current.style.display = originalStyles.display;
       }
     }
   };
