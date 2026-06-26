@@ -389,7 +389,7 @@ const LandingHome = () => {
 
                         <div className="flex items-center gap-8 mt-4 pt-8 border-t border-slate-100 dark:border-slate-800">
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">15+</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">10+</p>
                                 <p className="text-sm text-slate-400 font-medium">Years Experience</p>
                             </div>
                             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
@@ -399,7 +399,7 @@ const LandingHome = () => {
                             </div>
                             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
                             <div>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">1M+</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">21M+</p>
                                 <p className="text-sm text-slate-400 font-medium">Miles Traveled</p>
                             </div>
                         </div>
