@@ -387,20 +387,25 @@ const LandingHome = () => {
                             </a>
                         </div>
 
-                        <div className="flex items-center gap-8 mt-4 pt-8 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-4 mt-4 pt-8 border-t border-slate-100 dark:border-slate-800">
                             <div>
                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">10+</p>
                                 <p className="text-sm text-slate-400 font-medium">Years Experience</p>
                             </div>
-                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
                             <div>
                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">500+</p>
                                 <p className="text-sm text-slate-400 font-medium">Clients Happy</p>
                             </div>
-                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
                             <div>
                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">21M+</p>
                                 <p className="text-sm text-slate-400 font-medium">Miles Traveled</p>
+                            </div>
+                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+                            <div>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">83+</p>
+                                <p className="text-sm text-slate-400 font-medium">Vehicles Fleet</p>
                             </div>
                         </div>
                     </motion.div>
